@@ -5,24 +5,26 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+import { ArduinoColors } from './colors';
+
+const tintColorLight = ArduinoColors.blue;
+const tintColorDark = ArduinoColors.blue;
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: ArduinoColors.textPrimary,
+    background: ArduinoColors.background,
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: ArduinoColors.textSecondary,
+    tabIconDefault: ArduinoColors.textMuted,
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: ArduinoColors.textPrimary,
+    background: ArduinoColors.background,
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: ArduinoColors.textSecondary,
+    tabIconDefault: ArduinoColors.textMuted,
     tabIconSelected: tintColorDark,
   },
 };
