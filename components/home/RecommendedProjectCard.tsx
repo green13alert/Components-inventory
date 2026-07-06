@@ -1,30 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
+import { ProjectImage } from '@/constants/projects';
 
 type RecommendedProjectCardProps = {
   title: string;
   ownedParts: number;
   totalParts: number;
-  icon: keyof typeof Ionicons.glyphMap;
+  image: ProjectImage;
 };
 
 export function RecommendedProjectCard({
   title,
   ownedParts,
   totalParts,
-  icon,
+  image,
 }: RecommendedProjectCardProps) {
   const missingParts = totalParts - ownedParts;
   const matchPercent = Math.round((ownedParts / totalParts) * 100);
 
   return (
     <View style={styles.container}>
-      <View style={styles.topRow}>
-        <View style={styles.iconWrap}>
-          <Ionicons name={icon} size={28} color={ArduinoColors.blue} />
-        </View>
+      <View style={styles.imageWrap}>
+        <Image source={image} style={styles.image} contentFit="cover" transition={200} />
         <View style={styles.matchBadge}>
           <Text style={styles.matchText}>{matchPercent}% match</Text>
         </View>
@@ -54,24 +54,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: ArduinoColors.border,
-    padding: 14,
+    padding: 10,
     gap: 10,
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  imageWrap: {
+    position: 'relative',
   },
-  iconWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: ArduinoColors.blueMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
+  image: {
+    width: '100%',
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: ArduinoColors.surfaceElevated,
   },
   matchBadge: {
-    backgroundColor: ArduinoColors.blueMuted,
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(15, 17, 23, 0.75)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,

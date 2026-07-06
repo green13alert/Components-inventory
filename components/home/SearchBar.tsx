@@ -1,18 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, TextInputProps, View } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
 
-export function SearchBar() {
+type SearchBarProps = {
+  placeholder?: string;
+  value?: string;
+  onChangeText?: TextInputProps['onChangeText'];
+  editable?: boolean;
+};
+
+export function SearchBar({
+  placeholder = 'Search...',
+  value,
+  onChangeText,
+  editable = true,
+}: SearchBarProps) {
   return (
     <View style={styles.container}>
       <Ionicons name="search" size={20} color={ArduinoColors.textMuted} />
       <TextInput
         style={styles.input}
-        placeholder="Search projects..."
+        placeholder={placeholder}
         placeholderTextColor={ArduinoColors.textMuted}
-        editable={false}
-        pointerEvents="none"
+        value={value}
+        onChangeText={onChangeText}
+        editable={editable}
+        autoCorrect={false}
+        autoCapitalize="none"
+        clearButtonMode="while-editing"
       />
     </View>
   );

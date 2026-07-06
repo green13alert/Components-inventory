@@ -2,6 +2,7 @@ export const ArduinoColors = {
   blue: '#00979D',
   blueDark: '#007A7F',
   blueMuted: 'rgba(0, 151, 157, 0.15)',
+  blueSoft: 'rgba(0, 151, 157, 0.1)',
   background: '#0F1117',
   surface: '#1A1D26',
   surfaceElevated: '#242833',

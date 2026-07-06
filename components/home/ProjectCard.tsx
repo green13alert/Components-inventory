@@ -1,21 +1,20 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
+import { ProjectImage } from '@/constants/projects';
 
 type ProjectCardProps = {
   title: string;
   difficulty: string;
   duration: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  image: ProjectImage;
 };
 
-export function ProjectCard({ title, difficulty, duration, icon }: ProjectCardProps) {
+export function ProjectCard({ title, difficulty, duration, image }: ProjectCardProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.iconArea}>
-        <Ionicons name={icon} size={32} color={ArduinoColors.blue} />
-      </View>
+      <Image source={image} style={styles.image} contentFit="cover" transition={200} />
       <Text style={styles.title} numberOfLines={2}>
         {title}
       </Text>
@@ -36,16 +35,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: ArduinoColors.border,
-    padding: 14,
-    gap: 12,
+    padding: 10,
+    gap: 10,
   },
-  iconArea: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    backgroundColor: ArduinoColors.blueMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
+  image: {
+    width: '100%',
+    height: 96,
+    borderRadius: 12,
+    backgroundColor: ArduinoColors.surfaceElevated,
   },
   title: {
     fontSize: 15,
