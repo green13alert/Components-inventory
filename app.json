@@ -7,9 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "atlas",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#181B1E",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "backgroundColor": "#181B1E"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,10 +35,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+        "backgroundColor": "#181B1E",
+        "dark": {
+          "backgroundColor": "#181B1E"
+        }
         }
       ]
     ],

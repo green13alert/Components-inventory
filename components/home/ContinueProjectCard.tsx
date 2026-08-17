@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SolderiColors } from '@/constants/colors';
 import { ProjectImage } from '@/constants/projects';
-import { Radii, Spacing, Typography } from '@/constants/tokens';
 
 type ContinueProjectCardProps = {
   projectId: string;
@@ -24,107 +23,115 @@ export function ContinueProjectCard({
   progress,
   image,
 }: ContinueProjectCardProps) {
+  const router = useRouter();
+
   return (
-    <Link href={`/project/${projectId}`} asChild>
-      <Pressable
-        style={({ pressed }) => [styles.container, pressed && styles.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel={`Continue building ${title}`}>
-        <View style={styles.header}>
+    <Pressable
+      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      onPress={() => router.push(`/project/${projectId}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`Continue building ${title}`}>
+      <Image source={image} style={styles.image} contentFit="cover" />
+
+      <View style={styles.body}>
+        <View style={styles.textWrap}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.stepLabel}>{stepLabel}</Text>
+          <Text style={styles.stepTitle}>{stepTitle}</Text>
         </View>
 
-        <Image source={image} style={styles.image} contentFit="cover" transition={200} />
-
-        <View style={styles.body}>
-          <Text style={styles.stepTitle}>{stepTitle}</Text>
-
-          <View style={styles.progressSection}>
-            <View style={styles.track}>
-              <View style={[styles.fill, { width: `${progress}%` }]} />
-            </View>
+        <View style={styles.progressSection}>
+          <View style={styles.progressLabels}>
+            <Text style={styles.progressLabel}>Progress</Text>
             <Text style={styles.progressValue}>{progress}%</Text>
           </View>
-
-          <View style={styles.action}>
-            <Text style={styles.actionText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={16} color={SolderiColors.accent} />
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${progress}%` }]} />
           </View>
         </View>
-      </Pressable>
-    </Link>
+
+        <View style={styles.action}>
+          <Text style={styles.actionText}>Continue</Text>
+          <Ionicons name="arrow-forward" size={16} color={SolderiColors.accent} />
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: SolderiColors.surface,
-    borderRadius: Radii.xl,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: SolderiColors.border,
     overflow: 'hidden',
   },
   pressed: {
-    opacity: 0.94,
-    transform: [{ scale: 0.985 }],
-  },
-  header: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.md,
-    gap: Spacing.xs,
-  },
-  title: {
-    ...Typography.cardTitle,
-    color: SolderiColors.textPrimary,
-  },
-  stepLabel: {
-    ...Typography.caption,
-    color: SolderiColors.textSecondary,
+    opacity: 0.92,
   },
   image: {
     width: '100%',
-    height: 168,
+    height: 140,
     backgroundColor: SolderiColors.surfaceElevated,
   },
   body: {
-    padding: Spacing.xl,
-    gap: Spacing.lg,
+    padding: 18,
+    gap: 16,
+  },
+  textWrap: {
+    gap: 4,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: SolderiColors.textPrimary,
+  },
+  stepLabel: {
+    fontSize: 13,
+    color: SolderiColors.textSecondary,
   },
   stepTitle: {
-    ...Typography.body,
-    color: SolderiColors.textPrimary,
+    fontSize: 15,
     fontWeight: '500',
+    color: SolderiColors.textPrimary,
+    marginTop: 4,
   },
   progressSection: {
+    gap: 8,
+  },
+  progressLabels: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: Spacing.md,
+  },
+  progressLabel: {
+    fontSize: 13,
+    color: SolderiColors.textSecondary,
+  },
+  progressValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: SolderiColors.accent,
   },
   track: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: SolderiColors.surfaceElevated,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 4,
     backgroundColor: SolderiColors.accent,
-  },
-  progressValue: {
-    ...Typography.metadata,
-    color: SolderiColors.textMuted,
-    minWidth: 32,
-    textAlign: 'right',
   },
   action: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 6,
   },
   actionText: {
-    ...Typography.body,
+    fontSize: 15,
     fontWeight: '600',
     color: SolderiColors.accent,
   },

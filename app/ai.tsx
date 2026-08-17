@@ -15,7 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ChatBubble, ChatMessage } from '@/components/ai/ChatBubble';
 import { SuggestionChip } from '@/components/ai/SuggestionChip';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 
 const SUGGESTIONS = [
   'What parts do I need for a weather station?',
@@ -93,10 +93,10 @@ export default function AiScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={ArduinoColors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
           </Pressable>
           <View style={styles.headerIcon}>
-            <Ionicons name="sparkles" size={20} color={ArduinoColors.blue} />
+            <Ionicons name="sparkles" size={20} color={SolderiColors.accent} />
           </View>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Atlas AI</Text>
@@ -142,7 +142,7 @@ export default function AiScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ask about wiring, parts, or projects..."
-              placeholderTextColor={ArduinoColors.textMuted}
+              placeholderTextColor={SolderiColors.textMuted}
               value={input}
               onChangeText={setInput}
               multiline
@@ -155,7 +155,7 @@ export default function AiScreen() {
               disabled={!input.trim() || isTyping}
               accessibilityRole="button"
               accessibilityLabel="Send message">
-              <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+              <Ionicons name="arrow-up" size={20} color={SolderiColors.onAccent} />
             </Pressable>
           </View>
         </View>
@@ -167,7 +167,7 @@ export default function AiScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   flex: {
     flex: 1,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: ArduinoColors.border,
+    borderBottomColor: SolderiColors.border,
   },
   backButton: {
     width: 40,
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -203,12 +203,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     letterSpacing: -0.3,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   messageList: {
     paddingHorizontal: 20,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   suggestionsLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -237,9 +237,9 @@ const styles = StyleSheet.create({
   },
   typingBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     borderRadius: 18,
     borderBottomLeftRadius: 6,
     paddingHorizontal: 16,
@@ -247,24 +247,24 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: 14,
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
     fontStyle: 'italic',
   },
   inputBar: {
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: ArduinoColors.border,
-    backgroundColor: ArduinoColors.background,
+    borderTopColor: SolderiColors.border,
+    backgroundColor: SolderiColors.background,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 10,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     paddingLeft: 16,
     paddingRight: 6,
     paddingVertical: 6,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     maxHeight: 100,
     paddingVertical: 8,
   },
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },

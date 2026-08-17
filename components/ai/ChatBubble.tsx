@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 
 export type ChatMessage = {
   id: string;
@@ -39,21 +39,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   bubbleAssistant: {
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     borderBottomLeftRadius: 6,
   },
   bubbleUser: {
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
     borderBottomRightRadius: 6,
   },
   text: {
     fontSize: 15,
     lineHeight: 22,
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   textUser: {
-    color: '#FFFFFF',
+    color: SolderiColors.onAccent,
   },
 });

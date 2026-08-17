@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { FilterChips } from '@/components/inventory/FilterChips';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import {
   CATEGORY_LABELS,
   COMPONENT_FILTERS,
@@ -133,7 +133,7 @@ export function ComponentModal({
             <TextInput
               style={styles.input}
               placeholder="e.g. DHT22 Temp & Humidity"
-              placeholderTextColor={ArduinoColors.textMuted}
+              placeholderTextColor={SolderiColors.textMuted}
               value={name}
               onChangeText={setName}
               autoFocus={!isEditing}
@@ -158,7 +158,7 @@ export function ComponentModal({
                 onPress={() => setQuantity((q) => Math.max(1, q - 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Decrease quantity">
-                <Ionicons name="remove" size={22} color={ArduinoColors.textPrimary} />
+                <Ionicons name="remove" size={22} color={SolderiColors.textPrimary} />
               </Pressable>
               <Text style={styles.quantityValue}>{quantity}</Text>
               <Pressable
@@ -166,14 +166,14 @@ export function ComponentModal({
                 onPress={() => setQuantity((q) => q + 1)}
                 accessibilityRole="button"
                 accessibilityLabel="Increase quantity">
-                <Ionicons name="add" size={22} color={ArduinoColors.textPrimary} />
+                <Ionicons name="add" size={22} color={SolderiColors.textPrimary} />
               </Pressable>
             </View>
           </View>
 
           {isEditing ? (
             <Pressable style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button">
-              <Ionicons name="trash-outline" size={18} color="#F87171" />
+              <Ionicons name="trash-outline" size={18} color={SolderiColors.error} />
               <Text style={styles.deleteText}>Remove from inventory</Text>
             </Pressable>
           ) : null}
@@ -186,7 +186,7 @@ export function ComponentModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   header: {
     flexDirection: 'row',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: ArduinoColors.border,
+    borderBottomColor: SolderiColors.border,
   },
   headerButton: {
     minWidth: 64,
@@ -203,16 +203,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   cancelText: {
     fontSize: 16,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   saveText: {
     fontSize: 16,
     fontWeight: '700',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
     textAlign: 'right',
   },
   saveTextDisabled: {
@@ -228,21 +228,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   input: {
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   categoryHint: {
     fontSize: 13,
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
   },
   quantityRow: {
     flexDirection: 'row',
@@ -254,16 +254,16 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quantityValue: {
     fontSize: 28,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     minWidth: 40,
     textAlign: 'center',
   },
@@ -275,12 +275,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(248, 113, 113, 0.35)',
-    backgroundColor: 'rgba(248, 113, 113, 0.08)',
+    borderColor: SolderiColors.errorMuted,
+    backgroundColor: SolderiColors.errorMuted,
   },
   deleteText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#F87171',
+    color: SolderiColors.error,
   },
 });

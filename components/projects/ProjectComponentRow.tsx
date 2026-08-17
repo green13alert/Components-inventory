@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import { ProjectComponent } from '@/constants/projects-data';
 
 type ProjectComponentRowProps = {
@@ -15,7 +15,7 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
         <Ionicons
           name={component.icon}
           size={20}
-          color={component.owned ? ArduinoColors.blue : ArduinoColors.textMuted}
+          color={component.owned ? SolderiColors.accent : SolderiColors.textMuted}
         />
       </View>
       <Text style={[styles.name, !component.owned && styles.nameMissing]}>{component.name}</Text>
@@ -23,7 +23,7 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
         <Ionicons
           name={component.owned ? 'checkmark' : 'close'}
           size={12}
-          color={component.owned ? ArduinoColors.success : ArduinoColors.warning}
+          color={component.owned ? SolderiColors.success : SolderiColors.warning}
         />
         <Text style={[styles.badgeText, component.owned ? styles.badgeTextOwned : styles.badgeTextMissing]}>
           {component.owned ? 'Owned' : 'Missing'}
@@ -38,31 +38,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 14,
   },
   iconWrap: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapMissing: {
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
   },
   name: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   nameMissing: {
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   badge: {
     flexDirection: 'row',
@@ -73,19 +73,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   badgeOwned: {
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: SolderiColors.successMuted,
   },
   badgeMissing: {
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    backgroundColor: SolderiColors.accentMuted,
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '700',
   },
   badgeTextOwned: {
-    color: ArduinoColors.success,
+    color: SolderiColors.success,
   },
   badgeTextMissing: {
-    color: ArduinoColors.warning,
+    color: SolderiColors.warning,
   },
 });

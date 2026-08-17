@@ -7,7 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
 import { useAtlas } from '@/context/atlas-context';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import {
   CATEGORY_LABELS,
   DIFFICULTY_LABELS,
@@ -19,9 +19,9 @@ import {
 } from '@/constants/projects-data';
 
 const DIFFICULTY_COLORS = {
-  beginner: ArduinoColors.success,
-  intermediate: ArduinoColors.warning,
-  advanced: '#F87171',
+  beginner: SolderiColors.success,
+  intermediate: SolderiColors.warning,
+  advanced: SolderiColors.error,
 } as const;
 
 export default function ProjectDetailScreen() {
@@ -35,7 +35,7 @@ export default function ProjectDetailScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.notFound}>
-          <Ionicons name="alert-circle-outline" size={40} color={ArduinoColors.textMuted} />
+          <Ionicons name="alert-circle-outline" size={40} color={SolderiColors.textMuted} />
           <Text style={styles.notFoundTitle}>Project not found</Text>
           <Pressable style={styles.notFoundButton} onPress={() => router.back()}>
             <Text style={styles.notFoundButtonText}>Go Back</Text>
@@ -74,7 +74,7 @@ export default function ProjectDetailScreen() {
               onPress={() => router.back()}
               accessibilityRole="button"
               accessibilityLabel="Go back">
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+              <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
             </Pressable>
           </SafeAreaView>
         </View>
@@ -141,14 +141,14 @@ export default function ProjectDetailScreen() {
             </View>
             {missingCount > 0 ? (
               <View style={styles.missingBanner}>
-                <Ionicons name="warning-outline" size={16} color={ArduinoColors.warning} />
+                <Ionicons name="warning-outline" size={16} color={SolderiColors.warning} />
                 <Text style={styles.missingBannerText}>
                   {missingCount} part{missingCount !== 1 ? 's' : ''} missing from your inventory
                 </Text>
               </View>
             ) : (
               <View style={styles.readyBanner}>
-                <Ionicons name="checkmark-circle-outline" size={16} color={ArduinoColors.success} />
+                <Ionicons name="checkmark-circle-outline" size={16} color={SolderiColors.success} />
                 <Text style={styles.readyBannerText}>You have all the parts needed!</Text>
               </View>
             )}
@@ -163,7 +163,7 @@ export default function ProjectDetailScreen() {
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Pressable style={styles.startButton} onPress={handleStart} accessibilityRole="button">
-          <Ionicons name="play" size={20} color="#FFFFFF" />
+          <Ionicons name="play" size={20} color={SolderiColors.onAccent} />
           <Text style={styles.startButtonText}>{getStartButtonLabel(status)}</Text>
         </Pressable>
       </View>
@@ -184,7 +184,7 @@ function DetailRow({
 }) {
   return (
     <View style={styles.detailRow}>
-      <Ionicons name={icon} size={18} color={ArduinoColors.textMuted} />
+      <Ionicons name={icon} size={18} color={SolderiColors.textMuted} />
       <Text style={styles.detailLabel}>{label}</Text>
       <Text style={[styles.detailValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
     </View>
@@ -194,7 +194,7 @@ function DetailRow({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -206,11 +206,11 @@ const styles = StyleSheet.create({
   heroImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 17, 23, 0.35)',
+    backgroundColor: SolderiColors.overlayLight,
   },
   heroTopBar: {
     position: 'absolute',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(15, 17, 23, 0.55)',
+    backgroundColor: SolderiColors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryBadge: {
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.accentMuted,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     fontWeight: '700',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
     textTransform: 'uppercase',
   },
   difficultyBadge: {
@@ -266,12 +266,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     letterSpacing: -0.5,
   },
   description: {
     fontSize: 16,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
     lineHeight: 22,
   },
   statsRow: {
@@ -279,10 +279,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   progressCard: {
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 16,
     gap: 10,
   },
@@ -294,23 +294,23 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   progressValue: {
     fontSize: 14,
     fontWeight: '800',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
   },
   progressTrack: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 4,
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
   },
   section: {
     gap: 12,
@@ -318,19 +318,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     letterSpacing: -0.3,
   },
   overviewText: {
     fontSize: 15,
     lineHeight: 24,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   detailsCard: {
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 4,
     gap: 2,
   },
@@ -344,12 +344,12 @@ const styles = StyleSheet.create({
   detailLabel: {
     flex: 1,
     fontSize: 15,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   detailValue: {
     fontSize: 15,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   componentsHeader: {
     flexDirection: 'row',
@@ -358,13 +358,13 @@ const styles = StyleSheet.create({
   },
   componentsCount: {
     fontSize: 14,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   missingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    backgroundColor: SolderiColors.accentMuted,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -373,13 +373,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: ArduinoColors.warning,
+    color: SolderiColors.warning,
   },
   readyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: SolderiColors.successMuted,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
-    color: ArduinoColors.success,
+    color: SolderiColors.success,
   },
   componentsList: {
     gap: 8,
@@ -400,27 +400,27 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 20,
     paddingTop: 12,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
     borderTopWidth: 1,
-    borderTopColor: ArduinoColors.border,
+    borderTopColor: SolderiColors.border,
   },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
     borderRadius: 16,
     paddingVertical: 18,
   },
   startButtonText: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: SolderiColors.onAccent,
   },
   safeArea: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   notFound: {
     flex: 1,
@@ -432,20 +432,20 @@ const styles = StyleSheet.create({
   notFoundTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   notFoundButton: {
     marginTop: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
   },
   notFoundButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
 });

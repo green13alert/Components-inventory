@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileStatCard } from '@/components/profile/ProfileStatCard';
 import { SettingsRow } from '@/components/profile/SettingsRow';
 import { useAtlas } from '@/context/atlas-context';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export default function ProfileScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={ArduinoColors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
           </Pressable>
           <Text style={styles.topBarTitle}>Profile</Text>
           <View style={styles.backButton} />
@@ -51,12 +51,12 @@ export default function ProfileScreen() {
 
         <View style={styles.hero}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={40} color={ArduinoColors.textSecondary} />
+            <Ionicons name="person" size={40} color={SolderiColors.textSecondary} />
           </View>
           <Text style={styles.name}>Maker</Text>
           <Text style={styles.email}>maker@atlas.app</Text>
           <View style={styles.memberBadge}>
-            <Ionicons name="sparkles" size={14} color={ArduinoColors.blue} />
+            <Ionicons name="sparkles" size={14} color={SolderiColors.accent} />
             <Text style={styles.memberText}>Atlas Maker · Level 3</Text>
           </View>
         </View>
@@ -74,7 +74,7 @@ export default function ProfileScreen() {
               recentActivity.map((item) => (
                 <View key={item.title} style={styles.activityRow}>
                   <View style={styles.activityIcon}>
-                    <Ionicons name={item.icon} size={20} color={ArduinoColors.blue} />
+                    <Ionicons name={item.icon} size={20} color={SolderiColors.textSecondary} />
                   </View>
                   <View style={styles.activityText}>
                     <Text style={styles.activityTitle}>{item.title}</Text>
@@ -118,7 +118,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   content: {
     paddingHorizontal: 20,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   topBarTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   hero: {
     alignItems: 'center',
@@ -151,9 +151,9 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
     borderWidth: 2,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -161,12 +161,12 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 26,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     letterSpacing: -0.5,
   },
   email: {
     fontSize: 15,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   memberBadge: {
     flexDirection: 'row',
@@ -176,12 +176,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.accentSoft,
   },
   memberText: {
     fontSize: 13,
     fontWeight: '600',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
   },
   statsRow: {
     flexDirection: 'row',
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     letterSpacing: -0.3,
   },
   activityList: {
@@ -203,17 +203,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 14,
   },
   activityIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -224,15 +224,15 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   activityDetail: {
     fontSize: 13,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   emptyActivity: {
     fontSize: 14,
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
     textAlign: 'center',
     paddingVertical: 16,
   },

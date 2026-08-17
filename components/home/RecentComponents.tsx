@@ -18,7 +18,7 @@ function RecentComponentChip({ item, onPress }: { item: InventoryComponent; onPr
       accessibilityRole="button"
       accessibilityLabel={item.name}>
       <View style={styles.iconWrap}>
-        <Ionicons name={item.icon} size={18} color={SolderiColors.accent} />
+        <Ionicons name={item.icon} size={18} color={SolderiColors.textSecondary} />
       </View>
       <Text style={styles.chipName} numberOfLines={2}>
         {item.name}

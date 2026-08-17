@@ -10,7 +10,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAtlas } from '@/context/atlas-context';
 
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 
 import {
 
@@ -31,13 +31,9 @@ type ProjectListCardProps = {
 
 
 const DIFFICULTY_COLORS: Record<Project['difficulty'], string> = {
-
-  beginner: ArduinoColors.success,
-
-  intermediate: ArduinoColors.warning,
-
-  advanced: '#F87171',
-
+  beginner: SolderiColors.success,
+  intermediate: SolderiColors.warning,
+  advanced: SolderiColors.error,
 };
 
 
@@ -112,7 +108,7 @@ export function ProjectListCard({ project }: ProjectListCardProps) {
 
             <View style={styles.partsRow}>
 
-              <Ionicons name="cube-outline" size={13} color={ArduinoColors.textMuted} />
+              <Ionicons name="cube-outline" size={13} color={SolderiColors.textMuted} />
 
               <Text style={styles.partsText}>
 
@@ -154,7 +150,7 @@ export function ProjectListCard({ project }: ProjectListCardProps) {
 
           size={20}
 
-          color={favourited ? ArduinoColors.blue : ArduinoColors.textMuted}
+          color={favourited ? SolderiColors.accent : SolderiColors.textMuted}
 
         />
 
@@ -180,13 +176,13 @@ const styles = StyleSheet.create({
 
     flexDirection: 'row',
 
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
 
     borderRadius: 16,
 
     borderWidth: 1,
 
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
 
     overflow: 'hidden',
 
@@ -224,7 +220,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 12,
 
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
 
   },
 
@@ -246,7 +242,7 @@ const styles = StyleSheet.create({
 
     fontWeight: '700',
 
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
 
     lineHeight: 21,
 
@@ -256,7 +252,7 @@ const styles = StyleSheet.create({
 
     fontSize: 13,
 
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
 
     lineHeight: 18,
 
@@ -296,7 +292,7 @@ const styles = StyleSheet.create({
 
     fontSize: 12,
 
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
 
   },
 
@@ -328,7 +324,7 @@ const styles = StyleSheet.create({
 
     fontSize: 12,
 
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
 
   },
 
@@ -338,7 +334,7 @@ const styles = StyleSheet.create({
 
     fontWeight: '700',
 
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
 
   },
 

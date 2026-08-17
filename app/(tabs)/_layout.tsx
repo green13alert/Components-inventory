@@ -17,6 +17,7 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        lazy: false,
         tabBarActiveTintColor: SolderiColors.accent,
         tabBarInactiveTintColor: SolderiColors.textMuted,
         tabBarButton: HapticTab,

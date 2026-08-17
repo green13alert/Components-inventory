@@ -1,43 +1,43 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Theme configuration for React Navigation and shared app styling.
  */
 
 import { Platform } from 'react-native';
 
-import { ArduinoColors } from './colors';
-
-const tintColorLight = ArduinoColors.blue;
-const tintColorDark = ArduinoColors.blue;
+import { SolderiColors } from './colors';
 
 export const Colors = {
   light: {
-    text: ArduinoColors.textPrimary,
-    background: ArduinoColors.background,
-    tint: tintColorLight,
-    icon: ArduinoColors.textSecondary,
-    tabIconDefault: ArduinoColors.textMuted,
-    tabIconSelected: tintColorLight,
+    text: SolderiColors.textPrimary,
+    background: SolderiColors.background,
+    tint: SolderiColors.accent,
+    icon: SolderiColors.textSecondary,
+    tabIconDefault: SolderiColors.textMuted,
+    tabIconSelected: SolderiColors.accent,
   },
   dark: {
-    text: ArduinoColors.textPrimary,
-    background: ArduinoColors.background,
-    tint: tintColorDark,
-    icon: ArduinoColors.textSecondary,
-    tabIconDefault: ArduinoColors.textMuted,
-    tabIconSelected: tintColorDark,
+    text: SolderiColors.textPrimary,
+    background: SolderiColors.background,
+    tint: SolderiColors.accent,
+    icon: SolderiColors.textSecondary,
+    tabIconDefault: SolderiColors.textMuted,
+    tabIconSelected: SolderiColors.accent,
   },
 };
 
+export const NavigationTheme = {
+  background: SolderiColors.background,
+  card: SolderiColors.surface,
+  border: SolderiColors.border,
+  primary: SolderiColors.accent,
+  text: SolderiColors.textPrimary,
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

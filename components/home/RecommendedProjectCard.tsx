@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAtlas } from '@/context/atlas-context';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import { HOME_PROJECT_CARD_HEIGHT, HOME_PROJECT_CARD_WIDTH } from '@/constants/home-cards';
 import { ProjectImage } from '@/constants/projects';
 
@@ -46,7 +46,7 @@ export function RecommendedProjectCard({
         </Text>
         <View style={styles.footer}>
           <View style={styles.partsRow}>
-            <Ionicons name="cube-outline" size={14} color={ArduinoColors.textSecondary} />
+            <Ionicons name="cube-outline" size={14} color={SolderiColors.textSecondary} />
             <Text style={styles.partsText} numberOfLines={1}>
               {ownedParts}/{totalParts} parts
             </Text>
@@ -68,7 +68,7 @@ export function RecommendedProjectCard({
         <Ionicons
           name={favourited ? 'bookmark' : 'bookmark-outline'}
           size={18}
-          color={favourited ? ArduinoColors.blue : ArduinoColors.textMuted}
+          color={favourited ? SolderiColors.accent : SolderiColors.textMuted}
         />
       </Pressable>
     </View>
@@ -83,10 +83,10 @@ const styles = StyleSheet.create({
   },
   cardPressable: {
     flex: 1,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 10,
     gap: 10,
   },
@@ -97,13 +97,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 100,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
   },
   matchBadge: {
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: 'rgba(15, 17, 23, 0.75)',
+    backgroundColor: SolderiColors.overlay,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -111,12 +111,12 @@ const styles = StyleSheet.create({
   matchText: {
     fontSize: 11,
     fontWeight: '700',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     lineHeight: 20,
     minHeight: 40,
   },
@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
   partsText: {
     flex: 1,
     fontSize: 12,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   missingWrap: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    backgroundColor: SolderiColors.accentMuted,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   missingText: {
     fontSize: 12,
     fontWeight: '600',
-    color: ArduinoColors.warning,
+    color: SolderiColors.warning,
   },
   favouriteButton: {
     position: 'absolute',
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(15, 17, 23, 0.65)',
+    backgroundColor: SolderiColors.overlay,
     borderRadius: 8,
   },
   pressed: {

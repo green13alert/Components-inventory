@@ -23,7 +23,7 @@ const MAIN_TABS = [
 ] as const;
 
 const TAB_COUNT = MAIN_TABS.length;
-const BAR_SURFACE = 'rgba(23, 27, 36, 0.78)';
+const BAR_SURFACE = SolderiColors.barSurface;
 const AI_BUTTON_SIZE = 52;
 const H_PADDING = 6;
 const TAB_GAP = 4;
@@ -321,9 +321,9 @@ const styles = StyleSheet.create({
     top: BUBBLE_TOP,
     height: BUBBLE_HEIGHT,
     borderRadius: 22,
-    backgroundColor: 'rgba(32, 184, 196, 0.2)',
+    backgroundColor: SolderiColors.accentMuted,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(32, 184, 196, 0.4)',
+    borderColor: SolderiColors.accentBorder,
   },
   tabButton: {
     flex: 1,
@@ -358,14 +358,14 @@ const styles = StyleSheet.create({
     borderColor: SolderiColors.border,
   },
   aiButtonActive: {
-    borderColor: 'rgba(32, 184, 196, 0.45)',
+    borderColor: SolderiColors.accentBorder,
   },
   aiOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: BAR_SURFACE,
   },
   aiOverlayActive: {
-    backgroundColor: 'rgba(32, 184, 196, 0.14)',
+    backgroundColor: SolderiColors.accentMuted,
   },
   pressed: {
     opacity: 0.8,

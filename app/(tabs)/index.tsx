@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HomeOnboardingDevButton } from '@/components/dev/onboarding-shortcuts';
 import { ContinueProjectCard } from '@/components/home/ContinueProjectCard';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { HomeRecommendedCard } from '@/components/home/HomeRecommendedCard';
@@ -8,6 +9,7 @@ import { RecentComponents } from '@/components/home/RecentComponents';
 import { SectionHeading } from '@/components/home/SectionHeading';
 import { WorkshopStats } from '@/components/home/WorkshopStats';
 import { SolderiColors } from '@/constants/colors';
+import { DEV_ONBOARDING_SHORTCUTS } from '@/constants/onboarding-dev';
 import { tabBarBottomPadding } from '@/constants/layout';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { getProjectSteps } from '@/constants/project-steps';
@@ -41,7 +43,11 @@ export default function HomeScreen() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: tabBarBottomPadding(insets.bottom) },
+          {
+            paddingBottom: DEV_ONBOARDING_SHORTCUTS
+              ? tabBarBottomPadding(insets.bottom) + 64
+              : tabBarBottomPadding(insets.bottom),
+          },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
@@ -91,6 +97,9 @@ export default function HomeScreen() {
           <RecentComponents items={recentComponents} />
         </View>
       </ScrollView>
+
+      {/* TEMP dev onboarding shortcut — see constants/onboarding-dev.ts */}
+      {DEV_ONBOARDING_SHORTCUTS ? <HomeOnboardingDevButton /> : null}
     </SafeAreaView>
   );
 }

@@ -10,7 +10,7 @@ import { SearchBar } from '@/components/home/SearchBar';
 import { PageHeader } from '@/components/ui/page-header';
 import { useAtlas } from '@/context/atlas-context';
 import { tabBarBottomPadding } from '@/constants/layout';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import { COMPONENT_FILTERS, ComponentCategory, type InventoryComponent } from '@/constants/inventory';
 
 export default function InventoryScreen() {
@@ -69,7 +69,7 @@ export default function InventoryScreen() {
         />
 
         <Pressable style={styles.addButton} onPress={openAddModal} accessibilityRole="button">
-          <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
+          <Ionicons name="add-circle-outline" size={22} color={SolderiColors.onAccent} />
           <Text style={styles.addButtonText}>Add Components</Text>
         </Pressable>
 
@@ -91,7 +91,7 @@ export default function InventoryScreen() {
             ))
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={32} color={ArduinoColors.textMuted} />
+              <Ionicons name="search-outline" size={32} color={SolderiColors.textMuted} />
               <Text style={styles.emptyTitle}>No components found</Text>
               <Text style={styles.emptySubtitle}>Try a different search or filter</Text>
             </View>
@@ -114,7 +114,7 @@ export default function InventoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   scroll: {
     flex: 1,
@@ -128,14 +128,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
     borderRadius: 14,
     paddingVertical: 16,
   },
   addButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: SolderiColors.onAccent,
   },
   listHeader: {
     flexDirection: 'row',
@@ -145,11 +145,11 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   listCount: {
     fontSize: 14,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   list: {
     gap: 10,
@@ -162,10 +162,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
 });

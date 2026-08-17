@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import { CATEGORY_LABELS, InventoryComponent } from '@/constants/inventory';
 
 type InventoryItemCardProps = {
@@ -17,7 +17,7 @@ export function InventoryItemCard({ item, onPress }: InventoryItemCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Edit ${item.name}`}>
       <View style={styles.iconWrap}>
-        <Ionicons name={item.icon} size={24} color={ArduinoColors.blue} />
+        <Ionicons name={item.icon} size={24} color={SolderiColors.textSecondary} />
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{item.name}</Text>
@@ -28,7 +28,7 @@ export function InventoryItemCard({ item, onPress }: InventoryItemCardProps) {
         <Text style={styles.quantity}>{item.quantity}</Text>
       </View>
       {onPress ? (
-        <Ionicons name="chevron-forward" size={18} color={ArduinoColors.textMuted} />
+        <Ionicons name="chevron-forward" size={18} color={SolderiColors.textMuted} />
       ) : null}
     </Pressable>
   );
@@ -38,10 +38,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 14,
     gap: 14,
   },
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -63,11 +63,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   category: {
     fontSize: 13,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   quantityWrap: {
     alignItems: 'center',
@@ -77,12 +77,12 @@ const styles = StyleSheet.create({
   quantityLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
     textTransform: 'uppercase',
   },
   quantity: {
     fontSize: 18,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
 });

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAtlas } from '@/context/atlas-context';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import { HOME_PROJECT_CARD_HEIGHT, HOME_PROJECT_CARD_WIDTH } from '@/constants/home-cards';
 import { ProjectImage } from '@/constants/projects';
 
@@ -48,7 +48,7 @@ export function ProjectCard({ projectId, title, difficulty, duration, image }: P
         <Ionicons
           name={favourited ? 'bookmark' : 'bookmark-outline'}
           size={18}
-          color={favourited ? ArduinoColors.blue : ArduinoColors.textMuted}
+          color={favourited ? SolderiColors.accent : SolderiColors.textMuted}
         />
       </Pressable>
     </View>
@@ -63,10 +63,10 @@ const styles = StyleSheet.create({
   },
   cardPressable: {
     flex: 1,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
     padding: 10,
     gap: 10,
   },
@@ -74,12 +74,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 100,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     lineHeight: 20,
     minHeight: 40,
   },
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -98,12 +98,12 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
     textTransform: 'uppercase',
   },
   duration: {
     fontSize: 12,
-    color: ArduinoColors.textMuted,
+    color: SolderiColors.textMuted,
   },
   favouriteButton: {
     position: 'absolute',
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(15, 17, 23, 0.65)',
+    backgroundColor: SolderiColors.overlay,
     borderRadius: 8,
   },
   pressed: {

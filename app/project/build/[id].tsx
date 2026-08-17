@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAtlas } from '@/context/atlas-context';
-import { ArduinoColors } from '@/constants/colors';
+import { SolderiColors } from '@/constants/colors';
 import { getProjectSteps } from '@/constants/project-steps';
 import { getProjectById, getStartButtonLabel } from '@/constants/projects-data';
 
@@ -29,7 +29,7 @@ export default function ProjectBuildScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.notFound}>
-          <Ionicons name="alert-circle-outline" size={40} color={ArduinoColors.textMuted} />
+          <Ionicons name="alert-circle-outline" size={40} color={SolderiColors.textMuted} />
           <Text style={styles.notFoundTitle}>Project not found</Text>
           <Pressable style={styles.notFoundButton} onPress={() => router.back()}>
             <Text style={styles.notFoundButtonText}>Go Back</Text>
@@ -77,7 +77,7 @@ export default function ProjectBuildScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={ArduinoColors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
           </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>
             {project.title}
@@ -86,7 +86,7 @@ export default function ProjectBuildScreen() {
         </View>
         <View style={styles.readyState}>
           <View style={styles.readyIcon}>
-            <Ionicons name="construct-outline" size={48} color={ArduinoColors.blue} />
+            <Ionicons name="construct-outline" size={48} color={SolderiColors.textSecondary} />
           </View>
           <Text style={styles.readyTitle}>Ready to build?</Text>
           <Text style={styles.readySubtitle}>
@@ -98,7 +98,7 @@ export default function ProjectBuildScreen() {
               handleStartOrContinue();
             }}
             accessibilityRole="button">
-            <Ionicons name="play" size={20} color="#FFFFFF" />
+            <Ionicons name="play" size={20} color={SolderiColors.onAccent} />
             <Text style={styles.primaryButtonText}>{getStartButtonLabel(status)}</Text>
           </Pressable>
         </View>
@@ -115,7 +115,7 @@ export default function ProjectBuildScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={ArduinoColors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
           </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>
             {project.title}
@@ -124,7 +124,7 @@ export default function ProjectBuildScreen() {
         </View>
         <View style={styles.readyState}>
           <View style={[styles.readyIcon, styles.completedIcon]}>
-            <Ionicons name="checkmark-circle" size={48} color={ArduinoColors.success} />
+            <Ionicons name="checkmark-circle" size={48} color={SolderiColors.success} />
           </View>
           <Text style={styles.readyTitle}>Project complete!</Text>
           <Text style={styles.readySubtitle}>
@@ -149,7 +149,7 @@ export default function ProjectBuildScreen() {
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={ArduinoColors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
         </Pressable>
         <View style={styles.topBarCenter}>
           <Text style={styles.topBarTitle} numberOfLines={1}>
@@ -164,7 +164,7 @@ export default function ProjectBuildScreen() {
           onPress={() => router.replace({ pathname: '/project/[id]', params: { id: project.id } })}
           accessibilityRole="button"
           accessibilityLabel="Exit build">
-          <Ionicons name="close" size={22} color={ArduinoColors.textSecondary} />
+          <Ionicons name="close" size={22} color={SolderiColors.textSecondary} />
         </Pressable>
       </View>
 
@@ -189,7 +189,7 @@ export default function ProjectBuildScreen() {
         <Text style={styles.stepDescription}>{currentStep.description}</Text>
         {currentStep.tip ? (
           <View style={styles.tipCard}>
-            <Ionicons name="bulb-outline" size={18} color={ArduinoColors.warning} />
+            <Ionicons name="bulb-outline" size={18} color={SolderiColors.warning} />
             <Text style={styles.tipText}>{currentStep.tip}</Text>
           </View>
         ) : null}
@@ -214,12 +214,12 @@ export default function ProjectBuildScreen() {
           onPress={handlePrev}
           disabled={isFirstStep}
           accessibilityRole="button">
-          <Ionicons name="chevron-back" size={18} color={ArduinoColors.textPrimary} />
+          <Ionicons name="chevron-back" size={18} color={SolderiColors.textPrimary} />
           <Text style={styles.secondaryButtonText}>Previous</Text>
         </Pressable>
         <Pressable style={styles.primaryButton} onPress={handleNext} accessibilityRole="button">
           <Text style={styles.primaryButtonText}>{isLastStep ? 'Complete' : 'Next Step'}</Text>
-          <Ionicons name={isLastStep ? 'checkmark' : 'chevron-forward'} size={18} color="#FFFFFF" />
+          <Ionicons name={isLastStep ? 'checkmark' : 'chevron-forward'} size={18} color={SolderiColors.onAccent} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -229,7 +229,7 @@ export default function ProjectBuildScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   topBar: {
     flexDirection: 'row',
@@ -252,12 +252,12 @@ const styles = StyleSheet.create({
   topBarTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     textAlign: 'center',
   },
   topBarSubtitle: {
     fontSize: 13,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
     textAlign: 'center',
   },
   progressSection: {
@@ -273,23 +273,23 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   progressValue: {
     fontSize: 13,
     fontWeight: '800',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
   },
   progressTrack: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 4,
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
   },
   scroll: {
     flex: 1,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   },
   stepBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.accentMuted,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -308,35 +308,35 @@ const styles = StyleSheet.create({
   stepBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: ArduinoColors.blue,
+    color: SolderiColors.accent,
     textTransform: 'uppercase',
   },
   stepTitle: {
     fontSize: 26,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     letterSpacing: -0.5,
     lineHeight: 32,
   },
   stepDescription: {
     fontSize: 16,
     lineHeight: 26,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
   },
   tipCard: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    backgroundColor: SolderiColors.accentMuted,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.25)',
+    borderColor: SolderiColors.accentBorder,
     padding: 16,
   },
   tipText: {
     flex: 1,
     fontSize: 14,
     lineHeight: 21,
-    color: ArduinoColors.warning,
+    color: SolderiColors.warning,
     fontWeight: '500',
   },
   stepDots: {
@@ -349,14 +349,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: ArduinoColors.surfaceElevated,
+    backgroundColor: SolderiColors.surfaceElevated,
   },
   dotActive: {
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
     width: 20,
   },
   dotCompleted: {
-    backgroundColor: ArduinoColors.success,
+    backgroundColor: SolderiColors.success,
   },
   footer: {
     flexDirection: 'row',
@@ -364,8 +364,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: ArduinoColors.border,
-    backgroundColor: ArduinoColors.background,
+    borderTopColor: SolderiColors.border,
+    backgroundColor: SolderiColors.background,
   },
   primaryButton: {
     flex: 1,
@@ -373,14 +373,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: ArduinoColors.blue,
+    backgroundColor: SolderiColors.accent,
     borderRadius: 16,
     paddingVertical: 16,
   },
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: SolderiColors.onAccent,
   },
   secondaryButton: {
     flexDirection: 'row',
@@ -390,14 +390,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
   },
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   buttonDisabled: {
     opacity: 0.4,
@@ -413,24 +413,24 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: ArduinoColors.blueMuted,
+    backgroundColor: SolderiColors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
   completedIcon: {
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: SolderiColors.successMuted,
   },
   readyTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
     textAlign: 'center',
   },
   readySubtitle: {
     fontSize: 16,
     lineHeight: 24,
-    color: ArduinoColors.textSecondary,
+    color: SolderiColors.textSecondary,
     textAlign: 'center',
   },
   notFound: {
@@ -443,20 +443,20 @@ const styles = StyleSheet.create({
   notFoundTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
   notFoundButton: {
     marginTop: 8,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: ArduinoColors.surface,
+    backgroundColor: SolderiColors.surface,
     borderWidth: 1,
-    borderColor: ArduinoColors.border,
+    borderColor: SolderiColors.border,
   },
   notFoundButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: ArduinoColors.textPrimary,
+    color: SolderiColors.textPrimary,
   },
 });
