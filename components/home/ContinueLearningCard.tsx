@@ -1,10 +1,12 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
 import { ProjectImage } from '@/constants/projects';
 
 type ContinueLearningCardProps = {
+  projectId: string;
   title: string;
   subtitle: string;
   progress: number;
@@ -12,13 +14,17 @@ type ContinueLearningCardProps = {
 };
 
 export function ContinueLearningCard({
+  projectId,
   title,
   subtitle,
   progress,
   image,
 }: ContinueLearningCardProps) {
   return (
-    <View style={styles.container}>
+    <Link href={`/project/${projectId}`} asChild>
+      <Pressable
+        style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+        accessibilityRole="button">
       <Image source={image} style={styles.image} contentFit="cover" transition={200} />
       <View style={styles.body}>
         <View style={styles.textWrap}>
@@ -35,7 +41,8 @@ export function ContinueLearningCard({
           </View>
         </View>
       </View>
-    </View>
+      </Pressable>
+    </Link>
   );
 }
 
@@ -95,5 +102,9 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
     backgroundColor: ArduinoColors.blue,
+  },
+  pressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
 });

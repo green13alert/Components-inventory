@@ -1,85 +1,39 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ContinueLearningCard } from '@/components/home/ContinueLearningCard';
-import { NavBox } from '@/components/home/NavBox';
-import { InfoBox } from '@/components/home/InfoBox';
-import { ProjectCard } from '@/components/home/ProjectCard';
-import { RecommendedProjectCard } from '@/components/home/RecommendedProjectCard';
-import { SearchBar } from '@/components/home/SearchBar';
-import { ProfileAvatar } from '@/components/ui/profile-avatar';
-import { ArduinoColors } from '@/constants/colors';
+import { ContinueProjectCard } from '@/components/home/ContinueProjectCard';
+import { HomeHeader } from '@/components/home/HomeHeader';
+import { HomeRecommendedCard } from '@/components/home/HomeRecommendedCard';
+import { RecentComponents } from '@/components/home/RecentComponents';
+import { SectionHeading } from '@/components/home/SectionHeading';
+import { WorkshopStats } from '@/components/home/WorkshopStats';
+import { SolderiColors } from '@/constants/colors';
 import { tabBarBottomPadding } from '@/constants/layout';
-import { PROJECT_IMAGES } from '@/constants/projects';
+import { DIFFICULTY_LABELS } from '@/constants/projects-data';
+import { getProjectSteps } from '@/constants/project-steps';
+import { Spacing } from '@/constants/tokens';
+import { useAtlas } from '@/context/atlas-context';
 
-const POPULAR_PROJECTS = [
-  {
-    title: 'LED Matrix Display',
-    difficulty: 'Beginner',
-    duration: '2 hrs',
-    image: PROJECT_IMAGES.ledMatrix,
-  },
-  {
-    title: 'Bluetooth RC Car',
-    difficulty: 'Intermediate',
-    duration: '5 hrs',
-    image: PROJECT_IMAGES.bluetoothRcCar,
-  },
-  {
-    title: 'Weather Station',
-    difficulty: 'Intermediate',
-    duration: '4 hrs',
-    image: PROJECT_IMAGES.weatherStation,
-  },
-  {
-    title: 'Home Automation Hub',
-    difficulty: 'Advanced',
-    duration: '8 hrs',
-    image: PROJECT_IMAGES.homeAutomation,
-  },
-  {
-    title: 'Line Following Robot',
-    difficulty: 'Beginner',
-    duration: '3 hrs',
-    image: PROJECT_IMAGES.lineFollowingRobot,
-  },
-];
+const RECOMMENDED_PROJECT_IDS = ['3', '7', '8'];
 
-const RECOMMENDED_PROJECTS = [
-  {
-    title: 'Arduino Door Lock System',
-    ownedParts: 8,
-    totalParts: 10,
-    image: PROJECT_IMAGES.doorLock,
-  },
-  {
-    title: 'Motion Sensor Alarm',
-    ownedParts: 5,
-    totalParts: 6,
-    image: PROJECT_IMAGES.motionSensor,
-  },
-  {
-    title: 'Smart Thermostat',
-    ownedParts: 11,
-    totalParts: 14,
-    image: PROJECT_IMAGES.smartThermostat,
-  },
-  {
-    title: 'Pulse Oximeter',
-    ownedParts: 7,
-    totalParts: 9,
-    image: PROJECT_IMAGES.pulseOximeter,
-  },
-  {
-    title: 'Automated Greenhouse',
-    ownedParts: 9,
-    totalParts: 12,
-    image: PROJECT_IMAGES.automatedGreenhouse,
-  },
-];
+const RECENT_COMPONENT_IDS = ['6', '4', '3', '9'];
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { getProjectsWithStatus, inventory, getCurrentStepIndex } = useAtlas();
+
+  const projects = getProjectsWithStatus();
+  const continueProject = projects.find((p) => p.status === 'in_progress');
+  const recommendedProjects = RECOMMENDED_PROJECT_IDS.map((id) => projects.find((p) => p.id === id)!);
+  const recentComponents = RECENT_COMPONENT_IDS.map((id) => inventory.find((c) => c.id === id)!).filter(
+    Boolean,
+  );
+
+  const completedCount = projects.filter((p) => p.status === 'completed').length;
+
+  const continueSteps = continueProject ? getProjectSteps(continueProject) : [];
+  const continueStepIndex = continueProject ? getCurrentStepIndex(continueProject.id) : 0;
+  const continueStep = continueSteps[continueStepIndex];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -89,69 +43,52 @@ export default function HomeScreen() {
           styles.content,
           { paddingBottom: tabBarBottomPadding(insets.bottom) },
         ]}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.greeting}>Good morning,</Text>
-            <Text style={styles.name}>Maker</Text>
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
+        <HomeHeader />
+
+        {continueProject ? (
+          <View style={styles.section}>
+            <SectionHeading title="Continue Building" />
+            <ContinueProjectCard
+              projectId={continueProject.id}
+              title={continueProject.title}
+              stepLabel={`Step ${continueStepIndex + 1} of ${continueSteps.length}`}
+              stepTitle={continueStep?.title ?? ''}
+              progress={continueProject.progress ?? 0}
+              image={continueProject.image}
+            />
           </View>
-          <ProfileAvatar />
-        </View>
-
-        <SearchBar placeholder="Search projects..." editable={false} />
-
-        <View style={styles.navGrid}>
-          <View style={styles.navRow}>
-            <InfoBox label="7 Days Streak" icon="flame" />
-            <InfoBox label=" 10 Components" icon="bulb" />
-            <InfoBox label="5 Projects Completed" icon="trophy-sharp" />
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-        <View style={styles.navGrid}>
-          <View style={styles.navRow}>
-            <NavBox label="Inventory" icon="cube-outline" />
-            <NavBox label="Projects" icon="folder-open-outline" />
-            <NavBox label="Saved" icon="bookmark-outline" />
-            <NavBox label="Ask Ai" icon="sparkles-outline" />
-          </View>
-        </View>
+        ) : null}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Continue Learning</Text>
-          <ContinueLearningCard
-            title="Smart Plant Monitor"
-            subtitle="Step 4 of 8 · Soil moisture sensor wiring"
-            progress={52}
-            image={PROJECT_IMAGES.smartPlantMonitor}
+          <SectionHeading title="Your Workshop" />
+          <WorkshopStats
+            componentCount={inventory.length}
+            projectCount={completedCount}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Project Recommendations</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}>
-            {POPULAR_PROJECTS.map((project) => (
-              <ProjectCard key={project.title} {...project} />
+          <SectionHeading title="Recommended For You" />
+          <View style={styles.recommendedList}>
+            {recommendedProjects.map((project) => (
+              <HomeRecommendedCard
+                key={project.id}
+                projectId={project.id}
+                title={project.title}
+                difficulty={DIFFICULTY_LABELS[project.difficulty]}
+                duration={project.duration}
+                componentCount={project.totalParts}
+                image={project.image}
+              />
             ))}
-          </ScrollView>
+          </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recommended for You</Text>
-          <Text style={styles.sectionSubtitle}>Based on your current inventory</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}>
-            {RECOMMENDED_PROJECTS.map((project) => (
-              <RecommendedProjectCard key={project.title} {...project} />
-            ))}
-          </ScrollView>
+          <SectionHeading title="Recently Added" />
+          <RecentComponents items={recentComponents} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -161,59 +98,19 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: ArduinoColors.background,
+    backgroundColor: SolderiColors.background,
   },
   scroll: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    gap: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    gap: 12,
-  },
-  headerText: {
-    flex: 1,
-    gap: 2,
-  },
-  greeting: {
-    fontSize: 16,
-    color: ArduinoColors.textSecondary,
-  },
-  name: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ArduinoColors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  navGrid: {
-    gap: 12,
-  },
-  navRow: {
-    flexDirection: 'row',
-    gap: 12,
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing['3xl'],
   },
   section: {
-    gap: 14,
+    gap: Spacing.lg,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: ArduinoColors.textPrimary,
-    letterSpacing: -0.3,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: ArduinoColors.textSecondary,
-    marginTop: -8,
-  },
-  horizontalList: {
-    gap: 12,
-    paddingRight: 4,
+  recommendedList: {
+    gap: Spacing.xs,
   },
 });

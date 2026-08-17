@@ -1,36 +1,68 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAtlas } from '@/context/atlas-context';
 import { ArduinoColors } from '@/constants/colors';
+import { HOME_PROJECT_CARD_HEIGHT, HOME_PROJECT_CARD_WIDTH } from '@/constants/home-cards';
 import { ProjectImage } from '@/constants/projects';
 
 type ProjectCardProps = {
+  projectId: string;
   title: string;
   difficulty: string;
   duration: string;
   image: ProjectImage;
 };
 
-export function ProjectCard({ title, difficulty, duration, image }: ProjectCardProps) {
+export function ProjectCard({ projectId, title, difficulty, duration, image }: ProjectCardProps) {
+  const router = useRouter();
+  const { isFavourite, toggleFavourite } = useAtlas();
+  const favourited = isFavourite(projectId);
+
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} contentFit="cover" transition={200} />
-      <Text style={styles.title} numberOfLines={2}>
-        {title}
-      </Text>
-      <View style={styles.meta}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{difficulty}</Text>
+      <Pressable
+        style={({ pressed }) => [styles.cardPressable, pressed && styles.pressed]}
+        onPress={() => router.push(`/project/${projectId}`)}
+        accessibilityRole="button">
+        <Image source={image} style={styles.image} contentFit="cover" transition={200} />
+        <Text style={styles.title} numberOfLines={2}>
+          {title}
+        </Text>
+        <View style={styles.footer}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{difficulty}</Text>
+          </View>
+          <Text style={styles.duration}>{duration}</Text>
         </View>
-        <Text style={styles.duration}>{duration}</Text>
-      </View>
+      </Pressable>
+
+      <Pressable
+        style={styles.favouriteButton}
+        onPress={() => toggleFavourite(projectId)}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={favourited ? 'Remove from favourites' : 'Add to favourites'}>
+        <Ionicons
+          name={favourited ? 'bookmark' : 'bookmark-outline'}
+          size={18}
+          color={favourited ? ArduinoColors.blue : ArduinoColors.textMuted}
+        />
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: 160,
+    width: HOME_PROJECT_CARD_WIDTH,
+    height: HOME_PROJECT_CARD_HEIGHT,
+    position: 'relative',
+  },
+  cardPressable: {
+    flex: 1,
     backgroundColor: ArduinoColors.surface,
     borderRadius: 16,
     borderWidth: 1,
@@ -40,7 +72,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 96,
+    height: 100,
     borderRadius: 12,
     backgroundColor: ArduinoColors.surfaceElevated,
   },
@@ -51,8 +83,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     minHeight: 40,
   },
-  meta: {
+  footer: {
     gap: 6,
+    minHeight: 44,
+    justifyContent: 'flex-end',
   },
   badge: {
     alignSelf: 'flex-start',
@@ -70,5 +104,21 @@ const styles = StyleSheet.create({
   duration: {
     fontSize: 12,
     color: ArduinoColors.textMuted,
+  },
+  favouriteButton: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+    zIndex: 1,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 17, 23, 0.65)',
+    borderRadius: 8,
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
 });

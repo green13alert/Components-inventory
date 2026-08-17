@@ -1,16 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
 import { CATEGORY_LABELS, InventoryComponent } from '@/constants/inventory';
 
 type InventoryItemCardProps = {
   item: InventoryComponent;
+  onPress?: () => void;
 };
 
-export function InventoryItemCard({ item }: InventoryItemCardProps) {
+export function InventoryItemCard({ item, onPress }: InventoryItemCardProps) {
   return (
-    <View style={styles.container}>
+    <Pressable
+      style={({ pressed }) => [styles.container, pressed && onPress && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${item.name}`}>
       <View style={styles.iconWrap}>
         <Ionicons name={item.icon} size={24} color={ArduinoColors.blue} />
       </View>
@@ -22,7 +27,10 @@ export function InventoryItemCard({ item }: InventoryItemCardProps) {
         <Text style={styles.quantityLabel}>Qty</Text>
         <Text style={styles.quantity}>{item.quantity}</Text>
       </View>
-    </View>
+      {onPress ? (
+        <Ionicons name="chevron-forward" size={18} color={ArduinoColors.textMuted} />
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -36,6 +44,9 @@ const styles = StyleSheet.create({
     borderColor: ArduinoColors.border,
     padding: 14,
     gap: 14,
+  },
+  pressed: {
+    opacity: 0.9,
   },
   iconWrap: {
     width: 48,

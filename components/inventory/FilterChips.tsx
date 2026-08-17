@@ -1,15 +1,14 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
-import { ComponentCategory } from '@/constants/inventory';
 
-type FilterChipsProps = {
-  filters: { id: ComponentCategory; label: string }[];
-  selected: ComponentCategory;
-  onSelect: (id: ComponentCategory) => void;
+type FilterChipsProps<T extends string> = {
+  filters: { id: T; label: string }[];
+  selected: T;
+  onSelect: (id: T) => void;
 };
 
-export function FilterChips({ filters, selected, onSelect }: FilterChipsProps) {
+export function FilterChips<T extends string>({ filters, selected, onSelect }: FilterChipsProps<T>) {
   return (
     <ScrollView
       horizontal

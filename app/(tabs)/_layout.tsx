@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { FrostedTabBar } from '@/components/ui/frosted-tab-bar';
-import { ArduinoColors } from '@/constants/colors';
+import { CustomTabBar } from '@/components/ui/custom-tab-bar';
+import { SolderiColors } from '@/constants/colors';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -14,11 +14,11 @@ function TabIcon({ name, color }: { name: TabIconName; color: string }) {
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <FrostedTabBar {...props} />}
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: ArduinoColors.blue,
-        tabBarInactiveTintColor: ArduinoColors.textMuted,
+        tabBarActiveTintColor: SolderiColors.accent,
+        tabBarInactiveTintColor: SolderiColors.textMuted,
         tabBarButton: HapticTab,
         tabBarStyle: {
           position: 'absolute',
@@ -32,7 +32,7 @@ export default function TabLayout() {
           fontWeight: '500',
         },
         sceneStyle: {
-          backgroundColor: ArduinoColors.background,
+          backgroundColor: SolderiColors.background,
         },
       }}>
       <Tabs.Screen
@@ -59,15 +59,6 @@ export default function TabLayout() {
           title: 'Inventory',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name={focused ? 'cube' : 'cube-outline'} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name={focused ? 'person' : 'person-outline'} color={color} />
           ),
         }}
       />

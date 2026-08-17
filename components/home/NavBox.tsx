@@ -1,21 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ArduinoColors } from '@/constants/colors';
 
 type NavBoxProps = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
+  onPress?: () => void;
 };
 
-export function NavBox({ label, icon }: NavBoxProps) {
+export function NavBox({ label, icon, onPress }: NavBoxProps) {
   return (
-    <View style={styles.wrapper}>
+    <Pressable
+      style={({ pressed }) => [styles.wrapper, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}>
       <View style={styles.container}>
         <Ionicons name={icon} size={26} color={ArduinoColors.blue} />
       </View>
       <Text style={styles.label}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -38,5 +43,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: ArduinoColors.textPrimary,
     textAlign: 'center',
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
   },
 });

@@ -3,27 +3,28 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ComponentModal } from '@/components/inventory/ComponentModal';
 import { FilterChips } from '@/components/inventory/FilterChips';
 import { InventoryItemCard } from '@/components/inventory/InventoryItemCard';
 import { SearchBar } from '@/components/home/SearchBar';
 import { PageHeader } from '@/components/ui/page-header';
+import { useAtlas } from '@/context/atlas-context';
 import { tabBarBottomPadding } from '@/constants/layout';
 import { ArduinoColors } from '@/constants/colors';
-import {
-  COMPONENT_FILTERS,
-  ComponentCategory,
-  MOCK_INVENTORY,
-} from '@/constants/inventory';
+import { COMPONENT_FILTERS, ComponentCategory, type InventoryComponent } from '@/constants/inventory';
 
 export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
+  const { inventory, addInventoryItem, updateInventoryItem, removeInventoryItem } = useAtlas();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<ComponentCategory>('all');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryComponent | null>(null);
 
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return MOCK_INVENTORY.filter((item) => {
+    return inventory.filter((item) => {
       const matchesCategory = selectedFilter === 'all' || item.category === selectedFilter;
       const matchesSearch =
         query.length === 0 ||
@@ -32,7 +33,22 @@ export default function InventoryScreen() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, selectedFilter]);
+  }, [inventory, searchQuery, selectedFilter]);
+
+  const openAddModal = () => {
+    setEditingItem(null);
+    setModalVisible(true);
+  };
+
+  const openEditModal = (item: InventoryComponent) => {
+    setEditingItem(item);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setEditingItem(null);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -52,7 +68,7 @@ export default function InventoryScreen() {
           onChangeText={setSearchQuery}
         />
 
-        <Pressable style={styles.addButton} accessibilityRole="button">
+        <Pressable style={styles.addButton} onPress={openAddModal} accessibilityRole="button">
           <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
           <Text style={styles.addButtonText}>Add Components</Text>
         </Pressable>
@@ -70,7 +86,9 @@ export default function InventoryScreen() {
 
         <View style={styles.list}>
           {filteredItems.length > 0 ? (
-            filteredItems.map((item) => <InventoryItemCard key={item.id} item={item} />)
+            filteredItems.map((item) => (
+              <InventoryItemCard key={item.id} item={item} onPress={() => openEditModal(item)} />
+            ))
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="search-outline" size={32} color={ArduinoColors.textMuted} />
@@ -80,6 +98,15 @@ export default function InventoryScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ComponentModal
+        visible={modalVisible}
+        editingItem={editingItem}
+        onClose={closeModal}
+        onAdd={addInventoryItem}
+        onUpdate={updateInventoryItem}
+        onDelete={removeInventoryItem}
+      />
     </SafeAreaView>
   );
 }

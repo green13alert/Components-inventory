@@ -1,0 +1,2 @@
+export const HOME_PROJECT_CARD_WIDTH = 180;
+export const HOME_PROJECT_CARD_HEIGHT = 248;
