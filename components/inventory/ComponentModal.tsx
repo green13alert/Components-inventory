@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { FilterChips } from '@/components/inventory/FilterChips';
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SolderiColors } from '@/constants/colors';
 import {
   CATEGORY_LABELS,
@@ -25,15 +26,6 @@ const ADDABLE_CATEGORIES = COMPONENT_FILTERS.filter((f) => f.id !== 'all') as {
   id: Exclude<ComponentCategory, 'all'>;
   label: string;
 }[];
-
-const CATEGORY_ICONS: Record<Exclude<ComponentCategory, 'all'>, keyof typeof Ionicons.glyphMap> = {
-  microcontrollers: 'hardware-chip-outline',
-  sensors: 'thermometer-outline',
-  actuators: 'sync-outline',
-  displays: 'tv-outline',
-  power: 'battery-charging-outline',
-  modules: 'bluetooth-outline',
-};
 
 type ComponentModalProps = {
   visible: boolean;
@@ -79,7 +71,6 @@ export function ComponentModal({
     name: name.trim(),
     category,
     quantity,
-    icon: CATEGORY_ICONS[category],
   });
 
   const handleSave = () => {
@@ -128,6 +119,26 @@ export function ComponentModal({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
+          <View style={styles.previewRow}>
+            <ComponentIllustration
+              id={isEditing ? editingItem?.id : undefined}
+              name={name.trim() || editingItem?.name}
+              size={72}
+            />
+            <View style={styles.previewCopy}>
+              <Text style={styles.previewTitle}>
+                {name.trim() || (isEditing ? editingItem?.name : 'New component')}
+              </Text>
+              <Text style={styles.previewHint}>
+                {name.trim()
+                  ? CATEGORY_LABELS[category]
+                  : isEditing
+                    ? CATEGORY_LABELS[editingItem?.category ?? category]
+                    : 'Name your part to preview its illustration'}
+              </Text>
+            </View>
+          </View>
+
           <View style={styles.field}>
             <Text style={styles.label}>Component Name</Text>
             <TextInput
@@ -221,6 +232,29 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     gap: 28,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: SolderiColors.surface,
+    borderWidth: 1,
+    borderColor: SolderiColors.border,
+  },
+  previewCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  previewTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: SolderiColors.textPrimary,
+  },
+  previewHint: {
+    fontSize: 13,
+    color: SolderiColors.textSecondary,
   },
   field: {
     gap: 12,

@@ -6,6 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ComponentModal } from '@/components/inventory/ComponentModal';
 import { FilterChips } from '@/components/inventory/FilterChips';
 import { InventoryItemCard } from '@/components/inventory/InventoryItemCard';
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SearchBar } from '@/components/home/SearchBar';
 import { PageHeader } from '@/components/ui/page-header';
 import { useAtlas } from '@/context/atlas-context';
@@ -34,6 +35,10 @@ export default function InventoryScreen() {
       return matchesCategory && matchesSearch;
     });
   }, [inventory, searchQuery, selectedFilter]);
+
+  const isFiltered =
+    searchQuery.trim().length > 0 || selectedFilter !== 'all';
+  const isEmptyInventory = inventory.length === 0;
 
   const openAddModal = () => {
     setEditingItem(null);
@@ -91,9 +96,21 @@ export default function InventoryScreen() {
             ))
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={32} color={SolderiColors.textMuted} />
-              <Text style={styles.emptyTitle}>No components found</Text>
-              <Text style={styles.emptySubtitle}>Try a different search or filter</Text>
+              {isEmptyInventory && !isFiltered ? (
+                <>
+                  <ComponentIllustration id="generic-board" size={56} />
+                  <Text style={styles.emptyTitle}>No components yet</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Add the hardware you own to start matching projects
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="search-outline" size={32} color={SolderiColors.textMuted} />
+                  <Text style={styles.emptyTitle}>No components found</Text>
+                  <Text style={styles.emptySubtitle}>Try a different search or filter</Text>
+                </>
+              )}
             </View>
           )}
         </View>

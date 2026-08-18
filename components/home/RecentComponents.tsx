@@ -1,7 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SolderiColors } from '@/constants/colors';
 import { InventoryComponent } from '@/constants/inventory';
 import { Radii, Spacing, Typography } from '@/constants/tokens';
@@ -18,7 +18,7 @@ function RecentComponentChip({ item, onPress }: { item: InventoryComponent; onPr
       accessibilityRole="button"
       accessibilityLabel={item.name}>
       <View style={styles.iconWrap}>
-        <Ionicons name={item.icon} size={18} color={SolderiColors.textSecondary} />
+        <ComponentIllustration id={item.id} name={item.name} size={44} />
       </View>
       <Text style={styles.chipName} numberOfLines={2}>
         {item.name}
@@ -64,10 +64,10 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
   iconWrap: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: Radii.md,
-    backgroundColor: SolderiColors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
   },

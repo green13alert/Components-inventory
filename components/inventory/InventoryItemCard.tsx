@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SolderiColors } from '@/constants/colors';
 import { CATEGORY_LABELS, InventoryComponent } from '@/constants/inventory';
 
@@ -17,7 +17,7 @@ export function InventoryItemCard({ item, onPress }: InventoryItemCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Edit ${item.name}`}>
       <View style={styles.iconWrap}>
-        <Ionicons name={item.icon} size={24} color={SolderiColors.textSecondary} />
+        <ComponentIllustration id={item.id} name={item.name} size={52} />
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{item.name}</Text>
@@ -27,9 +27,6 @@ export function InventoryItemCard({ item, onPress }: InventoryItemCardProps) {
         <Text style={styles.quantityLabel}>Qty</Text>
         <Text style={styles.quantity}>{item.quantity}</Text>
       </View>
-      {onPress ? (
-        <Ionicons name="chevron-forward" size={18} color={SolderiColors.textMuted} />
-      ) : null}
     </Pressable>
   );
 }
@@ -49,10 +46,10 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   iconWrap: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     borderRadius: 14,
-    backgroundColor: SolderiColors.surfaceElevated,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SolderiColors } from '@/constants/colors';
 import { ProjectComponent } from '@/constants/projects-data';
 
@@ -12,10 +13,11 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
   return (
     <View style={styles.row}>
       <View style={[styles.iconWrap, !component.owned && styles.iconWrapMissing]}>
-        <Ionicons
-          name={component.icon}
-          size={20}
-          color={component.owned ? SolderiColors.accent : SolderiColors.textMuted}
+        <ComponentIllustration
+          id={component.illustrationId}
+          name={component.name}
+          size={40}
+          plate={component.owned}
         />
       </View>
       <Text style={[styles.name, !component.owned && styles.nameMissing]}>{component.name}</Text>
@@ -45,15 +47,16 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    backgroundColor: SolderiColors.accentMuted,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapMissing: {
-    backgroundColor: SolderiColors.surfaceElevated,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    opacity: 0.75,
   },
   name: {
     flex: 1,

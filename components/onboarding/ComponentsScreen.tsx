@@ -1,30 +1,22 @@
-import MaskedView from '@react-native-masked-view/masked-view';
+import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, Layout } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ComponentPickerChip } from '@/components/onboarding/ComponentPickerChip';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
-import {
-  ORANGE_ARC_SAGITTA,
-  ORANGE_PANEL_WIDTH,
-} from '@/components/onboarding/orange-panel-path';
-import { OrangePanelSvg } from '@/components/onboarding/OrangePanelSvg';
+import { WorkbenchCategoryTabs } from '@/components/onboarding/WorkbenchCategoryTabs';
+import { WorkbenchComponentTile } from '@/components/onboarding/WorkbenchComponentTile';
+import { WorkbenchSurface } from '@/components/onboarding/WorkbenchSurface';
 import { SolderiColors } from '@/constants/colors';
 import {
-  COMPONENT_CATEGORY_LABELS,
+  ONBOARDING_COMPONENTS,
   ONBOARDING_CONTINUE,
+  type ComponentCategory,
+  type OnboardingComponent,
 } from '@/constants/onboarding';
 import { Spacing } from '@/constants/tokens';
-import { getComponentsByCategory } from '@/context/onboarding-context';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const ORANGE_PANEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.65, 580);
-const ORANGE_LAYOUT_HEIGHT = ORANGE_PANEL_HEIGHT + ORANGE_ARC_SAGITTA;
-const CTA_HEIGHT = 56;
-const CTA_FOOTER_SPACE = CTA_HEIGHT + Spacing.lg + Spacing.md;
 
 type ComponentsScreenProps = {
   selectedIds: string[];
@@ -33,6 +25,8 @@ type ComponentsScreenProps = {
   onContinue: () => void;
 };
 
+const SURFACE_HEIGHT = 196;
+
 export function ComponentsScreen({
   selectedIds,
   onToggle,
@@ -40,9 +34,25 @@ export function ComponentsScreen({
   onContinue,
 }: ComponentsScreenProps) {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const [activeCategory, setActiveCategory] = useState<ComponentCategory>('boards');
   const count = selectedIds.length;
-  const categories = getComponentsByCategory();
-  const scrollBottomPadding = CTA_FOOTER_SPACE + Math.max(insets.bottom, Spacing.lg);
+
+  const categoryComponents = useMemo(
+    () => ONBOARDING_COMPONENTS.filter((component) => component.category === activeCategory),
+    [activeCategory],
+  );
+
+  const selectedComponents = useMemo(
+    () =>
+      selectedIds
+        .map((id) => ONBOARDING_COMPONENTS.find((component) => component.id === id))
+        .filter(Boolean) as OnboardingComponent[],
+    [selectedIds],
+  );
+
+  const countLabel =
+    count === 0 ? '0 components' : `${count} component${count === 1 ? '' : 's'}`;
 
   return (
     <View style={styles.screen}>
@@ -67,78 +77,82 @@ export function ComponentsScreen({
             Add some components you already own and we&apos;ll use them to find projects you can build.
           </Text>
         </View>
+
+        <View style={styles.inventoryBar}>
+          <Text style={styles.inventoryLabel}>Your workshop</Text>
+          <Animated.Text entering={FadeIn.duration(240)} key={countLabel} style={styles.inventoryCount}>
+            {countLabel}
+          </Animated.Text>
+        </View>
       </View>
 
-      <View style={styles.topSpacer} />
+      <View style={styles.workbenchZone}>
+        <ScrollView
+          style={styles.workbenchScroll}
+          contentContainerStyle={[
+            styles.workbenchContent,
+            { paddingBottom: 100 + Math.max(insets.bottom, Spacing.lg) },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          <View style={[styles.surfaceStage, { height: SURFACE_HEIGHT + 48 }]}>
+            <WorkbenchSurface width={screenWidth} height={SURFACE_HEIGHT} />
 
-      <View
-        style={[
-          styles.orangeSection,
-          {
-            height: ORANGE_LAYOUT_HEIGHT,
-            marginTop: -ORANGE_ARC_SAGITTA,
-          },
-        ]}>
-        <View style={styles.orangeBackground} pointerEvents="none">
-          <OrangePanelSvg
-            width={ORANGE_PANEL_WIDTH}
-            height={ORANGE_LAYOUT_HEIGHT}
-            color={SolderiColors.accent}
-          />
-        </View>
-
-        <MaskedView
-          style={styles.maskedScroll}
-          androidRenderingMode="software"
-          maskElement={
-            <View style={styles.maskRoot}>
-              <OrangePanelSvg
-                width={ORANGE_PANEL_WIDTH}
-                height={ORANGE_LAYOUT_HEIGHT}
-                color="#000000"
-              />
-            </View>
-          }>
-          <ScrollView
-            style={styles.orangeScroll}
-            contentContainerStyle={[
-              styles.orangeContent,
-              { paddingBottom: scrollBottomPadding },
-            ]}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
-            <Animated.View entering={FadeInDown.duration(420)}>
-              <Text style={styles.counter}>
-                {count} component{count === 1 ? '' : 's'} added
-              </Text>
-            </Animated.View>
-
-            <View style={styles.categories}>
-              {categories.map((group, groupIndex) => (
-                <Animated.View
-                  key={group.category}
-                  entering={FadeInDown.duration(420).delay(60 + groupIndex * 50)}
-                  style={styles.categoryBlock}>
-                  <Text style={styles.categoryLabel}>
-                    {COMPONENT_CATEGORY_LABELS[group.category]}
-                  </Text>
-                  <View style={styles.chipRow}>
-                    {group.items.map((component) => (
-                      <ComponentPickerChip
-                        key={component.id}
-                        emoji={component.emoji}
+            <View style={styles.surfaceOverlay} pointerEvents="box-none">
+              <Text style={styles.surfaceLabel}>On your bench</Text>
+              {selectedComponents.length === 0 ? (
+                <Text style={styles.emptyBenchText}>
+                  Tap components below to place them on your bench
+                </Text>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.collectionRow}
+                  style={styles.collectionScroll}>
+                  {selectedComponents.map((component) => (
+                    <Animated.View
+                      key={component.id}
+                      layout={Layout.springify()}
+                      entering={FadeInDown.duration(280)}>
+                      <WorkbenchComponentTile
+                        componentId={component.id}
                         label={component.name}
-                        selected={selectedIds.includes(component.id)}
+                        selected
+                        compact
+                        onSurface
                         onPress={() => onToggle(component.id)}
-                        onOrange
                       />
-                    ))}
-                  </View>
+                    </Animated.View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.pickerSection}>
+            <WorkbenchCategoryTabs active={activeCategory} onChange={setActiveCategory} />
+
+            <Animated.View
+              key={activeCategory}
+              entering={FadeIn.duration(260)}
+              style={styles.pickerGrid}>
+              {categoryComponents.map((component, index) => (
+                <Animated.View
+                  key={component.id}
+                  entering={FadeInDown.duration(320).delay(index * 40)}
+                  style={styles.pickerCell}>
+                  <WorkbenchComponentTile
+                    componentId={component.id}
+                    label={component.name}
+                    selected={selectedIds.includes(component.id)}
+                    onPress={() => onToggle(component.id)}
+                  />
                 </Animated.View>
               ))}
-            </View>
-          </ScrollView>
-        </MaskedView>
+            </Animated.View>
+          </View>
+        </ScrollView>
 
         <View
           style={[styles.floatingCta, { paddingBottom: Math.max(insets.bottom, Spacing.lg) }]}
@@ -147,7 +161,6 @@ export function ComponentsScreen({
             label={ONBOARDING_CONTINUE}
             onPress={onContinue}
             disabled={count === 0}
-            variant="surface"
           />
         </View>
       </View>
@@ -162,12 +175,13 @@ const styles = StyleSheet.create({
   },
   topSection: {
     paddingHorizontal: 28,
+    zIndex: 2,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing.xl,
   },
   backButton: {
     width: 40,
@@ -183,7 +197,7 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     gap: 8,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   title: {
     fontSize: 28,
@@ -198,62 +212,89 @@ const styles = StyleSheet.create({
     color: SolderiColors.textSecondary,
     maxWidth: 320,
   },
-  topSpacer: {
-    flex: 1,
-    minHeight: Spacing.lg,
+  inventoryBar: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
   },
-  orangeSection: {
-    position: 'relative',
-    overflow: 'visible',
-  },
-  orangeBackground: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  maskedScroll: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  maskRoot: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  orangeScroll: {
-    flex: 1,
-  },
-  orangeContent: {
-    paddingTop: ORANGE_ARC_SAGITTA + Spacing.md,
-    paddingHorizontal: 28,
-    gap: Spacing.xl,
-  },
-  counter: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.onAccent,
-    textAlign: 'center',
-  },
-  categories: {
-    gap: Spacing.xl,
-  },
-  categoryBlock: {
-    gap: Spacing.md,
-  },
-  categoryLabel: {
+  inventoryLabel: {
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: 'rgba(24, 27, 30, 0.62)',
+    color: SolderiColors.textMuted,
   },
-  chipRow: {
+  inventoryCount: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: SolderiColors.accent,
+  },
+  workbenchZone: {
+    flex: 1,
+  },
+  workbenchScroll: {
+    flex: 1,
+  },
+  workbenchContent: {
+    gap: Spacing.lg,
+  },
+  surfaceStage: {
+    position: 'relative',
+    marginTop: Spacing.xs,
+  },
+  surfaceOverlay: {
+    position: 'absolute',
+    left: 28,
+    right: 28,
+    top: 72,
+    bottom: 28,
+    justifyContent: 'flex-start',
+    gap: Spacing.sm,
+  },
+  surfaceLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: SolderiColors.textMuted,
+    opacity: 0.85,
+  },
+  emptyBenchText: {
+    fontSize: 13,
+    color: SolderiColors.textSecondary,
+    opacity: 0.75,
+    marginTop: Spacing.sm,
+  },
+  collectionScroll: {
+    flexGrow: 0,
+    marginTop: Spacing.xs,
+  },
+  collectionRow: {
+    gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+    alignItems: 'flex-end',
+  },
+  pickerSection: {
+    gap: Spacing.lg,
+    paddingTop: Spacing.sm,
+  },
+  pickerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    justifyContent: 'space-between',
+  },
+  pickerCell: {
+    width: '48%',
   },
   floatingCta: {
     position: 'absolute',
     left: 28,
     right: 28,
     bottom: 0,
-    backgroundColor: 'transparent',
     zIndex: 2,
   },
 });

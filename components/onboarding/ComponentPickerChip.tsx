@@ -2,11 +2,12 @@ import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SolderiColors } from '@/constants/colors';
 import { Radii, Spacing } from '@/constants/tokens';
 
 type ComponentPickerChipProps = {
-  emoji: string;
+  componentId: string;
   label: string;
   selected: boolean;
   onPress: () => void;
@@ -16,7 +17,7 @@ type ComponentPickerChipProps = {
 const SPRING = { damping: 20, stiffness: 280, mass: 0.75 };
 
 export function ComponentPickerChip({
-  emoji,
+  componentId,
   label,
   selected,
   onPress,
@@ -49,7 +50,7 @@ export function ComponentPickerChip({
           selected && (onOrange ? styles.selectedOnOrange : styles.selected),
           animatedStyle,
         ]}>
-        <Text style={styles.emoji}>{emoji}</Text>
+        <ComponentIllustration id={componentId} name={label} size={32} plate={false} />
         <Text style={[styles.label, onOrange && styles.labelOnOrange]} numberOfLines={1}>
           {label}
         </Text>
@@ -87,10 +88,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
-  },
-  emoji: {
-    fontSize: 16,
-    flexShrink: 0,
   },
   label: {
     fontSize: 14,

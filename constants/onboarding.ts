@@ -71,19 +71,19 @@ export type OnboardingComponent = {
   id: string;
   name: string;
   category: ComponentCategory;
-  emoji: string;
 };
 
 export const ONBOARDING_COMPONENTS: OnboardingComponent[] = [
-  { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards', emoji: '🔷' },
-  { id: 'esp32', name: 'ESP32', category: 'boards', emoji: '📡' },
-  { id: 'servo-sg90', name: 'Servo SG90', category: 'motors', emoji: '⚙️' },
-  { id: 'hc-sr04', name: 'HC-SR04', category: 'sensors', emoji: '📏' },
-  { id: 'oled', name: 'OLED Display', category: 'displays', emoji: '🖥️' },
-  { id: 'led', name: 'LED', category: 'components', emoji: '💡' },
-  { id: 'resistor', name: 'Resistor', category: 'components', emoji: '〰️' },
-  { id: 'dc-motor', name: 'DC Motor', category: 'motors', emoji: '🔩' },
-  { id: 'dht11', name: 'DHT11', category: 'sensors', emoji: '🌡️' },
+  { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards' },
+  { id: 'esp32', name: 'ESP32', category: 'boards' },
+  { id: 'servo-sg90', name: 'Servo SG90', category: 'motors' },
+  { id: 'hc-sr04', name: 'HC-SR04', category: 'sensors' },
+  { id: 'oled', name: 'OLED Display', category: 'displays' },
+  { id: 'led', name: 'LED', category: 'components' },
+  { id: 'resistor', name: 'Resistor', category: 'components' },
+  { id: 'breadboard', name: 'Breadboard', category: 'components' },
+  { id: 'dc-motor', name: 'DC Motor', category: 'motors' },
+  { id: 'dht11', name: 'DHT11', category: 'sensors' },
 ];
 
 export type OnboardingInterest = {
