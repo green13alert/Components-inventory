@@ -17,6 +17,7 @@ type OnboardingShellProps = {
   footer: ReactNode;
   children: ReactNode;
   background?: 'gradient' | 'pcb-top' | 'pcb-subtle';
+  backgroundOverlay?: ReactNode;
   scrollable?: boolean;
 };
 
@@ -28,6 +29,7 @@ export function OnboardingShell({
   footer,
   children,
   background = 'gradient',
+  backgroundOverlay,
   scrollable = true,
 }: OnboardingShellProps) {
   const insets = useSafeAreaInsets();
@@ -65,6 +67,12 @@ export function OnboardingShell({
             style={StyleSheet.absoluteFill}
           />
         </>
+      ) : null}
+
+      {backgroundOverlay ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {backgroundOverlay}
+        </View>
       ) : null}
 
       <View

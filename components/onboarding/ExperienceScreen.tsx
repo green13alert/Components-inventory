@@ -1,14 +1,9 @@
-import { StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Dimensions, StyleSheet, View } from 'react-native';
 
-import { ExperienceOptionCard } from '@/components/onboarding/ExperienceOptionCard';
+import { SkillTierPicker } from '@/components/onboarding/SkillTierPicker';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import {
-  EXPERIENCE_OPTIONS,
-  ONBOARDING_CONTINUE,
-  type ExperienceLevel,
-} from '@/constants/onboarding';
+import { ONBOARDING_CONTINUE, type ExperienceLevel } from '@/constants/onboarding';
 import { Spacing } from '@/constants/tokens';
 
 type ExperienceScreenProps = {
@@ -19,6 +14,9 @@ type ExperienceScreenProps = {
 };
 
 export function ExperienceScreen({ selected, onSelect, onBack, onContinue }: ExperienceScreenProps) {
+  const screenHeight = Dimensions.get('window').height;
+  const isCompact = screenHeight < 700;
+
   return (
     <OnboardingShell
       step={2}
@@ -26,7 +24,7 @@ export function ExperienceScreen({ selected, onSelect, onBack, onContinue }: Exp
       description="Tell us your skill level so we can tailor projects to you."
       onBack={onBack}
       background="gradient"
-      scrollable={false}
+      scrollable={isCompact}
       footer={
         <OnboardingCta
           label={ONBOARDING_CONTINUE}
@@ -34,28 +32,16 @@ export function ExperienceScreen({ selected, onSelect, onBack, onContinue }: Exp
           disabled={!selected}
         />
       }>
-      <View style={styles.options}>
-        {EXPERIENCE_OPTIONS.map((option, index) => (
-          <Animated.View key={option.id} entering={FadeInDown.duration(420).delay(index * 70)}>
-            <ExperienceOptionCard
-              emoji={option.emoji}
-              title={option.title}
-              subtitle={option.subtitle}
-              selected={selected === option.id}
-              onPress={() => onSelect(option.id)}
-            />
-          </Animated.View>
-        ))}
+      <View style={styles.content}>
+        <SkillTierPicker selected={selected} onSelect={onSelect} />
       </View>
     </OnboardingShell>
   );
 }
 
 const styles = StyleSheet.create({
-  options: {
+  content: {
     flex: 1,
-    gap: Spacing.md,
-    justifyContent: 'center',
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.sm,
   },
 });
