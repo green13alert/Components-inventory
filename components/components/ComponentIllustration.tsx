@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, Line, Path, Rect } from 'react-native-svg';
 
@@ -12,6 +13,8 @@ type ComponentIllustrationProps = {
   name?: string;
   size?: number;
   plate?: boolean;
+  /** When false, skips the SVG ground ellipse (e.g. workbench uses BenchComponentShadow). */
+  showGroundShadow?: boolean;
 };
 
 export function ComponentIllustration({
@@ -19,6 +22,7 @@ export function ComponentIllustration({
   name,
   size = 48,
   plate = true,
+  showGroundShadow = true,
 }: ComponentIllustrationProps) {
   const illustrationId = resolveComponentIllustration({ id, name });
   const inner = size * 0.88;
@@ -38,64 +42,90 @@ export function ComponentIllustration({
         />
       ) : null}
       <View style={styles.art}>
-        <IllustrationArt id={illustrationId} size={inner} />
+        <IllustrationArt id={illustrationId} size={inner} showGroundShadow={showGroundShadow} />
       </View>
     </View>
   );
 }
 
-function IllustrationArt({ id, size }: { id: ComponentIllustrationId; size: number }) {
+function IllustrationArt({
+  id,
+  size,
+  showGroundShadow,
+}: {
+  id: ComponentIllustrationId;
+  size: number;
+  showGroundShadow: boolean;
+}) {
   switch (id) {
     case 'arduino-uno':
-      return <ArduinoUno size={size} />;
+      return <ArduinoUno size={size} showGroundShadow={showGroundShadow} />;
     case 'esp32':
-      return <Esp32 size={size} />;
+      return <Esp32 size={size} showGroundShadow={showGroundShadow} />;
     case 'servo-sg90':
-      return <Servo size={size} />;
+      return <Servo size={size} showGroundShadow={showGroundShadow} />;
     case 'hc-sr04':
-      return <HcSr04 size={size} />;
+      return <HcSr04 size={size} showGroundShadow={showGroundShadow} />;
     case 'oled':
-      return <Oled size={size} />;
+      return <Oled size={size} showGroundShadow={showGroundShadow} />;
     case 'dht11':
-      return <Dht11 size={size} />;
+      return <Dht11 size={size} showGroundShadow={showGroundShadow} />;
     case 'led':
-      return <Led size={size} />;
+      return <Led size={size} showGroundShadow={showGroundShadow} />;
     case 'resistor':
-      return <Resistor size={size} />;
+      return <Resistor size={size} showGroundShadow={showGroundShadow} />;
     case 'dc-motor':
-      return <DcMotor size={size} />;
+      return <DcMotor size={size} showGroundShadow={showGroundShadow} />;
     case 'breadboard':
-      return <Breadboard size={size} />;
+      return <Breadboard size={size} showGroundShadow={showGroundShadow} />;
     case 'pir-sensor':
-      return <PirSensor size={size} />;
+      return <PirSensor size={size} showGroundShadow={showGroundShadow} />;
     case 'lcd-display':
-      return <LcdDisplay size={size} />;
+      return <LcdDisplay size={size} showGroundShadow={showGroundShadow} />;
     case 'relay-module':
-      return <RelayModule size={size} />;
+      return <RelayModule size={size} showGroundShadow={showGroundShadow} />;
     case 'bluetooth-module':
-      return <BluetoothModule size={size} />;
+      return <BluetoothModule size={size} showGroundShadow={showGroundShadow} />;
     case 'battery':
-      return <Battery size={size} />;
+      return <Battery size={size} showGroundShadow={showGroundShadow} />;
     case 'motor-driver':
-      return <MotorDriver size={size} />;
+      return <MotorDriver size={size} showGroundShadow={showGroundShadow} />;
     case 'jumper-wires':
-      return <JumperWires size={size} />;
+      return <JumperWires size={size} showGroundShadow={showGroundShadow} />;
     case 'generic-sensor':
-      return <GenericSensor size={size} />;
+      return <GenericSensor size={size} showGroundShadow={showGroundShadow} />;
     case 'generic-board':
-      return <GenericBoard size={size} />;
+      return <GenericBoard size={size} showGroundShadow={showGroundShadow} />;
     case 'generic-motor':
-      return <DcMotor size={size} />;
+      return <DcMotor size={size} showGroundShadow={showGroundShadow} />;
     case 'generic-display':
-      return <Oled size={size} />;
+      return <Oled size={size} showGroundShadow={showGroundShadow} />;
     default:
-      return <GenericModule size={size} />;
+      return <GenericModule size={size} showGroundShadow={showGroundShadow} />;
   }
 }
 
 /** Ground shadow — dark is intentional; component body stays bright. */
 function GroundShadow() {
   return <Ellipse cx={32} cy={54} rx={22} ry={4} fill={HW.dropShadow} opacity={0.45} />;
+}
+
+type IllustrationProps = {
+  size: number;
+  showGroundShadow?: boolean;
+};
+
+function IllustrationSvg({
+  size,
+  showGroundShadow = true,
+  children,
+}: IllustrationProps & { children: ReactNode }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 64 64">
+      {showGroundShadow ? <GroundShadow /> : null}
+      {children}
+    </Svg>
+  );
 }
 
 /** Top-left sheen shared across the library. */
@@ -141,10 +171,9 @@ function PinRow({
   );
 }
 
-function ArduinoUno({ size }: { size: number }) {
+function ArduinoUno({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Main board — familiar Arduino teal-blue */}
       <Rect x={10} y={20} width={44} height={28} rx={2.5} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.8} />
       <TopSheen x={12} y={21} w={28} h={6} rx={1} />
@@ -164,14 +193,13 @@ function ArduinoUno({ size }: { size: number }) {
       {[22, 26, 30, 34, 38].map((y) => (
         <Line key={y} x1={16} y1={y} x2={48} y2={y} stroke={HW.pcbBlueHighlight} strokeWidth={0.5} opacity={0.35} />
       ))}
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Esp32({ size }: { size: number }) {
+function Esp32({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Dark green PCB — recognisable ESP32 colour */}
       <Rect x={12} y={18} width={40} height={28} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.8} />
       <TopSheen x={14} y={19} w={24} h={5} rx={1} />
@@ -186,14 +214,13 @@ function Esp32({ size }: { size: number }) {
       <PinRow x={14} y={50} count={10} spacing={3.6} />
       {/* Status LED */}
       <Circle cx={38} cy={22} r={1.5} fill={HW.ledRed} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Servo({ size }: { size: number }) {
+function Servo({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Blue SG90 body */}
       <Rect x={14} y={30} width={36} height={20} rx={3} fill={HW.servoBlue} stroke={HW.servoBlueDark} strokeWidth={0.8} />
       <TopSheen x={16} y={31} w={24} h={5} rx={1} />
@@ -207,14 +234,13 @@ function Servo({ size }: { size: number }) {
       {/* Cable */}
       <Path d="M 50 38 Q 56 36 58 42" stroke={HW.wireYellow} strokeWidth={2} fill="none" strokeLinecap="round" />
       <Path d="M 50 42 Q 56 44 58 48" stroke={HW.wireRed} strokeWidth={2} fill="none" strokeLinecap="round" />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function HcSr04({ size }: { size: number }) {
+function HcSr04({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={8} y={26} width={48} height={16} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.8} />
       <TopSheen x={10} y={27} w={30} h={4} rx={1} />
       {/* Ultrasonic transducers — silver cylinders */}
@@ -226,14 +252,13 @@ function HcSr04({ size }: { size: number }) {
       <Circle cx={42} cy={32} r={2.5} fill={HW.metalLight} opacity={0.7} />
       {/* Pin header */}
       <PinRow x={28} y={18} count={4} spacing={4} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Oled({ size }: { size: number }) {
+function Oled({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Blue PCB frame */}
       <Rect x={12} y={20} width={40} height={26} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.8} />
       <TopSheen x={14} y={21} w={26} h={5} rx={1} />
@@ -245,14 +270,13 @@ function Oled({ size }: { size: number }) {
       <Line x1={20} y1={38} x2={42} y2={38} stroke={HW.screenGlow} strokeWidth={0.8} opacity={0.4} />
       {/* Pin header */}
       <PinRow x={22} y={14} count={4} spacing={5} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Dht11({ size }: { size: number }) {
+function Dht11({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Blue plastic housing */}
       <Rect x={16} y={16} width={32} height={32} rx={4} fill={HW.sensorBlue} stroke={HW.sensorBlueLight} strokeWidth={0.8} />
       <TopSheen x={18} y={17} w={20} h={8} rx={2} />
@@ -265,14 +289,13 @@ function Dht11({ size }: { size: number }) {
       )}
       {/* Pins */}
       <PinRow x={24} y={50} count={3} spacing={8} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Led({ size }: { size: number }) {
+function Led({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Red dome with bright highlight */}
       <Ellipse cx={32} cy={26} rx={11} ry={10} fill={HW.ledRed} stroke="#B91C1C" strokeWidth={0.6} />
       <Ellipse cx={32} cy={23} rx={7} ry={5} fill={HW.ledRedGlow} opacity={0.65} />
@@ -284,14 +307,13 @@ function Led({ size }: { size: number }) {
       <Rect x={33} y={40} width={2} height={12} rx={0.5} fill={HW.pinSilver} />
       <Line x1={30} y1={52} x2={26} y2={58} stroke={HW.pinSilver} strokeWidth={1.4} strokeLinecap="round" />
       <Line x1={34} y1={52} x2={38} y2={58} stroke={HW.pinSilver} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Resistor({ size }: { size: number }) {
+function Resistor({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Leads */}
       <Line x1={10} y1={32} x2={18} y2={32} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
       <Line x1={46} y1={32} x2={54} y2={32} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
@@ -303,14 +325,13 @@ function Resistor({ size }: { size: number }) {
       <Rect x={28} y={27} width={3.5} height={10} rx={1} fill={HW.bandRed} />
       <Rect x={34} y={27} width={3.5} height={10} rx={1} fill={HW.bandGold} />
       <Rect x={40} y={27} width={3.5} height={10} rx={1} fill={HW.bandGold} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function DcMotor({ size }: { size: number }) {
+function DcMotor({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Motor body */}
       <Rect x={14} y={26} width={30} height={22} rx={4} fill={HW.motorBodyLight} stroke={HW.motorBody} strokeWidth={0.8} />
       <TopSheen x={16} y={27} w={18} h={6} rx={2} />
@@ -323,14 +344,13 @@ function DcMotor({ size }: { size: number }) {
       {/* Wires */}
       <Path d="M 20 48 Q 14 52 12 56" stroke={HW.wireRed} strokeWidth={2} fill="none" strokeLinecap="round" />
       <Path d="M 26 48 Q 22 54 20 58" stroke={HW.wireBlack} strokeWidth={2} fill="none" strokeLinecap="round" />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Breadboard({ size }: { size: number }) {
+function Breadboard({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* White body */}
       <Rect x={8} y={22} width={48} height={24} rx={2} fill={HW.breadWhite} stroke={HW.breadCream} strokeWidth={0.8} />
       <TopSheen x={10} y={23} w={32} h={6} rx={1} />
@@ -344,28 +364,26 @@ function Breadboard({ size }: { size: number }) {
         )),
       )}
       <Line x1={10} y1={33} x2={54} y2={33} stroke={HW.breadCream} strokeWidth={0.6} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function PirSensor({ size }: { size: number }) {
+function PirSensor({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={14} y={28} width={36} height={16} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
       <TopSheen x={16} y={29} w={22} h={4} rx={1} />
       {/* White dome */}
       <Circle cx={32} cy={30} r={9} fill="#FAFAF5" stroke={HW.breadCream} strokeWidth={0.7} />
       <Ellipse cx={32} cy={27} rx={5} ry={3} fill={HW.highlightSoft} />
       <PinRow x={26} y={18} count={3} spacing={6} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function LcdDisplay({ size }: { size: number }) {
+function LcdDisplay({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Gray bezel */}
       <Rect x={6} y={24} width={52} height={20} rx={2} fill={HW.metal} stroke={HW.metalDark} strokeWidth={0.7} />
       <TopSheen x={8} y={25} w={30} h={4} rx={1} />
@@ -374,14 +392,13 @@ function LcdDisplay({ size }: { size: number }) {
       <Line x1={14} y1={32} x2={50} y2={32} stroke="#5C6B2E" strokeWidth={0.8} opacity={0.55} />
       <Line x1={14} y1={36} x2={46} y2={36} stroke="#5C6B2E" strokeWidth={0.8} opacity={0.4} />
       <PinRow x={18} y={16} count={8} spacing={3.5} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function RelayModule({ size }: { size: number }) {
+function RelayModule({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={10} y={22} width={44} height={22} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
       <TopSheen x={12} y={23} w={26} h={5} rx={1} />
       {/* Relay block */}
@@ -391,42 +408,39 @@ function RelayModule({ size }: { size: number }) {
       <Rect x={36} y={26} width={12} height={14} rx={1} fill={HW.sensorBlueLight} stroke={HW.sensorBlue} strokeWidth={0.6} />
       <Circle cx={42} cy={33} r={3} fill={HW.servoWhite} opacity={0.8} />
       <PinRow x={18} y={14} count={4} spacing={5} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function BluetoothModule({ size }: { size: number }) {
+function BluetoothModule({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={12} y={24} width={40} height={18} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
       <TopSheen x={14} y={25} w={24} h={4} rx={1} />
       {/* HC-05 style module */}
       <Rect x={18} y={28} width={20} height={10} rx={1} fill={HW.icBlack} stroke={HW.icPin} strokeWidth={0.5} />
       <Path d="M 28 30 L 34 34 L 28 38 L 22 34 Z" fill={HW.sensorBlueLight} opacity={0.85} />
       <PinRow x={20} y={16} count={4} spacing={6} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function Battery({ size }: { size: number }) {
+function Battery({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={14} y={26} width={36} height={18} rx={3} fill={HW.batteryBlack} stroke={HW.metalDark} strokeWidth={0.7} />
       <TopSheen x={16} y={27} w={22} h={5} rx={1.5} />
       <Rect x={26} y={22} width={12} height={4} rx={1} fill={HW.metal} stroke={HW.metalDark} strokeWidth={0.5} />
       {/* Red label stripe */}
       <Rect x={18} y={30} width={28} height={8} rx={1} fill={HW.batteryRed} opacity={0.9} />
       <Line x1={22} y1={34} x2={42} y2={34} stroke={HW.highlight} strokeWidth={0.8} opacity={0.4} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function MotorDriver({ size }: { size: number }) {
+function MotorDriver({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={8} y={22} width={48} height={22} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
       <TopSheen x={10} y={23} w={30} h={5} rx={1} />
       {/* L298N-style heatsink */}
@@ -439,59 +453,55 @@ function MotorDriver({ size }: { size: number }) {
       <Rect x={38} y={28} width={4} height={10} rx={0.5} fill={HW.wireGreen} />
       <Rect x={44} y={28} width={4} height={10} rx={0.5} fill={HW.wireRed} />
       <PinRow x={16} y={14} count={6} spacing={4} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function JumperWires({ size }: { size: number }) {
+function JumperWires({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Path d="M 12 42 Q 22 18 34 34 T 52 26" stroke={HW.wireRed} strokeWidth={2.5} fill="none" strokeLinecap="round" />
       <Path d="M 16 46 Q 28 32 40 42" stroke={HW.wireYellow} strokeWidth={2.5} fill="none" strokeLinecap="round" />
       <Path d="M 20 38 Q 32 48 46 36" stroke={HW.wireGreen} strokeWidth={2.5} fill="none" strokeLinecap="round" />
       <Circle cx={12} cy={42} r={3} fill={HW.wireRed} />
       <Circle cx={52} cy={26} r={3} fill={HW.wireRed} />
       <Circle cx={46} cy={36} r={3} fill={HW.wireGreen} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function GenericSensor({ size }: { size: number }) {
+function GenericSensor({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={16} y={20} width={32} height={26} rx={3} fill={HW.genericBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
       <TopSheen x={18} y={21} w={20} h={6} rx={1.5} />
       <Circle cx={32} cy={32} r={8} fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.7} />
       <Circle cx={32} cy={30} r={3} fill={HW.highlightSoft} />
       <PinRow x={24} y={50} count={3} spacing={8} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function GenericBoard({ size }: { size: number }) {
+function GenericBoard({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={12} y={18} width={40} height={28} rx={2.5} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.8} />
       <TopSheen x={14} y={19} w={26} h={6} rx={1} />
       <Rect x={20} y={26} width={24} height={14} rx={1.5} fill={HW.icBlack} stroke={HW.icPin} strokeWidth={0.5} />
       <PinRow x={16} y={12} count={8} spacing={3.5} />
       <PinRow x={16} y={50} count={8} spacing={3.5} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 
-function GenericModule({ size }: { size: number }) {
+function GenericModule({ size, showGroundShadow = true }: IllustrationProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64">
-      <GroundShadow />
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       <Rect x={14} y={22} width={36} height={22} rx={2} fill={HW.genericGreen} stroke={HW.pcbGreen} strokeWidth={0.7} />
       <TopSheen x={16} y={23} w={22} h={5} rx={1} />
       <Rect x={20} y={28} width={24} height={10} rx={1} fill={HW.icBlack} stroke={HW.icPin} strokeWidth={0.5} />
       <PinRow x={20} y={14} count={4} spacing={6} />
-    </Svg>
+    </IllustrationSvg>
   );
 }
 

@@ -17,6 +17,24 @@ type WorkbenchSurfaceProps = {
   height: number;
 };
 
+/** ViewBox coordinates of the bench top-face — keep in sync with `topFace` path. */
+export const WORKBENCH_FACE = {
+  viewboxHeight: 220,
+  topY: 52,
+  bottomY: 168,
+} as const;
+
+export function getBenchFaceOverlayInsets(surfaceHeight: number, stageHeight: number) {
+  const { viewboxHeight, topY, bottomY } = WORKBENCH_FACE;
+  const faceTop = (topY / viewboxHeight) * surfaceHeight;
+  const faceBottom = (bottomY / viewboxHeight) * surfaceHeight;
+
+  return {
+    top: Math.round(faceTop),
+    bottom: Math.round(stageHeight - faceBottom),
+  };
+}
+
 /** Stylised top-down perspective electronics workbench surface. */
 export function WorkbenchSurface({ width, height }: WorkbenchSurfaceProps) {
   const vbW = 390;

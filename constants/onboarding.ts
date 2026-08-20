@@ -67,6 +67,15 @@ export const COMPONENT_CATEGORY_LABELS: Record<ComponentCategory, string> = {
   components: 'Components',
 };
 
+/** Tab order on Page 3 — Components sits directly after Boards. */
+export const COMPONENT_CATEGORY_ORDER: ComponentCategory[] = [
+  'boards',
+  'components',
+  'sensors',
+  'motors',
+  'displays',
+];
+
 export type OnboardingComponent = {
   id: string;
   name: string;
@@ -95,12 +104,12 @@ export type OnboardingInterest = {
 export const INTEREST_OPTIONS: OnboardingInterest[] = [
   { id: 'robotics', emoji: '🤖', label: 'Robotics' },
   { id: 'aerospace', emoji: '🚀', label: 'Aerospace' },
-  { id: 'smart-home', emoji: '🏠', label: 'Smart Home' },
   { id: 'mechanical', emoji: '⚙️', label: 'Mechanical' },
   { id: 'electronics', emoji: '💡', label: 'Electronics' },
-  { id: 'displays', emoji: '🖥️', label: 'Displays' },
-  { id: 'rc', emoji: '🚗', label: 'RC / Vehicles' },
-  { id: 'sensors', emoji: '🌡️', label: 'Sensors' },
+  { id: 'smart-home', emoji: '🏠', label: 'Smart Home' },
+  { id: 'vehicles', emoji: '🚗', label: 'Vehicles' },
+  { id: 'computing', emoji: '💻', label: 'Computing' },
+  { id: 'automation', emoji: '🏭', label: 'Automation' },
 ];
 
 export type MockRecommendedProject = {

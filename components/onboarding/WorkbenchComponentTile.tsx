@@ -32,14 +32,26 @@ export function WorkbenchComponentTile({
   const scale = useSharedValue(1);
 
   useEffect(() => {
-    const liftAmount = onSurface ? -8 : -5;
+    if (onSurface) {
+      lift.value = 0;
+      scale.value = 1;
+      return;
+    }
+
+    const liftAmount = -5;
     lift.value = withSpring(selected ? liftAmount : 0, SPRING);
     scale.value = withSpring(selected ? 1.05 : 1, SPRING);
   }, [lift, onSurface, scale, selected]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: lift.value }, { scale: scale.value }],
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    if (onSurface) {
+      return {};
+    }
+
+    return {
+      transform: [{ translateY: lift.value }, { scale: scale.value }],
+    };
+  });
 
   const isSurfaceCompact = compact && onSurface;
   const illustrationSize = isSurfaceCompact ? 40 : compact ? 44 : 48;
@@ -51,11 +63,16 @@ export function WorkbenchComponentTile({
         onPress();
       }}
       onPressIn={() => {
-        scale.value = withSpring(0.97, SPRING);
+        if (!onSurface) {
+          scale.value = withSpring(0.97, SPRING);
+        }
       }}
       onPressOut={() => {
-        scale.value = withSpring(selected ? 1.05 : 1, SPRING);
+        if (!onSurface) {
+          scale.value = withSpring(selected ? 1.05 : 1, SPRING);
+        }
       }}
+      delayPressIn={onSurface ? 80 : 0}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       style={
@@ -65,41 +82,56 @@ export function WorkbenchComponentTile({
             ? styles.compactPressable
             : styles.pressable
       }>
-      {isSurfaceCompact ? <BenchComponentShadow width={48} /> : null}
-      <Animated.View
-        style={[
-          isSurfaceCompact
-            ? styles.surfacePart
-            : compact
-              ? styles.compactTile
-              : styles.tile,
-          !onSurface && selected && styles.tileSelected,
-          onSurface && selected && styles.surfacePartSelected,
-          animatedStyle,
-          isSurfaceCompact && styles.surfacePartFloated,
-        ]}>
-        <ComponentIllustration
-          id={componentId}
-          name={label}
-          size={illustrationSize}
-          plate={!onSurface}
-        />
-        {!compact ? (
-          <Text style={styles.label} numberOfLines={2}>
-            {label}
-          </Text>
-        ) : null}
-        {selected ? (
-          <View
-            style={[
-              styles.checkBadge,
-              compact && styles.checkBadgeCompact,
-              onSurface && styles.checkBadgeSurface,
-            ]}>
-            <Ionicons name="checkmark" size={compact ? 10 : 12} color={SolderiColors.onAccent} />
+      {isSurfaceCompact ? (
+        <>
+          <View style={styles.surfaceShadow}>
+            <BenchComponentShadow width={44} />
           </View>
-        ) : null}
-      </Animated.View>
+          <Animated.View
+            style={[
+              styles.surfacePart,
+              onSurface && selected && styles.surfacePartSelected,
+              animatedStyle,
+            ]}>
+            <ComponentIllustration
+              id={componentId}
+              name={label}
+              size={illustrationSize}
+              plate={false}
+              showGroundShadow={false}
+            />
+            {selected ? (
+              <View style={[styles.checkBadge, styles.checkBadgeSurface]}>
+                <Ionicons name="checkmark" size={10} color={SolderiColors.onAccent} />
+              </View>
+            ) : null}
+          </Animated.View>
+        </>
+      ) : (
+        <Animated.View
+          style={[
+            compact ? styles.compactTile : styles.tile,
+            !onSurface && selected && styles.tileSelected,
+            animatedStyle,
+          ]}>
+          <ComponentIllustration
+            id={componentId}
+            name={label}
+            size={illustrationSize}
+            plate={!onSurface}
+          />
+          {!compact ? (
+            <Text style={styles.label} numberOfLines={2}>
+              {label}
+            </Text>
+          ) : null}
+          {selected ? (
+            <View style={[styles.checkBadge, compact && styles.checkBadgeCompact]}>
+              <Ionicons name="checkmark" size={compact ? 10 : 12} color={SolderiColors.onAccent} />
+            </View>
+          ) : null}
+        </Animated.View>
+      )}
     </Pressable>
   );
 }
@@ -113,10 +145,17 @@ const styles = StyleSheet.create({
   },
   surfacePressable: {
     width: 52,
-    minHeight: 56,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingBottom: 2,
+  },
+  surfaceShadow: {
+    position: 'absolute',
+    bottom: 4,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 0,
   },
   tile: {
     minHeight: 108,
@@ -156,10 +195,8 @@ const styles = StyleSheet.create({
     borderRadius: Radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  surfacePartFloated: {
-    position: 'absolute',
-    bottom: 8,
+    marginBottom: 8,
+    zIndex: 1,
   },
   tileSelected: {
     borderColor: SolderiColors.accentBorder,
@@ -200,8 +237,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   checkBadgeSurface: {
-    top: -4,
-    right: -4,
+    top: 0,
+    right: 0,
     width: 14,
     height: 14,
     borderRadius: 7,

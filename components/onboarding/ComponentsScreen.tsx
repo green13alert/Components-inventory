@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, Layout } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { WorkbenchCategoryTabs } from '@/components/onboarding/WorkbenchCategoryTabs';
 import { WorkbenchComponentTile } from '@/components/onboarding/WorkbenchComponentTile';
-import { WorkbenchSurface } from '@/components/onboarding/WorkbenchSurface';
+import { WorkbenchSurface, getBenchFaceOverlayInsets } from '@/components/onboarding/WorkbenchSurface';
 import { SolderiColors } from '@/constants/colors';
 import {
   ONBOARDING_COMPONENTS,
@@ -25,7 +25,19 @@ type ComponentsScreenProps = {
   onContinue: () => void;
 };
 
-const SURFACE_HEIGHT = 196;
+const SURFACE_HEIGHT = 280;
+const BENCH_TILE_WIDTH = 52;
+const BENCH_TILE_HEIGHT = 60;
+const BENCH_ROW_GAP = 10;
+const BENCH_COL_GAP = 10;
+const BENCH_ROW_COUNT = 2;
+const BENCH_LABEL_WIDTH = 92;
+const STAGE_EXTRA_HEIGHT = 32;
+/** Extra room above the grid for lift animation + check badge. */
+const BENCH_SCROLL_TOP_PAD = 14;
+const BENCH_GRID_HEIGHT = BENCH_TILE_HEIGHT * BENCH_ROW_COUNT + BENCH_ROW_GAP;
+const BENCH_SCROLL_AREA_HEIGHT = BENCH_SCROLL_TOP_PAD + BENCH_GRID_HEIGHT + 8;
+const HORIZONTAL_INSET = 28;
 
 export function ComponentsScreen({
   selectedIds,
@@ -53,6 +65,31 @@ export function ComponentsScreen({
 
   const countLabel =
     count === 0 ? '0 components' : `${count} component${count === 1 ? '' : 's'}`;
+
+  const stageHeight = SURFACE_HEIGHT + STAGE_EXTRA_HEIGHT;
+  const benchOverlayInsets = getBenchFaceOverlayInsets(SURFACE_HEIGHT, stageHeight);
+  const isBenchEmpty = selectedComponents.length === 0;
+
+  const benchColumns = useMemo(() => {
+    const columns: (OnboardingComponent | undefined)[][] = [];
+    const columnCount = Math.max(1, Math.ceil(selectedComponents.length / BENCH_ROW_COUNT));
+
+    for (let col = 0; col < columnCount; col += 1) {
+      columns.push([
+        selectedComponents[col * BENCH_ROW_COUNT],
+        selectedComponents[col * BENCH_ROW_COUNT + 1],
+      ]);
+    }
+
+    return columns;
+  }, [selectedComponents]);
+
+  const benchGridWidth =
+    benchColumns.length * BENCH_TILE_WIDTH + Math.max(0, benchColumns.length - 1) * BENCH_COL_GAP;
+
+  const benchScrollViewportWidth =
+    screenWidth - HORIZONTAL_INSET * 2 - BENCH_LABEL_WIDTH - Spacing.sm;
+  const benchOverflows = benchGridWidth > benchScrollViewportWidth;
 
   return (
     <View style={styles.screen}>
@@ -87,49 +124,75 @@ export function ComponentsScreen({
       </View>
 
       <View style={styles.workbenchZone}>
+        <View style={[styles.surfaceStage, { height: stageHeight }]}>
+          <WorkbenchSurface width={screenWidth} height={SURFACE_HEIGHT} />
+
+          <View style={[styles.surfaceOverlay, benchOverlayInsets]}>
+            {isBenchEmpty ? (
+              <View style={styles.emptyBench}>
+                <Text style={styles.surfaceLabel}>On your bench</Text>
+                <Text style={styles.emptyBenchText}>
+                  Tap components below to place them on your bench
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.benchCollection}>
+                <Text style={[styles.surfaceLabel, styles.benchLabel]}>On your bench</Text>
+                <View style={styles.benchScrollWrap}>
+                  <ScrollView
+                    horizontal
+                    nestedScrollEnabled
+                    directionalLockEnabled
+                    alwaysBounceVertical={false}
+                    showsVerticalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={benchOverflows}
+                    persistentScrollbar={benchOverflows}
+                    scrollEnabled={benchOverflows}
+                    scrollEventThrottle={16}
+                    style={styles.benchScroll}
+                    contentContainerStyle={styles.benchScrollContent}>
+                    <View style={[styles.benchGrid, { width: benchGridWidth }]}>
+                      {benchColumns.map((column, columnIndex) => (
+                        <View key={`col-${columnIndex}`} style={styles.benchColumn}>
+                          {column.map((component, rowIndex) =>
+                            component ? (
+                              <View key={component.id} style={styles.benchTileSlot}>
+                                <WorkbenchComponentTile
+                                  componentId={component.id}
+                                  label={component.name}
+                                  selected
+                                  compact
+                                  onSurface
+                                  onPress={() => onToggle(component.id)}
+                                />
+                              </View>
+                            ) : (
+                              <View key={`empty-${columnIndex}-${rowIndex}`} style={styles.benchTileSlot} />
+                            ),
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                  {benchOverflows ? (
+                    <View style={styles.benchScrollHint} pointerEvents="none">
+                      <Ionicons name="chevron-forward" size={14} color={SolderiColors.textMuted} />
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+
         <ScrollView
-          style={styles.workbenchScroll}
+          style={styles.pickerScroll}
           contentContainerStyle={[
-            styles.workbenchContent,
+            styles.pickerScrollContent,
             { paddingBottom: 100 + Math.max(insets.bottom, Spacing.lg) },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
-          <View style={[styles.surfaceStage, { height: SURFACE_HEIGHT + 48 }]}>
-            <WorkbenchSurface width={screenWidth} height={SURFACE_HEIGHT} />
-
-            <View style={styles.surfaceOverlay} pointerEvents="box-none">
-              <Text style={styles.surfaceLabel}>On your bench</Text>
-              {selectedComponents.length === 0 ? (
-                <Text style={styles.emptyBenchText}>
-                  Tap components below to place them on your bench
-                </Text>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.collectionRow}
-                  style={styles.collectionScroll}>
-                  {selectedComponents.map((component) => (
-                    <Animated.View
-                      key={component.id}
-                      layout={Layout.springify()}
-                      entering={FadeInDown.duration(280)}>
-                      <WorkbenchComponentTile
-                        componentId={component.id}
-                        label={component.name}
-                        selected
-                        compact
-                        onSurface
-                        onPress={() => onToggle(component.id)}
-                      />
-                    </Animated.View>
-                  ))}
-                </ScrollView>
-              )}
-            </View>
-          </View>
-
           <View style={styles.pickerSection}>
             <WorkbenchCategoryTabs active={activeCategory} onChange={setActiveCategory} />
 
@@ -233,24 +296,28 @@ const styles = StyleSheet.create({
   workbenchZone: {
     flex: 1,
   },
-  workbenchScroll: {
+  pickerScroll: {
     flex: 1,
   },
-  workbenchContent: {
-    gap: Spacing.lg,
+  pickerScrollContent: {
+    flexGrow: 1,
   },
   surfaceStage: {
     position: 'relative',
     marginTop: Spacing.xs,
+    marginBottom: -Spacing.sm,
   },
   surfaceOverlay: {
     position: 'absolute',
     left: 28,
     right: 28,
-    top: 72,
-    bottom: 28,
     justifyContent: 'flex-start',
+  },
+  emptyBench: {
+    flex: 1,
+    paddingTop: Spacing.sm,
     gap: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
   },
   surfaceLabel: {
     fontSize: 11,
@@ -260,25 +327,65 @@ const styles = StyleSheet.create({
     color: SolderiColors.textMuted,
     opacity: 0.85,
   },
+  benchLabel: {
+    width: BENCH_LABEL_WIDTH,
+    paddingTop: BENCH_SCROLL_TOP_PAD + 18,
+  },
+  benchCollection: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+  },
+  benchScrollWrap: {
+    flex: 1,
+    height: BENCH_SCROLL_AREA_HEIGHT,
+    position: 'relative',
+  },
+  benchScroll: {
+    flex: 1,
+    height: BENCH_SCROLL_AREA_HEIGHT,
+  },
+  benchScrollContent: {
+    height: BENCH_SCROLL_AREA_HEIGHT,
+    paddingTop: BENCH_SCROLL_TOP_PAD,
+    paddingRight: Spacing.lg,
+    alignItems: 'flex-start',
+  },
+  benchScrollHint: {
+    position: 'absolute',
+    right: 0,
+    top: BENCH_SCROLL_TOP_PAD + BENCH_GRID_HEIGHT / 2 - 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: SolderiColors.overlayLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  benchGrid: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    height: BENCH_GRID_HEIGHT,
+    gap: BENCH_COL_GAP,
+  },
+  benchColumn: {
+    gap: BENCH_ROW_GAP,
+  },
+  benchTileSlot: {
+    width: BENCH_TILE_WIDTH,
+    height: BENCH_TILE_HEIGHT,
+  },
   emptyBenchText: {
     fontSize: 13,
+    lineHeight: 19,
     color: SolderiColors.textSecondary,
-    opacity: 0.75,
-    marginTop: Spacing.sm,
-  },
-  collectionScroll: {
-    flexGrow: 0,
-    marginTop: Spacing.xs,
-  },
-  collectionRow: {
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xs,
-    alignItems: 'flex-end',
+    opacity: 0.8,
+    maxWidth: 260,
   },
   pickerSection: {
-    gap: Spacing.lg,
-    paddingTop: Spacing.sm,
+    gap: Spacing.md,
+    paddingTop: Spacing.xs,
   },
   pickerGrid: {
     flexDirection: 'row',

@@ -1,10 +1,10 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { SolderiColors } from '@/constants/colors';
-import { COMPONENT_CATEGORY_LABELS, type ComponentCategory } from '@/constants/onboarding';
+import { COMPONENT_CATEGORY_LABELS, COMPONENT_CATEGORY_ORDER, type ComponentCategory } from '@/constants/onboarding';
 import { Radii, Spacing } from '@/constants/tokens';
 
-const CATEGORIES = Object.keys(COMPONENT_CATEGORY_LABELS) as ComponentCategory[];
+const CATEGORIES = COMPONENT_CATEGORY_ORDER;
 
 type WorkbenchCategoryTabsProps = {
   active: ComponentCategory;
