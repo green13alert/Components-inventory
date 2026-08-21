@@ -246,7 +246,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
           </ClipPath>
         </Defs>
 
-        <Rect x={4} y={4} width={352} height={192} rx={14} fill="url(#frameGrad)" stroke={SolderiColors.border} strokeWidth={1} />
+        <Rect x={0} y={0} width={360} height={200} rx={14} fill="url(#frameGrad)" />
         <HeroWorkbenchEnvironment />
 
         <G>
@@ -348,7 +348,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
         </G>
 
         {selectedIds.length > 0 ? (
-          <Rect x={4} y={4} width={352} height={192} rx={14} fill={SolderiColors.accent} opacity={0.035} />
+          <Rect x={0} y={0} width={360} height={200} rx={14} fill={SolderiColors.accent} opacity={0.035} />
         ) : null}
       </Svg>
     </View>

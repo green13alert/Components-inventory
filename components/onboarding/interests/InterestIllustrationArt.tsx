@@ -332,10 +332,19 @@ export function HeroWorkbenchEnvironment() {
       <Path d="M 118 28 L 128 22 L 138 28 L 138 42 L 118 42 Z" fill={HW.metalDark} opacity={0.7} />
       <Circle cx={128} cy={24} r={3} fill={HW.metal} />
       <Line x1={108} y1={38} x2={148} y2={38} stroke={HW.metalDark} strokeWidth={1.2} opacity={0.5} />
-      <Ellipse cx={180} cy={20} rx={40} ry={12} fill="#FFB547" opacity={0.12} />
-      <Path d="M 168 8 L 180 0 L 192 8 L 190 18 L 170 18 Z" fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.5} />
-      <Rect x={176} y={18} width={8} height={14} rx={1} fill={HW.metal} />
-      <Ellipse cx={180} cy={34} rx={52} ry={8} fill="#FFB547" opacity={0.08} />
+      {/* Overhead shop light — long rod from ceiling, compact shade + bulb */}
+      <Rect x={177} y={5} width={6} height={3} rx={0.5} fill={HW.metalDark} />
+      <Rect x={178.5} y={8} width={3} height={16} rx={0.5} fill={HW.metal} stroke={HW.metalDark} strokeWidth={0.35} />
+      <Rect x={173} y={24} width={14} height={5} rx={1} fill={HW.metal} stroke={HW.metalDark} strokeWidth={0.4} />
+      <Path
+        d="M 172 29 L 172 33 Q 180 38 188 33 L 188 29 Z"
+        fill={HW.metalLight}
+        stroke={HW.metalDark}
+        strokeWidth={0.45}
+      />
+      <Ellipse cx={180} cy={35} rx={6.5} ry={3.5} fill="#FFF8E7" opacity={0.9} />
+      <Ellipse cx={180} cy={34.5} rx={3} ry={1.4} fill="#FFFFFF" opacity={0.45} />
+      <Ellipse cx={180} cy={38} rx={48} ry={10} fill="#FFB547" opacity={0.1} />
       <Path d="M 16 128 L 344 128 L 352 148 L 8 148 Z" fill="#3A4044" stroke="#454B50" strokeWidth={0.6} />
       <Path d="M 8 148 L 352 148 L 360 168 L 0 168 Z" fill="#2A2E31" stroke="#363B3E" strokeWidth={0.5} />
       <Line x1={16} y1={130} x2={344} y2={130} stroke={HW.highlightSoft} strokeWidth={0.8} opacity={0.35} />
