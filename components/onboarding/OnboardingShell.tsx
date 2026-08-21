@@ -19,6 +19,7 @@ type OnboardingShellProps = {
   background?: 'gradient' | 'pcb-top' | 'pcb-subtle';
   backgroundOverlay?: ReactNode;
   scrollable?: boolean;
+  headerGap?: number;
 };
 
 export function OnboardingShell({
@@ -31,12 +32,13 @@ export function OnboardingShell({
   background = 'gradient',
   backgroundOverlay,
   scrollable = true,
+  headerGap,
 }: OnboardingShellProps) {
   const insets = useSafeAreaInsets();
 
   const content = (
     <>
-      <View style={styles.headerCopy}>
+      <View style={[styles.headerCopy, headerGap != null && { marginBottom: headerGap }]}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>

@@ -33,21 +33,18 @@ export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export const EXPERIENCE_OPTIONS = [
   {
     id: 'beginner' as const,
-    emoji: '🌱',
     title: 'Beginner',
-    subtitle: "I'm just getting started",
+    subtitle: 'Just getting started with electronics',
   },
   {
     id: 'intermediate' as const,
-    emoji: '🔧',
     title: 'Intermediate',
-    subtitle: "I've built a few projects",
+    subtitle: "I've built a few projects before",
   },
   {
     id: 'advanced' as const,
-    emoji: '⚡',
     title: 'Advanced',
-    subtitle: "I'm comfortable designing my own projects",
+    subtitle: "I'm comfortable building complex projects",
   },
 ];
 

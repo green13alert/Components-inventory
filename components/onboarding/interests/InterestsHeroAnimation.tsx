@@ -346,10 +346,6 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
             <HeroConveyorPackagesSceneGraphic />
           </G>
         </G>
-
-        {selectedIds.length > 0 ? (
-          <Rect x={0} y={0} width={360} height={200} rx={14} fill={SolderiColors.accent} opacity={0.035} />
-        ) : null}
       </Svg>
     </View>
   );

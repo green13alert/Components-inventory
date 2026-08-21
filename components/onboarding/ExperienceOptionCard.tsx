@@ -1,49 +1,45 @@
 import { useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg from 'react-native-svg';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
 
+import { SkillLevelIllustration } from '@/components/onboarding/experience/SkillLevelIllustrations';
 import { SolderiColors } from '@/constants/colors';
+import type { ExperienceLevel } from '@/constants/onboarding';
 import { Radii, Spacing } from '@/constants/tokens';
 
 type ExperienceOptionCardProps = {
-  emoji: string;
+  tier: ExperienceLevel;
   title: string;
   subtitle: string;
   selected: boolean;
-  hasSelection: boolean;
   onPress: () => void;
 };
 
-const SPRING = { damping: 18, stiffness: 220, mass: 0.8 };
+const SPRING = { damping: 20, stiffness: 260, mass: 0.75 };
+const ILLUSTRATION_SIZE = 48;
 
 export function ExperienceOptionCard({
-  emoji,
+  tier,
   title,
   subtitle,
   selected,
-  hasSelection,
   onPress,
 }: ExperienceOptionCardProps) {
   const scale = useSharedValue(1);
-  const recede = useSharedValue(1);
 
   useEffect(() => {
-    scale.value = withSpring(selected ? 1.03 : 1, SPRING);
-    recede.value = withSpring(hasSelection && !selected ? 0.58 : 1, SPRING);
-  }, [hasSelection, recede, scale, selected]);
+    scale.value = withSpring(selected ? 1.02 : 1, SPRING);
+  }, [scale, selected]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: recede.value,
-  }));
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: selected ? 1.12 : 1 }],
   }));
 
   return (
@@ -56,21 +52,24 @@ export function ExperienceOptionCard({
         scale.value = withSpring(0.985, SPRING);
       }}
       onPressOut={() => {
-        scale.value = withSpring(selected ? 1.03 : 1, SPRING);
+        scale.value = withSpring(selected ? 1.02 : 1, SPRING);
       }}
       accessibilityRole="button"
-      accessibilityState={{ selected }}>
-      <Animated.View style={[styles.stage, selected && styles.stageSelected, animatedStyle]}>
-        <Animated.View style={[styles.iconRing, selected && styles.iconRingSelected, iconStyle]}>
-          <Text style={[styles.emoji, selected && styles.emojiSelected]}>{emoji}</Text>
-        </Animated.View>
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${title}${selected ? ', selected' : ''}`}>
+      <Animated.View style={[styles.card, selected && styles.cardSelected, animatedStyle]}>
+        <View style={[styles.illustrationWrap, selected && styles.illustrationWrapSelected]}>
+          <Svg width={ILLUSTRATION_SIZE} height={ILLUSTRATION_SIZE} viewBox="0 0 64 64">
+            <SkillLevelIllustration tier={tier} accent={selected} />
+          </Svg>
+        </View>
 
         <View style={styles.copy}>
           <View style={styles.titleRow}>
-            <Text style={[styles.stageLabel, selected && styles.stageLabelSelected]}>
-              {title}
-            </Text>
-            {selected ? <View style={styles.activeDot} /> : null}
+            <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
+            {selected ? (
+              <Ionicons name="checkmark-circle" size={18} color={SolderiColors.accent} />
+            ) : null}
           </View>
           <Text style={[styles.subtitle, selected && styles.subtitleSelected]} numberOfLines={2}>
             {subtitle}
@@ -82,46 +81,40 @@ export function ExperienceOptionCard({
 }
 
 const styles = StyleSheet.create({
-  stage: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    minHeight: 88,
-    paddingVertical: Spacing.sm + 2,
+    minHeight: 68,
+    paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderRadius: Radii.lg,
     backgroundColor: SolderiColors.surface,
     borderWidth: 1,
     borderColor: SolderiColors.border,
   },
-  stageSelected: {
+  cardSelected: {
     backgroundColor: SolderiColors.accentMuted,
     borderColor: SolderiColors.accentBorder,
     shadowColor: SolderiColors.accent,
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 5,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  iconRing: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+  illustrationWrap: {
+    width: ILLUSTRATION_SIZE,
+    height: ILLUSTRATION_SIZE,
+    borderRadius: Radii.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: SolderiColors.surfaceElevated,
     borderWidth: 1,
     borderColor: SolderiColors.border,
   },
-  iconRingSelected: {
-    backgroundColor: 'rgba(255, 181, 71, 0.2)',
+  illustrationWrapSelected: {
+    backgroundColor: 'rgba(255, 181, 71, 0.12)',
     borderColor: SolderiColors.accentBorder,
-  },
-  emoji: {
-    fontSize: 26,
-  },
-  emojiSelected: {
-    fontSize: 30,
   },
   copy: {
     flex: 1,
@@ -133,23 +126,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  stageLabel: {
-    fontSize: 17,
+  title: {
+    fontSize: 16,
     fontWeight: '700',
     color: SolderiColors.textPrimary,
+    flexShrink: 1,
   },
-  stageLabelSelected: {
+  titleSelected: {
     color: SolderiColors.textPrimary,
   },
-  activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: SolderiColors.accent,
-  },
   subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     color: SolderiColors.textSecondary,
   },
   subtitleSelected: {
