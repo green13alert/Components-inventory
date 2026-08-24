@@ -26,7 +26,8 @@ export type ComponentIllustrationId =
   | 'generic-board'
   | 'generic-module'
   | 'generic-motor'
-  | 'generic-display';
+  | 'generic-display'
+  | 'electronics-kit';
 
 /** Canonical onboarding / catalog ids map 1:1 to illustration ids. */
 export const ONBOARDING_COMPONENT_IDS = [
@@ -65,6 +66,7 @@ const DIRECT_IDS = new Set<string>([
   'generic-module',
   'generic-motor',
   'generic-display',
+  'electronics-kit',
 ]);
 
 type ResolveInput = {
@@ -75,7 +77,7 @@ type ResolveInput = {
 const NAME_RULES: { pattern: RegExp; id: ComponentIllustrationId }[] = [
   { pattern: /arduino/i, id: 'arduino-uno' },
   { pattern: /esp32|esp-32/i, id: 'esp32' },
-  { pattern: /servo/i, id: 'servo-sg90' },
+  { pattern: /sg90|servo/i, id: 'servo-sg90' },
   { pattern: /hc-sr04|ultrasonic/i, id: 'hc-sr04' },
   { pattern: /oled/i, id: 'oled' },
   { pattern: /dht\d|temp.*humid|humidity sensor|temperature probe/i, id: 'dht11' },
@@ -145,6 +147,7 @@ export function getComponentDisplayName(id: ComponentIllustrationId): string {
     'generic-module': 'Module',
     'generic-motor': 'Motor',
     'generic-display': 'Display',
+    'electronics-kit': 'Components',
   };
   return labels[id];
 }

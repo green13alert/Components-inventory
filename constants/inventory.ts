@@ -12,6 +12,10 @@ export type InventoryComponent = {
   name: string;
   category: Exclude<ComponentCategory, 'all'>;
   quantity: number;
+  /** Present when the item was chosen from the component catalogue. */
+  catalogueId?: string;
+  /** Catalogue subtype, e.g. temperature_humidity. */
+  type?: string;
 };
 
 export const COMPONENT_FILTERS: { id: ComponentCategory; label: string }[] = [

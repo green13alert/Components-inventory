@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, Line, Path, Rect } from 'react-native-svg';
 
 import { HW } from '@/constants/component-illustration-palette';
+import { SolderiColors } from '@/constants/colors';
 import {
   resolveComponentIllustration,
   type ComponentIllustrationId,
@@ -100,6 +101,8 @@ function IllustrationArt({
       return <DcMotor size={size} showGroundShadow={showGroundShadow} />;
     case 'generic-display':
       return <Oled size={size} showGroundShadow={showGroundShadow} />;
+    case 'electronics-kit':
+      return <ElectronicsKit size={size} showGroundShadow={showGroundShadow} />;
     default:
       return <GenericModule size={size} showGroundShadow={showGroundShadow} />;
   }
@@ -466,6 +469,76 @@ function JumperWires({ size, showGroundShadow = true }: IllustrationProps) {
       <Circle cx={12} cy={42} r={3} fill={HW.wireRed} />
       <Circle cx={52} cy={26} r={3} fill={HW.wireRed} />
       <Circle cx={46} cy={36} r={3} fill={HW.wireGreen} />
+    </IllustrationSvg>
+  );
+}
+
+/** Empty-state cluster — generic parts, not one identifiable product. */
+function ElectronicsKit({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      {/* Generic PCB */}
+      <Rect
+        x={12}
+        y={16}
+        width={30}
+        height={18}
+        rx={2}
+        fill={HW.pcbBlue}
+        stroke={HW.pcbBlueDark}
+        strokeWidth={0.7}
+      />
+      <TopSheen x={14} y={17} w={16} h={4} rx={1} />
+      <Rect x={18} y={21} width={14} height={8} rx={1} fill={HW.icBlack} stroke={HW.icPin} strokeWidth={0.45} />
+      <TopSheen x={19} y={21.5} w={7} h={2} rx={0.4} />
+      {[16, 20, 24, 28, 32].map((x) => (
+        <Rect key={x} x={x} y={30} width={1.6} height={4} rx={0.3} fill={HW.pinGold} />
+      ))}
+      <Circle cx={38} cy={20} r={1.6} fill={SolderiColors.accent} />
+      <Circle cx={38} cy={20} r={0.6} fill={HW.highlight} opacity={0.7} />
+
+      {/* Generic sensor / module */}
+      <Rect
+        x={40}
+        y={18}
+        width={14}
+        height={16}
+        rx={2}
+        fill={HW.sensorBlue}
+        stroke={HW.sensorBlueLight}
+        strokeWidth={0.6}
+      />
+      <TopSheen x={41.5} y={19} w={8} h={3.5} rx={1} />
+      {[43, 47, 51].map((x) =>
+        [24, 28].map((y) => (
+          <Circle key={`${x}-${y}`} cx={x} cy={y} r={0.9} fill={HW.sensorVent} opacity={0.7} />
+        )),
+      )}
+
+      {/* Resistor */}
+      <Line x1={8} y1={44} x2={14} y2={44} stroke={HW.pinSilver} strokeWidth={1.3} strokeLinecap="round" />
+      <Line x1={32} y1={44} x2={38} y2={44} stroke={HW.pinSilver} strokeWidth={1.3} strokeLinecap="round" />
+      <Rect x={14} y={40} width={18} height={8} rx={4} fill={HW.resistorBody} stroke="#B8A888" strokeWidth={0.5} />
+      <TopSheen x={16} y={41} w={8} h={2.5} rx={1} />
+      <Rect x={17} y={41} width={2.2} height={6} rx={0.6} fill={HW.bandBrown} />
+      <Rect x={21} y={41} width={2.2} height={6} rx={0.6} fill={HW.bandRed} />
+      <Rect x={26} y={41} width={2.2} height={6} rx={0.6} fill={HW.bandGold} />
+
+      {/* Wires */}
+      <Path d="M 42 34 Q 50 38 48 48" stroke={HW.wireRed} strokeWidth={1.8} fill="none" strokeLinecap="round" />
+      <Path
+        d="M 40 34 Q 44 42 54 46"
+        stroke={SolderiColors.accent}
+        strokeWidth={1.8}
+        fill="none"
+        strokeLinecap="round"
+      />
+      <Circle cx={48} cy={48} r={2} fill={HW.wireRed} />
+      <Circle cx={54} cy={46} r={2} fill={SolderiColors.accent} />
+
+      {/* Small LED */}
+      <Ellipse cx={44} cy={42} rx={3.2} ry={3} fill={HW.ledRed} />
+      <Ellipse cx={43} cy={41} rx={1.4} ry={1} fill={HW.ledRedGlow} opacity={0.7} />
     </IllustrationSvg>
   );
 }
