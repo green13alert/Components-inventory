@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
 import { useAtlas } from '@/context/atlas-context';
 import { SolderiColors } from '@/constants/colors';
 import { getProjectSteps } from '@/constants/project-steps';
 import { getProjectById, getStartButtonLabel } from '@/constants/projects-data';
+import { getProjectSketch } from '@/constants/walkthrough-content';
 
 export default function ProjectBuildScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,7 +58,6 @@ export default function ProjectBuildScreen() {
   const handleNext = () => {
     if (isLastStep) {
       completeProject(project.id);
-      router.replace({ pathname: '/project/[id]', params: { id: project.id } });
       return;
     }
     setProjectStep(project.id, currentStepIndex + 1);
@@ -108,36 +109,13 @@ export default function ProjectBuildScreen() {
 
   if (isCompleted) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.topBar}>
-          <Pressable
-            style={styles.iconButton}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
-          </Pressable>
-          <Text style={styles.topBarTitle} numberOfLines={1}>
-            {project.title}
-          </Text>
-          <View style={styles.iconButton} />
-        </View>
-        <View style={styles.readyState}>
-          <View style={[styles.readyIcon, styles.completedIcon]}>
-            <Ionicons name="checkmark-circle" size={48} color={SolderiColors.success} />
-          </View>
-          <Text style={styles.readyTitle}>Project complete!</Text>
-          <Text style={styles.readySubtitle}>
-            You finished all {steps.length} steps. Great work on {project.title}.
-          </Text>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => router.replace({ pathname: '/project/[id]', params: { id: project.id } })}
-            accessibilityRole="button">
-            <Text style={styles.primaryButtonText}>Back to Project</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <ProjectCompleteView
+        title={project.title}
+        stepCount={steps.length}
+        onBackToProject={() => router.replace({ pathname: '/project/[id]', params: { id: project.id } })}
+        onBrowseProjects={() => router.replace('/projects')}
+        sketch={getProjectSketch(project)}
+      />
     );
   }
 
@@ -187,12 +165,7 @@ export default function ProjectBuildScreen() {
         </View>
         <Text style={styles.stepTitle}>{currentStep.title}</Text>
         <Text style={styles.stepDescription}>{currentStep.description}</Text>
-        {currentStep.tip ? (
-          <View style={styles.tipCard}>
-            <Ionicons name="bulb-outline" size={18} color={SolderiColors.warning} />
-            <Text style={styles.tipText}>{currentStep.tip}</Text>
-          </View>
-        ) : null}
+        <StepContent blocks={currentStep.blocks} />
 
         <View style={styles.stepDots}>
           {steps.map((step, index) => (
@@ -222,6 +195,78 @@ export default function ProjectBuildScreen() {
           <Ionicons name={isLastStep ? 'checkmark' : 'chevron-forward'} size={18} color={SolderiColors.onAccent} />
         </Pressable>
       </View>
+    </SafeAreaView>
+  );
+}
+
+function ProjectCompleteView({
+  title,
+  stepCount,
+  onBackToProject,
+  onBrowseProjects,
+  sketch,
+}: {
+  title: string;
+  stepCount: number;
+  onBackToProject: () => void;
+  onBrowseProjects: () => void;
+  sketch: ReturnType<typeof getProjectSketch>;
+}) {
+  const [showCode, setShowCode] = useState(false);
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.topBar}>
+        <Pressable
+          style={styles.iconButton}
+          onPress={onBackToProject}
+          accessibilityRole="button"
+          accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
+        </Pressable>
+        <View style={styles.topBarCenter}>
+          <Text style={styles.topBarTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+        <View style={styles.iconButton} />
+      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.completeScroll}
+        showsVerticalScrollIndicator={false}>
+        <View style={[styles.readyIcon, styles.completedIcon]}>
+          <Ionicons name="checkmark-circle" size={48} color={SolderiColors.success} />
+        </View>
+        <Text style={styles.completeKicker}>Project complete</Text>
+        <Text style={styles.readyTitle}>You've finished the project.</Text>
+        <Text style={styles.readySubtitle}>
+          You completed all {stepCount} steps of {title}.
+        </Text>
+
+        {showCode ? (
+          <View style={styles.completeCode}>
+            <CodeBlock {...sketch} />
+          </View>
+        ) : null}
+
+        <View style={styles.completeActions}>
+          <Pressable
+            style={styles.secondaryButtonWide}
+            onPress={() => setShowCode((open) => !open)}
+            accessibilityRole="button">
+            <Ionicons name="code-slash-outline" size={18} color={SolderiColors.textPrimary} />
+            <Text style={styles.secondaryButtonText}>{showCode ? 'Hide code' : 'View code'}</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButtonWide} onPress={onBrowseProjects} accessibilityRole="button">
+            <Ionicons name="albums-outline" size={18} color={SolderiColors.textPrimary} />
+            <Text style={styles.secondaryButtonText}>Start another project</Text>
+          </Pressable>
+          <Pressable style={styles.primaryButton} onPress={onBackToProject} accessibilityRole="button">
+            <Text style={styles.primaryButtonText}>Back to Project</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -323,22 +368,6 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     color: SolderiColors.textSecondary,
   },
-  tipCard: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: SolderiColors.accentMuted,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: SolderiColors.accentBorder,
-    padding: 16,
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 21,
-    color: SolderiColors.warning,
-    fontWeight: '500',
-  },
   stepDots: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -432,6 +461,40 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: SolderiColors.textSecondary,
     textAlign: 'center',
+  },
+  completeScroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    gap: 16,
+    alignItems: 'center',
+  },
+  completeKicker: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: SolderiColors.success,
+    textAlign: 'center',
+  },
+  completeActions: {
+    width: '100%',
+    gap: 10,
+    marginTop: 8,
+  },
+  completeCode: {
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  secondaryButtonWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: SolderiColors.surface,
+    borderWidth: 1,
+    borderColor: SolderiColors.border,
   },
   notFound: {
     flex: 1,

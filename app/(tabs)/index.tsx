@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeOnboardingDevButton } from '@/components/dev/onboarding-shortcuts';
+import { ContinueBuildingCarousel } from '@/components/home/ContinueBuildingCarousel';
 import { ContinueProjectCard } from '@/components/home/ContinueProjectCard';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { HomeRecommendedCard } from '@/components/home/HomeRecommendedCard';
@@ -25,17 +26,13 @@ export default function HomeScreen() {
   const { getProjectsWithStatus, inventory, getCurrentStepIndex } = useAtlas();
 
   const projects = getProjectsWithStatus();
-  const continueProject = projects.find((p) => p.status === 'in_progress');
+  const continueProjects = projects.filter((p) => p.status === 'in_progress');
   const recommendedProjects = RECOMMENDED_PROJECT_IDS.map((id) => projects.find((p) => p.id === id)!);
   const recentComponents = RECENT_COMPONENT_IDS.map((id) => inventory.find((c) => c.id === id)!).filter(
     Boolean,
   );
 
   const completedCount = projects.filter((p) => p.status === 'completed').length;
-
-  const continueSteps = continueProject ? getProjectSteps(continueProject) : [];
-  const continueStepIndex = continueProject ? getCurrentStepIndex(continueProject.id) : 0;
-  const continueStep = continueSteps[continueStepIndex];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -53,16 +50,29 @@ export default function HomeScreen() {
         keyboardShouldPersistTaps="handled">
         <HomeHeader />
 
-        {continueProject ? (
+        {continueProjects.length > 0 ? (
           <View style={styles.section}>
             <SectionHeading title="Continue Building" />
-            <ContinueProjectCard
-              projectId={continueProject.id}
-              title={continueProject.title}
-              stepLabel={`Step ${continueStepIndex + 1} of ${continueSteps.length}`}
-              stepTitle={continueStep?.title ?? ''}
-              progress={continueProject.progress ?? 0}
-              image={continueProject.image}
+            <ContinueBuildingCarousel
+              items={continueProjects}
+              keyExtractor={(project) => project.id}
+              renderItem={(project, cardWidth) => {
+                const steps = getProjectSteps(project);
+                const stepIndex = getCurrentStepIndex(project.id);
+                const step = steps[stepIndex];
+
+                return (
+                  <ContinueProjectCard
+                    projectId={project.id}
+                    title={project.title}
+                    stepLabel={`Step ${stepIndex + 1} of ${steps.length}`}
+                    stepTitle={step?.title ?? ''}
+                    progress={project.progress ?? 0}
+                    image={project.image}
+                    width={cardWidth}
+                  />
+                );
+              }}
             />
           </View>
         ) : null}

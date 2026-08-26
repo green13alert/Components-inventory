@@ -13,6 +13,7 @@ type ContinueProjectCardProps = {
   stepTitle: string;
   progress: number;
   image: ProjectImage;
+  width?: number;
 };
 
 export function ContinueProjectCard({
@@ -22,12 +23,17 @@ export function ContinueProjectCard({
   stepTitle,
   progress,
   image,
+  width,
 }: ContinueProjectCardProps) {
   const router = useRouter();
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.container,
+        width != null && { width },
+        pressed && styles.pressed,
+      ]}
       onPress={() => router.push(`/project/${projectId}`)}
       accessibilityRole="button"
       accessibilityLabel={`Continue building ${title}`}>

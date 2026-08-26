@@ -1,13 +1,17 @@
-import { Project, ProjectCategory, getStepCount } from '@/constants/projects-data';
+import { Project, ProjectCategory, getProjectComponents, getStepCount } from '@/constants/projects-data';
+import { buildStepBlocks, type StepBlock } from '@/constants/walkthrough-content';
 
 export type ProjectStep = {
   id: string;
   title: string;
   description: string;
   tip?: string;
+  blocks: StepBlock[];
 };
 
-const STEP_TEMPLATES: Record<ProjectCategory, Omit<ProjectStep, 'id'>[]> = {
+type StepTemplate = Omit<ProjectStep, 'id' | 'blocks'>;
+
+const STEP_TEMPLATES: Record<ProjectCategory, StepTemplate[]> = {
   sensors: [
     {
       title: 'Gather your components',
@@ -283,10 +287,10 @@ export function getProjectSteps(project: Project): ProjectStep[] {
   const templates = STEP_TEMPLATES[project.category];
   const count = getStepCount(project.difficulty);
   const selected = templates.slice(0, count);
+  const components = getProjectComponents(project);
 
-  return selected.map((step, index) => ({
+  const titled = selected.map((step, index) => ({
     ...step,
-    id: `${project.id}-step-${index}`,
     title:
       index === 0
         ? `Introduction — ${project.title}`
@@ -297,6 +301,18 @@ export function getProjectSteps(project: Project): ProjectStep[] {
       index === 0
         ? `Welcome to ${project.title}! ${step.description}`
         : step.description,
+  }));
+
+  return titled.map((step, index) => ({
+    ...step,
+    id: `${project.id}-step-${index}`,
+    blocks: buildStepBlocks({
+      project,
+      step,
+      index,
+      steps: titled,
+      components,
+    }),
   }));
 }
 

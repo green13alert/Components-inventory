@@ -21,6 +21,7 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
         />
       </View>
       <Text style={[styles.name, !component.owned && styles.nameMissing]}>{component.name}</Text>
+      <Text style={styles.quantity}>×{component.quantity}</Text>
       <View style={[styles.badge, component.owned ? styles.badgeOwned : styles.badgeMissing]}>
         <Ionicons
           name={component.owned ? 'checkmark' : 'close'}
@@ -66,6 +67,11 @@ const styles = StyleSheet.create({
   },
   nameMissing: {
     color: SolderiColors.textSecondary,
+  },
+  quantity: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: SolderiColors.textMuted,
   },
   badge: {
     flexDirection: 'row',

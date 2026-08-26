@@ -14,6 +14,7 @@ import {
   getProjectById,
   getProjectComponents,
   getProjectOverview,
+  getProjectLearningPoints,
   getStartButtonLabel,
   getStepCount,
 } from '@/constants/projects-data';
@@ -49,6 +50,7 @@ export default function ProjectDetailScreen() {
   const matchPercent = Math.round((project.ownedParts / project.totalParts) * 100);
   const missingCount = project.totalParts - project.ownedParts;
   const overview = getProjectOverview(project);
+  const learningPoints = getProjectLearningPoints(project);
   const stepCount = getStepCount(project.difficulty);
   const status = getProjectStatus(project.id);
   const progress = getProjectProgressPercent(project.id, project.difficulty);
@@ -120,6 +122,15 @@ export default function ProjectDetailScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Overview</Text>
             <Text style={styles.overviewText}>{overview}</Text>
+            <View style={styles.learnList}>
+              <Text style={styles.learnHeading}>You'll learn</Text>
+              {learningPoints.map((point) => (
+                <View key={point} style={styles.learnRow}>
+                  <View style={styles.learnDot} />
+                  <Text style={styles.learnText}>{point}</Text>
+                </View>
+              ))}
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -324,6 +335,33 @@ const styles = StyleSheet.create({
   overviewText: {
     fontSize: 15,
     lineHeight: 24,
+    color: SolderiColors.textSecondary,
+  },
+  learnList: {
+    gap: 10,
+    paddingTop: 4,
+  },
+  learnHeading: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: SolderiColors.textPrimary,
+  },
+  learnRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  learnDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: SolderiColors.accent,
+    marginTop: 7,
+  },
+  learnText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
     color: SolderiColors.textSecondary,
   },
   detailsCard: {

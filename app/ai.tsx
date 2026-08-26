@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -8,55 +9,88 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ChatBubble, ChatMessage } from '@/components/ai/ChatBubble';
-import { SuggestionChip } from '@/components/ai/SuggestionChip';
+import { AiCommandBar } from '@/components/ai/AiCommandBar';
+import { AiHistoryPanel } from '@/components/ai/AiHistoryPanel';
+import { AiNetworkVisual } from '@/components/ai/AiNetworkVisual';
+import { ConversationTurn } from '@/components/ai/ConversationTurn';
+import {
+  AI_COPY,
+  PLACEHOLDER_CHATS,
+  type ChatMessage,
+  type ChatSession,
+} from '@/constants/ai';
 import { SolderiColors } from '@/constants/colors';
-
-const SUGGESTIONS = [
-  'What parts do I need for a weather station?',
-  'Help me debug my LED circuit',
-  'Suggest a beginner project with my inventory',
-];
-
-const WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
-    "Hi! I'm Atlas AI, your Arduino building assistant. I can help with wiring, component selection, debugging, and project ideas based on your inventory. What are you working on?",
-};
+import { Spacing, Typography } from '@/constants/tokens';
 
 function getMockResponse(input: string): string {
   const query = input.toLowerCase();
 
   if (query.includes('weather')) {
-    return 'For a basic weather station you\'ll need: Arduino Uno, DHT22 (temp/humidity), BMP280 (pressure), a 16x2 LCD or OLED display, breadboard, jumper wires, and a 10kΩ resistor. You already own 7 of 9 parts — you\'re missing the BMP280 and LCD.';
+    return 'A compact weather station can start with temperature and humidity, then add pressure if you want a fuller reading. I can outline the sensors and wiring once you pick indoor or outdoor.';
   }
   if (query.includes('led') || query.includes('debug')) {
-    return 'Common LED issues: check polarity (long leg = anode/+), confirm you\'re using a 220Ω–330Ω resistor, verify the pin is set to OUTPUT in setup(), and make sure GND is connected. If it\'s dim, the resistor may be too large.';
+    return 'For a typical LED circuit I would check polarity first, confirm a 220Ω–330Ω resistor is in series, and verify the pin is set to OUTPUT.';
   }
-  if (query.includes('beginner') || query.includes('inventory') || query.includes('suggest')) {
-    return 'Based on your inventory, I\'d recommend the Motion Sensor Alarm — you have 5 of 6 parts. It\'s a 1.5 hr beginner build and only needs a PIR sensor you don\'t have yet. Want me to list the full wiring steps?';
+  if (query.includes('esp32') || query.includes('temperature')) {
+    return 'On ESP32, power the sensor from 3.3V, share ground, and use a free GPIO for data. I can map the pins once you choose the sensor.';
+  }
+  if (query.includes('robot') || query.includes('arm')) {
+    return 'A small arm can begin with three servos and a simple gripper. Prove the base rotation first, then add reach.';
   }
 
-  return 'Good question! I can help with component lists, wiring diagrams, code snippets, and troubleshooting. Try asking about a specific project or part you\'re stuck on.';
+  return 'Tell me what you are building and I can help with parts, wiring, or a first plan.';
+}
+
+function titleFromPrompt(input: string) {
+  const trimmed = input.trim();
+  if (trimmed.length <= 36) return trimmed;
+  return `${trimmed.slice(0, 33).trim()}…`;
 }
 
 export default function AiScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<ChatMessage>>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+  const [sessions, setSessions] = useState<ChatSession[]>(PLACEHOLDER_CHATS);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isWorking, setIsWorking] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const activeSession = useMemo(
+    () => sessions.find((session) => session.id === activeId) ?? null,
+    [activeId, sessions],
+  );
+  const messages = activeSession?.messages ?? [];
+  const isEmpty = messages.length === 0;
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const startNewChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveId(null);
+    setInput('');
+    setIsWorking(false);
+    closeMenu();
+  };
+
+  const selectChat = (id: string) => {
+    Haptics.selectionAsync();
+    setActiveId(id);
+    setInput('');
+    setIsWorking(false);
+    closeMenu();
+  };
 
   const sendMessage = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || isTyping) return;
+    if (!trimmed || isWorking) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -64,9 +98,23 @@ export default function AiScreen() {
       content: trimmed,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const sessionId = activeId ?? `chat-${Date.now()}`;
+    const nextTitle = activeSession?.title ?? titleFromPrompt(trimmed);
+
+    setSessions((prev) => {
+      const existing = prev.find((session) => session.id === sessionId);
+      if (existing) {
+        return prev.map((session) =>
+          session.id === sessionId
+            ? { ...session, messages: [...session.messages, userMessage] }
+            : session,
+        );
+      }
+      return [{ id: sessionId, title: nextTitle, messages: [userMessage] }, ...prev];
+    });
+    setActiveId(sessionId);
     setInput('');
-    setIsTyping(true);
+    setIsWorking(true);
 
     setTimeout(() => {
       const assistantMessage: ChatMessage = {
@@ -74,90 +122,99 @@ export default function AiScreen() {
         role: 'assistant',
         content: getMockResponse(trimmed),
       };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsTyping(false);
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === sessionId
+            ? { ...session, messages: [...session.messages, assistantMessage] }
+            : session,
+        ),
+      );
+      setIsWorking(false);
     }, 900);
   };
 
-  const showSuggestions = messages.length === 1;
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
+        keyboardVerticalOffset={0}>
         <View style={styles.header}>
           <Pressable
-            style={styles.backButton}
+            style={styles.headerButton}
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
           </Pressable>
-          <View style={styles.headerIcon}>
-            <Ionicons name="sparkles" size={20} color={SolderiColors.accent} />
-          </View>
           <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Atlas AI</Text>
-            <Text style={styles.headerSubtitle}>Your Arduino building assistant</Text>
+            <Text style={styles.headerTitle}>{AI_COPY.title}</Text>
+            <Text style={styles.headerSubtitle}>{AI_COPY.subtitle}</Text>
           </View>
+          <Pressable
+            style={styles.headerButton}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMenuOpen((open) => !open);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={AI_COPY.openChats}
+            accessibilityState={{ expanded: menuOpen }}>
+            <Ionicons
+              name={menuOpen ? 'close' : 'menu-outline'}
+              size={22}
+              color={SolderiColors.textPrimary}
+            />
+          </Pressable>
         </View>
 
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ChatBubble message={item} />}
-          ItemSeparatorComponent={() => <View style={styles.messageGap} />}
-          contentContainerStyle={styles.messageList}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          ListFooterComponent={
-            showSuggestions ? (
-              <View style={styles.suggestions}>
-                <Text style={styles.suggestionsLabel}>Try asking</Text>
-                <View style={styles.suggestionChips}>
-                  {SUGGESTIONS.map((suggestion) => (
-                    <SuggestionChip
-                      key={suggestion}
-                      label={suggestion}
-                      onPress={() => sendMessage(suggestion)}
-                    />
-                  ))}
-                </View>
-              </View>
-            ) : isTyping ? (
-              <View style={styles.typingRow}>
-                <View style={styles.typingBubble}>
-                  <Text style={styles.typingText}>Atlas AI is thinking...</Text>
-                </View>
-              </View>
-            ) : null
-          }
-        />
-
-        <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-          <View style={styles.inputWrap}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask about wiring, parts, or projects..."
-              placeholderTextColor={SolderiColors.textMuted}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              maxLength={500}
-              editable={!isTyping}
+        <View style={styles.workspace}>
+          {isEmpty ? (
+            <View style={styles.empty}>
+              <AiNetworkVisual />
+            </View>
+          ) : (
+            <FlatList
+              ref={listRef}
+              data={messages}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <ConversationTurn message={item} />}
+              ItemSeparatorComponent={() => <View style={styles.turnGap} />}
+              contentContainerStyle={styles.thread}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+              ListFooterComponent={
+                isWorking ? (
+                  <View style={styles.working}>
+                    <View style={styles.workingMark} />
+                    <Text style={styles.workingText}>{AI_COPY.working}</Text>
+                  </View>
+                ) : (
+                  <View style={styles.threadEnd} />
+                )
+              }
             />
-            <Pressable
-              style={[styles.sendButton, (!input.trim() || isTyping) && styles.sendButtonDisabled]}
-              onPress={() => sendMessage(input)}
-              disabled={!input.trim() || isTyping}
-              accessibilityRole="button"
-              accessibilityLabel="Send message">
-              <Ionicons name="arrow-up" size={20} color={SolderiColors.onAccent} />
-            </Pressable>
-          </View>
+          )}
+
+          <AiCommandBar
+            value={input}
+            placeholder={AI_COPY.inputPlaceholder}
+            disabled={isWorking}
+            bottomInset={insets.bottom}
+            onChangeText={setInput}
+            onSubmit={() => sendMessage(input)}
+          />
+
+          {menuOpen ? (
+            <AiHistoryPanel
+              sessions={sessions}
+              activeId={activeId}
+              onNewChat={startNewChat}
+              onSelectChat={selectChat}
+              onClose={closeMenu}
+            />
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -175,116 +232,62 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: SolderiColors.border,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.lg,
   },
-  backButton: {
+  headerButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: SolderiColors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerText: {
     flex: 1,
     gap: 2,
+    paddingHorizontal: Spacing.sm,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    ...Typography.cardTitle,
     color: SolderiColors.textPrimary,
-    letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 13,
+    ...Typography.caption,
     color: SolderiColors.textSecondary,
   },
-  messageList: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-  },
-  messageGap: {
-    height: 12,
-  },
-  suggestions: {
-    marginTop: 8,
-    gap: 10,
-  },
-  suggestionsLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SolderiColors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  suggestionChips: {
-    gap: 8,
-  },
-  typingRow: {
-    marginTop: 4,
-  },
-  typingBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    borderRadius: 18,
-    borderBottomLeftRadius: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  typingText: {
-    fontSize: 14,
-    color: SolderiColors.textMuted,
-    fontStyle: 'italic',
-  },
-  inputBar: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: SolderiColors.border,
-    backgroundColor: SolderiColors.background,
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 10,
-    backgroundColor: SolderiColors.surface,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 6,
-  },
-  input: {
+  workspace: {
     flex: 1,
-    fontSize: 16,
-    color: SolderiColors.textPrimary,
-    maxHeight: 100,
-    paddingVertical: 8,
   },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: SolderiColors.accent,
+  empty: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendButtonDisabled: {
-    opacity: 0.4,
+  thread: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  turnGap: {
+    height: Spacing['2xl'],
+  },
+  working: {
+    marginTop: Spacing['2xl'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  workingMark: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: SolderiColors.accent,
+  },
+  workingText: {
+    ...Typography.caption,
+    color: SolderiColors.textMuted,
+  },
+  threadEnd: {
+    height: Spacing.lg,
   },
 });

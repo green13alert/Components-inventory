@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { SolderiColors } from '@/constants/colors';
@@ -6,20 +7,30 @@ import {
   PROJECT_BUILD_FEATURES,
   type MockRecommendedProject,
 } from '@/constants/onboarding';
+import { PROJECT_IMAGES } from '@/constants/projects';
 import { Radii, Spacing } from '@/constants/tokens';
 
 type OnboardingProjectCardProps = {
   project: MockRecommendedProject;
 };
 
+const ONBOARDING_PROJECT_IMAGES = {
+  'obstacle-robot': PROJECT_IMAGES.obstacleRobot,
+  'temp-monitor': PROJECT_IMAGES.weatherStation,
+  'servo-radar': PROJECT_IMAGES.servoCamera,
+} as const;
+
 export function OnboardingProjectCard({ project }: OnboardingProjectCardProps) {
   const complete = project.matched >= project.total;
   const metaLine = `${EXPERIENCE_LABELS[project.difficulty]} · ${project.matched}/${project.total} components`;
+  const image =
+    ONBOARDING_PROJECT_IMAGES[project.id as keyof typeof ONBOARDING_PROJECT_IMAGES] ??
+    PROJECT_IMAGES.obstacleRobot;
 
   return (
     <View style={styles.card}>
       <View style={styles.iconWrap}>
-        <Text style={styles.emoji}>{project.emoji}</Text>
+        <Image source={image} style={styles.image} contentFit="cover" transition={200} />
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{project.title}</Text>
@@ -59,12 +70,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: Radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     backgroundColor: SolderiColors.surfaceElevated,
   },
-  emoji: {
-    fontSize: 26,
+  image: {
+    width: '100%',
+    height: '100%',
   },
   content: {
     flex: 1,

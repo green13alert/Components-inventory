@@ -11,6 +11,7 @@ type ContinueLearningCardProps = {
   subtitle: string;
   progress: number;
   image: ProjectImage;
+  width?: number;
 };
 
 export function ContinueLearningCard({
@@ -19,11 +20,16 @@ export function ContinueLearningCard({
   subtitle,
   progress,
   image,
+  width,
 }: ContinueLearningCardProps) {
   return (
     <Link href={`/project/${projectId}`} asChild>
       <Pressable
-        style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.container,
+          width != null && { width },
+          pressed && styles.pressed,
+        ]}
         accessibilityRole="button">
       <Image source={image} style={styles.image} contentFit="cover" transition={200} />
       <View style={styles.body}>

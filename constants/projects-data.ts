@@ -12,6 +12,7 @@ export type ProjectComponent = {
   name: string;
   illustrationId: ComponentIllustrationId;
   owned: boolean;
+  quantity: number;
 };
 
 export type Project = {
@@ -153,6 +154,52 @@ export function getProjectOverview(project: Project): string {
   return `${project.description}. This ${DIFFICULTY_LABELS[project.difficulty].toLowerCase()} ${CATEGORY_LABELS[project.category].toLowerCase()} build walks you through wiring, coding, and testing with step-by-step guidance tailored to your skill level.`;
 }
 
+const LEARNING_POINTS: Record<ProjectCategory, string[]> = {
+  sensors: [
+    'How to wire analog and digital sensors',
+    'How to read, calibrate, and threshold sensor values',
+    'How to display live data and trigger alerts',
+  ],
+  robotics: [
+    'How to assemble a chassis and drive motors safely',
+    'How to wire motor drivers and distance or line sensors',
+    'How to test, calibrate, and tune robot motion',
+  ],
+  iot: [
+    'How to read sensors and connect a board to Wi-Fi',
+    'How to send data to a cloud dashboard',
+    'How to add a local display and alerts',
+  ],
+  automation: [
+    'How to plan inputs, outputs, and control logic',
+    'How to switch loads safely with relays',
+    'How to add a user interface and fail-safes',
+  ],
+  displays: [
+    'How to wire I2C and SPI display modules',
+    'How to install libraries and render text or graphics',
+    'How to drive a display from buttons or sensors',
+  ],
+};
+
+export function getProjectLearningPoints(project: Project): string[] {
+  return LEARNING_POINTS[project.category];
+}
+
+function inferComponentQuantity(name: string): number {
+  const n = name.toLowerCase();
+  if (/jumper/.test(n)) return 10;
+  if (/resistor kit/.test(n)) return 5;
+  if (/220/.test(n)) return 3;
+  if (/resistor/.test(n) && !/photoresistor/.test(n)) return 3;
+  if (/led pack/.test(n) || /traffic light leds/.test(n)) return 3;
+  if (/dc gear motors/.test(n) || (/\bmotors\b/.test(n) && !/driver|servo/.test(n))) return 2;
+  if (/propellers/.test(n)) return 4;
+  if (/limit switches/.test(n)) return 2;
+  if (/esc controllers/.test(n)) return 4;
+  return 1;
+}
+
 export function getProjectComponents(project: Project): ProjectComponent[] {
   const pool = COMPONENT_POOLS[project.category];
   const count = Math.min(project.totalParts, pool.length);
@@ -162,6 +209,7 @@ export function getProjectComponents(project: Project): ProjectComponent[] {
     name: component.name,
     illustrationId: resolveComponentIllustration({ name: component.name }),
     owned: index < project.ownedParts,
+    quantity: inferComponentQuantity(component.name),
   }));
 }
 
@@ -230,7 +278,8 @@ export const MOCK_PROJECTS: Project[] = [
     image: PROJECT_IMAGES.bluetoothRcCar,
     ownedParts: 9,
     totalParts: 12,
-    status: 'not_started',
+    status: 'in_progress',
+    progress: 30,
   },
   {
     id: '4',

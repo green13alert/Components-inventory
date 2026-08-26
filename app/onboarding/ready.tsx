@@ -14,7 +14,7 @@ export default function OnboardingReadyRoute() {
       interestSummary={summary.interestSummary}
       projects={recommendedProjects}
       onBack={() => router.back()}
-      onFinish={() => router.replace('/(tabs)')}
+      onFinish={() => router.push('/onboarding/sign-up')}
     />
   );
 }

@@ -10,6 +10,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 
 
+import { ContinueBuildingCarousel } from '@/components/home/ContinueBuildingCarousel';
+
 import { ContinueLearningCard } from '@/components/home/ContinueLearningCard';
 
 import { SearchBar } from '@/components/home/SearchBar';
@@ -48,7 +50,7 @@ export default function ProjectsScreen() {
 
   const { filter } = useLocalSearchParams<{ filter?: string }>();
 
-  const { getProjectsWithStatus, isFavourite } = useAtlas();
+  const { getProjectsWithStatus, isFavourite, getCurrentStepIndex } = useAtlas();
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -74,9 +76,9 @@ export default function ProjectsScreen() {
 
 
 
-  const inProgressProject = useMemo(
+  const inProgressProjects = useMemo(
 
-    () => allProjects.find((p) => p.status === 'in_progress'),
+    () => allProjects.filter((p) => p.status === 'in_progress'),
 
     [allProjects],
 
@@ -130,33 +132,7 @@ export default function ProjectsScreen() {
 
   const showContinueSection =
 
-    viewFilter === 'all' && inProgressProject != null && searchQuery.trim().length === 0;
-
-
-
-  const continueSubtitle = inProgressProject
-
-    ? getStepSubtitle(
-
-        inProgressProject,
-
-        Math.max(
-
-          0,
-
-          Math.round(
-
-            ((inProgressProject.progress ?? 0) / 100) * getProjectSteps(inProgressProject).length,
-
-          ) - 1,
-
-        ),
-
-        getProjectSteps(inProgressProject),
-
-      )
-
-    : '';
+    viewFilter === 'all' && inProgressProjects.length > 0 && searchQuery.trim().length === 0;
 
 
 
@@ -220,24 +196,32 @@ export default function ProjectsScreen() {
 
 
 
-        {showContinueSection && inProgressProject ? (
+        {showContinueSection ? (
 
           <View style={styles.section}>
 
             <Text style={styles.sectionTitle}>Continue Building</Text>
 
-            <ContinueLearningCard
+            <ContinueBuildingCarousel
+              items={inProgressProjects}
+              horizontalInset={20}
+              keyExtractor={(project) => project.id}
+              renderItem={(project, cardWidth) => {
+                const steps = getProjectSteps(project);
+                const stepIndex = getCurrentStepIndex(project.id);
+                const subtitle = getStepSubtitle(project, stepIndex, steps);
 
-              projectId={inProgressProject.id}
-
-              title={inProgressProject.title}
-
-              subtitle={continueSubtitle}
-
-              progress={inProgressProject.progress ?? 0}
-
-              image={inProgressProject.image}
-
+                return (
+                  <ContinueLearningCard
+                    projectId={project.id}
+                    title={project.title}
+                    subtitle={subtitle}
+                    progress={project.progress ?? 0}
+                    image={project.image}
+                    width={cardWidth}
+                  />
+                );
+              }}
             />
 
           </View>
