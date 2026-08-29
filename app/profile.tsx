@@ -13,6 +13,7 @@ export default function ProfileScreen() {
   const { getProjectsWithStatus, inventory } = useAtlas();
 
   const projects = getProjectsWithStatus();
+  const inProgressCount = projects.filter((p) => p.status === 'in_progress').length;
   const completedCount = projects.filter((p) => p.status === 'completed').length;
   const inProgressProjects = projects.filter((p) => p.status === 'in_progress');
 
@@ -62,9 +63,9 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <ProfileStatCard icon="flame" value="7" label="Day Streak" />
-          <ProfileStatCard icon="folder-open-outline" value={String(completedCount)} label="Projects Done" />
           <ProfileStatCard icon="cube-outline" value={String(inventory.length)} label="Components" />
+          <ProfileStatCard icon="folder-open-outline" value={String(inProgressCount)} label="Projects" />
+          <ProfileStatCard icon="checkmark-circle-outline" value={String(completedCount)} label="Completed" />
         </View>
 
         <View style={styles.section}>

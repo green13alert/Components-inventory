@@ -6,7 +6,7 @@ import { Spacing, Typography } from '@/constants/tokens';
 type WorkshopStatsProps = {
   componentCount: number;
   projectCount: number;
-  streakDays?: number;
+  completedCount: number;
 };
 
 type StatItemProps = {
@@ -30,13 +30,13 @@ function StatItem({ value, label, showDivider }: StatItemProps) {
 export function WorkshopStats({
   componentCount,
   projectCount,
-  streakDays = 7,
+  completedCount,
 }: WorkshopStatsProps) {
   return (
     <View style={styles.container}>
       <StatItem value={componentCount} label="Components" showDivider />
       <StatItem value={projectCount} label="Projects" showDivider />
-      <StatItem value={streakDays} label="Day streak" />
+      <StatItem value={completedCount} label="Completed" />
     </View>
   );
 }

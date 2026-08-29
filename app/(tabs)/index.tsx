@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeOnboardingDevButton } from '@/components/dev/onboarding-shortcuts';
+import { BuildActivitySection } from '@/components/home/BuildActivityGraph';
 import { ContinueBuildingCarousel } from '@/components/home/ContinueBuildingCarousel';
 import { ContinueProjectCard } from '@/components/home/ContinueProjectCard';
 import { HomeHeader } from '@/components/home/HomeHeader';
@@ -32,6 +33,7 @@ export default function HomeScreen() {
     Boolean,
   );
 
+  const inProgressCount = projects.filter((p) => p.status === 'in_progress').length;
   const completedCount = projects.filter((p) => p.status === 'completed').length;
 
   return (
@@ -81,9 +83,12 @@ export default function HomeScreen() {
           <SectionHeading title="Your Workshop" />
           <WorkshopStats
             componentCount={inventory.length}
-            projectCount={completedCount}
+            projectCount={inProgressCount}
+            completedCount={completedCount}
           />
         </View>
+
+        <BuildActivitySection />
 
         <View style={styles.section}>
           <SectionHeading title="Recommended For You" />

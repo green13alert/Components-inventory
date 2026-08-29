@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,11 +11,12 @@ import { Spacing } from '@/constants/tokens';
 
 type WelcomeScreenProps = {
   onContinue: () => void;
+  onLogIn: () => void;
   /** TEMP dev skip control — omit in production */
   skipControl?: ReactNode;
 };
 
-export function WelcomeScreen({ onContinue, skipControl }: WelcomeScreenProps) {
+export function WelcomeScreen({ onContinue, onLogIn, skipControl }: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -42,6 +43,14 @@ export function WelcomeScreen({ onContinue, skipControl }: WelcomeScreenProps) {
 
         <Animated.View entering={FadeInDown.duration(480).delay(90)} style={styles.ctaWrap}>
           <OnboardingCta label={ONBOARDING_WELCOME.cta} onPress={onContinue} />
+          <Pressable
+            onPress={onLogIn}
+            style={styles.loginRow}
+            accessibilityRole="button"
+            accessibilityLabel="Already have an account? Log in">
+            <Text style={styles.loginPrompt}>Already have an account? </Text>
+            <Text style={styles.loginLink}>Log in</Text>
+          </Pressable>
         </Animated.View>
       </View>
     </View>
@@ -90,5 +99,20 @@ const styles = StyleSheet.create({
   },
   ctaWrap: {
     marginTop: Spacing['3xl'],
+    gap: Spacing.lg,
+  },
+  loginRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  loginPrompt: {
+    fontSize: 15,
+    color: SolderiColors.textSecondary,
+  },
+  loginLink: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: SolderiColors.accent,
   },
 });

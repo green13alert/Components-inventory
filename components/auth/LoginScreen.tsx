@@ -24,6 +24,7 @@ type LoginScreenProps = {
   onLogIn: () => void;
   onSignUp: () => void;
   onBack?: () => void;
+  showSignUpLink?: boolean;
 };
 
 export function LoginScreen({
@@ -34,6 +35,7 @@ export function LoginScreen({
   onLogIn,
   onSignUp,
   onBack,
+  showSignUpLink = true,
 }: LoginScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -100,14 +102,16 @@ export function LoginScreen({
           <View style={styles.actions}>
             <OnboardingCta label={AUTH_LOGIN.logIn} onPress={onLogIn} />
 
-            <Pressable
-              onPress={onSignUp}
-              style={styles.linkRow}
-              accessibilityRole="button"
-              accessibilityLabel={`${AUTH_LOGIN.signUpPrompt} ${AUTH_LOGIN.signUpLink}`}>
-              <Text style={styles.linkPrompt}>{AUTH_LOGIN.signUpPrompt} </Text>
-              <Text style={styles.linkAccent}>{AUTH_LOGIN.signUpLink}</Text>
-            </Pressable>
+            {showSignUpLink ? (
+              <Pressable
+                onPress={onSignUp}
+                style={styles.linkRow}
+                accessibilityRole="button"
+                accessibilityLabel={`${AUTH_LOGIN.signUpPrompt} ${AUTH_LOGIN.signUpLink}`}>
+                <Text style={styles.linkPrompt}>{AUTH_LOGIN.signUpPrompt} </Text>
+                <Text style={styles.linkAccent}>{AUTH_LOGIN.signUpLink}</Text>
+              </Pressable>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

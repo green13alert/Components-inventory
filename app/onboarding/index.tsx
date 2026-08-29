@@ -10,6 +10,7 @@ export default function OnboardingWelcomeRoute() {
   return (
     <WelcomeScreen
       onContinue={() => router.push('/onboarding/experience')}
+      onLogIn={() => router.push({ pathname: '/onboarding/login', params: { from: 'welcome' } })}
       skipControl={
         DEV_ONBOARDING_SHORTCUTS ? (
           <OnboardingSkipDevButton onPress={() => router.replace('/(tabs)')} />
