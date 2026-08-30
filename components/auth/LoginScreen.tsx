@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,9 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { AUTH_LOGIN } from '@/constants/auth';
 import { Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type LoginScreenProps = {
   email: string;
@@ -37,12 +39,14 @@ export function LoginScreen({
   onBack,
   showSignUpLink = true,
 }: LoginScreenProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={['#1E2226', '#181B1E', '#181B1E']}
+        colors={[colors.gradientStart, colors.background, colors.background]}
         locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -119,63 +123,65 @@ export function LoginScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-    gap: Spacing['2xl'],
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: Spacing.xs,
-  },
-  backLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: SolderiColors.textSecondary,
-  },
-  header: {
-    gap: Spacing.md,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    lineHeight: 32,
-    color: SolderiColors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: SolderiColors.textSecondary,
-    maxWidth: 320,
-  },
-  form: {
-    gap: Spacing.lg,
-  },
-  actions: {
-    gap: Spacing.lg,
-    paddingTop: Spacing.xs,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  linkPrompt: {
-    fontSize: 15,
-    color: SolderiColors.textSecondary,
-  },
-  linkAccent: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.accent,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 28,
+      gap: Spacing['2xl'],
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      paddingVertical: Spacing.xs,
+    },
+    backLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    header: {
+      gap: Spacing.md,
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: '700',
+      letterSpacing: -0.5,
+      lineHeight: 32,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+      maxWidth: 320,
+    },
+    form: {
+      gap: Spacing.lg,
+    },
+    actions: {
+      gap: Spacing.lg,
+      paddingTop: Spacing.xs,
+    },
+    linkRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+    },
+    linkPrompt: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    linkAccent: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+  });
+}

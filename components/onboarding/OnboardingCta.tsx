@@ -1,9 +1,11 @@
 import * as Haptics from 'expo-haptics';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Radii } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type OnboardingCtaProps = {
   label: string;
@@ -20,6 +22,8 @@ export function OnboardingCta({
   disabled = false,
   variant = 'primary',
 }: OnboardingCtaProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -57,41 +61,43 @@ export function OnboardingCta({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    minHeight: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: Radii.lg,
-    backgroundColor: SolderiColors.accent,
-    shadowColor: '#000',
-    shadowOpacity: 0.32,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  pressed: {
-    backgroundColor: SolderiColors.accentStrong,
-  },
-  buttonSurface: {
-    backgroundColor: SolderiColors.onAccent,
-    shadowOpacity: 0.22,
-  },
-  pressedSurface: {
-    opacity: 0.92,
-  },
-  disabled: {
-    opacity: 0.45,
-  },
-  label: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    color: SolderiColors.onAccent,
-  },
-  labelSurface: {
-    color: SolderiColors.accentStrong,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    button: {
+      minHeight: 56,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 18,
+      paddingHorizontal: 24,
+      borderRadius: Radii.lg,
+      backgroundColor: colors.accent,
+      shadowColor: '#000',
+      shadowOpacity: 0.32,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 8,
+    },
+    pressed: {
+      backgroundColor: colors.accentStrong,
+    },
+    buttonSurface: {
+      backgroundColor: colors.onAccent,
+      shadowOpacity: 0.22,
+    },
+    pressedSurface: {
+      opacity: 0.92,
+    },
+    disabled: {
+      opacity: 0.45,
+    },
+    label: {
+      fontSize: 17,
+      fontWeight: '700',
+      letterSpacing: -0.2,
+      color: colors.onAccent,
+    },
+    labelSurface: {
+      color: colors.accentStrong,
+    },
+  });
+}

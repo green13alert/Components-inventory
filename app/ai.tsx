@@ -23,8 +23,9 @@ import {
   type ChatMessage,
   type ChatSession,
 } from '@/constants/ai';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Spacing, Typography } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 function getMockResponse(input: string): string {
   const query = input.toLowerCase();
@@ -54,6 +55,8 @@ function titleFromPrompt(input: string) {
 export default function AiScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const [sessions, setSessions] = useState<ChatSession[]>(PLACEHOLDER_CHATS);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -145,7 +148,7 @@ export default function AiScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>{AI_COPY.title}</Text>
@@ -163,7 +166,7 @@ export default function AiScreen() {
             <Ionicons
               name={menuOpen ? 'close' : 'menu-outline'}
               size={22}
-              color={SolderiColors.textPrimary}
+              color={colors.textPrimary}
             />
           </Pressable>
         </View>
@@ -221,73 +224,75 @@ export default function AiScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.lg,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerText: {
-    flex: 1,
-    gap: 2,
-    paddingHorizontal: Spacing.sm,
-  },
-  headerTitle: {
-    ...Typography.cardTitle,
-    color: SolderiColors.textPrimary,
-  },
-  headerSubtitle: {
-    ...Typography.caption,
-    color: SolderiColors.textSecondary,
-  },
-  workspace: {
-    flex: 1,
-  },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thread: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  turnGap: {
-    height: Spacing['2xl'],
-  },
-  working: {
-    marginTop: Spacing['2xl'],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  workingMark: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: SolderiColors.accent,
-  },
-  workingText: {
-    ...Typography.caption,
-    color: SolderiColors.textMuted,
-  },
-  threadEnd: {
-    height: Spacing.lg,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.md,
+      paddingTop: Spacing.xs,
+      paddingBottom: Spacing.lg,
+    },
+    headerButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerText: {
+      flex: 1,
+      gap: 2,
+      paddingHorizontal: Spacing.sm,
+    },
+    headerTitle: {
+      ...Typography.cardTitle,
+      color: colors.textPrimary,
+    },
+    headerSubtitle: {
+      ...Typography.caption,
+      color: colors.textSecondary,
+    },
+    workspace: {
+      flex: 1,
+    },
+    empty: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    thread: {
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.lg,
+      paddingBottom: Spacing.md,
+    },
+    turnGap: {
+      height: Spacing['2xl'],
+    },
+    working: {
+      marginTop: Spacing['2xl'],
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    workingMark: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.accent,
+    },
+    workingText: {
+      ...Typography.caption,
+      color: colors.textMuted,
+    },
+    threadEnd: {
+      height: Spacing.lg,
+    },
+  });
+}

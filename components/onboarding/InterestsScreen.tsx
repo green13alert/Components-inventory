@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,9 +8,10 @@ import { InterestCard } from '@/components/onboarding/interests/InterestCard';
 import { InterestsHeroAnimation } from '@/components/onboarding/interests/InterestsHeroAnimation';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { INTEREST_OPTIONS, ONBOARDING_CONTINUE } from '@/constants/onboarding';
 import { Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type InterestsScreenProps = {
   selectedIds: string[];
@@ -27,6 +29,8 @@ export function InterestsScreen({
   onBack,
   onContinue,
 }: InterestsScreenProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -36,7 +40,7 @@ export function InterestsScreen({
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={['#1E2226', '#181B1E', '#181B1E']}
+        colors={[colors.gradientStart, colors.background, colors.background]}
         locations={[0, 0.35, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -57,7 +61,7 @@ export function InterestsScreen({
             style={styles.backButton}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={22} color={SolderiColors.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <View style={styles.progressWrap}>
             <OnboardingProgress currentStep={4} />
@@ -97,64 +101,66 @@ export function InterestsScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: HORIZONTAL_INSET,
-    gap: Spacing.lg,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backSpacer: {
-    width: 40,
-  },
-  progressWrap: {
-    flex: 1,
-  },
-  headerBlock: {
-    gap: Spacing.md,
-  },
-  headerCopy: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.6,
-    lineHeight: 34,
-    color: SolderiColors.textPrimary,
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: SolderiColors.textSecondary,
-    maxWidth: 320,
-  },
-  cardGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: Spacing.md,
-  },
-  footer: {
-    paddingHorizontal: HORIZONTAL_INSET,
-    paddingTop: Spacing.sm,
-    backgroundColor: SolderiColors.background,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: HORIZONTAL_INSET,
+      gap: Spacing.lg,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    backSpacer: {
+      width: 40,
+    },
+    progressWrap: {
+      flex: 1,
+    },
+    headerBlock: {
+      gap: Spacing.md,
+    },
+    headerCopy: {
+      gap: 6,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      letterSpacing: -0.6,
+      lineHeight: 34,
+      color: colors.textPrimary,
+    },
+    description: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+      maxWidth: 320,
+    },
+    cardGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      rowGap: Spacing.md,
+    },
+    footer: {
+      paddingHorizontal: HORIZONTAL_INSET,
+      paddingTop: Spacing.sm,
+      backgroundColor: colors.background,
+    },
+  });
+}

@@ -1,30 +1,30 @@
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import type { ExperienceLevel } from '@/constants/onboarding';
+import { useSolderiColors } from '@/context/theme-context';
 
 type SkillTierModuleProps = {
   tier: ExperienceLevel;
   size?: number;
 };
 
-const SURFACE = SolderiColors.surfaceElevated;
-const SURFACE_DARK = SolderiColors.surface;
-const EDGE = SolderiColors.border;
-const ACCENT = SolderiColors.accent;
-const MUTED = SolderiColors.textMuted;
-
 export function SkillTierModule({ tier, size = 100 }: SkillTierModuleProps) {
+  const colors = useSolderiColors();
   if (tier === 'beginner') {
-    return <BeginnerModule size={size} />;
+    return <BeginnerModule size={size} colors={colors} />;
   }
   if (tier === 'intermediate') {
-    return <IntermediateModule size={size} />;
+    return <IntermediateModule size={size} colors={colors} />;
   }
-  return <AdvancedModule size={size} />;
+  return <AdvancedModule size={size} colors={colors} />;
 }
 
-function BeginnerModule({ size }: { size: number }) {
+function BeginnerModule({ size, colors }: { size: number; colors: SolderiPalette }) {
+  const SURFACE = colors.surfaceElevated;
+  const SURFACE_DARK = colors.surface;
+  const EDGE = colors.border;
+  const MUTED = colors.textMuted;
   const h = size * 0.95;
   return (
     <Svg width={size} height={h} viewBox="0 0 100 95">
@@ -51,7 +51,12 @@ function BeginnerModule({ size }: { size: number }) {
   );
 }
 
-function IntermediateModule({ size }: { size: number }) {
+function IntermediateModule({ size, colors }: { size: number; colors: SolderiPalette }) {
+  const SURFACE = colors.surfaceElevated;
+  const SURFACE_DARK = colors.surface;
+  const EDGE = colors.border;
+  const ACCENT = colors.accent;
+  const MUTED = colors.textMuted;
   const h = size * 1.05;
   return (
     <Svg width={size} height={h} viewBox="0 0 110 105">
@@ -80,7 +85,12 @@ function IntermediateModule({ size }: { size: number }) {
   );
 }
 
-function AdvancedModule({ size }: { size: number }) {
+function AdvancedModule({ size, colors }: { size: number; colors: SolderiPalette }) {
+  const SURFACE = colors.surfaceElevated;
+  const SURFACE_DARK = colors.surface;
+  const EDGE = colors.border;
+  const ACCENT = colors.accent;
+  const MUTED = colors.textMuted;
   const h = size * 1.12;
   return (
     <Svg width={size} height={h} viewBox="0 0 120 115">

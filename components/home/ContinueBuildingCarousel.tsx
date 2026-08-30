@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -8,8 +8,9 @@ import {
   View,
 } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 const CARD_GAP = Spacing.md;
 
@@ -21,6 +22,9 @@ type ContinueBuildingCarouselProps<T> = {
 };
 
 function ContinueBuildingPager({ count, activeIndex }: { count: number; activeIndex: number }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (count <= 1) return null;
 
   return (
@@ -46,6 +50,8 @@ export function ContinueBuildingCarousel<T>({
   renderItem,
   keyExtractor,
 }: ContinueBuildingCarouselProps<T>) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: screenWidth } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const cardWidth = screenWidth - horizontalInset * 2;
@@ -88,26 +94,28 @@ export function ContinueBuildingCarousel<T>({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    gap: Spacing.md,
-  },
-  list: {
-    gap: CARD_GAP,
-  },
-  pager: {
-    flexDirection: 'row',
-    gap: 8,
-    height: 4,
-  },
-  pagerSegment: {
-    flex: 1,
-    borderRadius: 2,
-  },
-  pagerSegmentActive: {
-    backgroundColor: SolderiColors.textSecondary,
-  },
-  pagerSegmentInactive: {
-    backgroundColor: SolderiColors.borderSubtle,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    wrap: {
+      gap: Spacing.md,
+    },
+    list: {
+      gap: CARD_GAP,
+    },
+    pager: {
+      flexDirection: 'row',
+      gap: 8,
+      height: 4,
+    },
+    pagerSegment: {
+      flex: 1,
+      borderRadius: 2,
+    },
+    pagerSegmentActive: {
+      backgroundColor: colors.textSecondary,
+    },
+    pagerSegmentInactive: {
+      backgroundColor: colors.borderSubtle,
+    },
+  });
+}

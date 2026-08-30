@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -9,8 +9,9 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Radii, Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type AuthTextFieldProps = {
   label: string;
@@ -31,6 +32,8 @@ export function AuthTextField({
   style,
   ...inputProps
 }: AuthTextFieldProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [focused, setFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const isPassword = secureTextEntry === true;
@@ -53,7 +56,7 @@ export function AuthTextField({
           value={value}
           editable={!disabled}
           secureTextEntry={isPassword && !passwordVisible}
-          placeholderTextColor={SolderiColors.textMuted}
+          placeholderTextColor={colors.textMuted}
           style={[styles.input, disabled && styles.inputDisabled, style]}
           onFocus={(event) => {
             setFocused(true);
@@ -75,7 +78,7 @@ export function AuthTextField({
             <Ionicons
               name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color={disabled ? SolderiColors.textMuted : SolderiColors.textSecondary}
+              color={disabled ? colors.textMuted : colors.textSecondary}
             />
           </Pressable>
         ) : null}
@@ -85,61 +88,63 @@ export function AuthTextField({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    gap: Spacing.sm,
-  },
-  wrapCompact: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: SolderiColors.textPrimary,
-  },
-  labelDisabled: {
-    color: SolderiColors.textMuted,
-  },
-  field: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 52,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: Radii.md,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  fieldFocused: {
-    borderColor: SolderiColors.accentBorder,
-    backgroundColor: SolderiColors.surfaceElevated,
-  },
-  fieldFilled: {
-    borderColor: SolderiColors.borderSubtle,
-  },
-  fieldError: {
-    borderColor: SolderiColors.error,
-    backgroundColor: SolderiColors.errorMuted,
-  },
-  fieldDisabled: {
-    opacity: 0.55,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: SolderiColors.textPrimary,
-    paddingVertical: Spacing.md,
-  },
-  inputDisabled: {
-    color: SolderiColors.textMuted,
-  },
-  toggle: {
-    marginLeft: Spacing.sm,
-    padding: Spacing.xs,
-  },
-  error: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: SolderiColors.error,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    wrap: {
+      gap: Spacing.sm,
+    },
+    wrapCompact: {
+      gap: 6,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    labelDisabled: {
+      color: colors.textMuted,
+    },
+    field: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minHeight: 52,
+      paddingHorizontal: Spacing.lg,
+      borderRadius: Radii.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    fieldFocused: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.surfaceElevated,
+    },
+    fieldFilled: {
+      borderColor: colors.borderSubtle,
+    },
+    fieldError: {
+      borderColor: colors.error,
+      backgroundColor: colors.errorMuted,
+    },
+    fieldDisabled: {
+      opacity: 0.55,
+    },
+    input: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.textPrimary,
+      paddingVertical: Spacing.md,
+    },
+    inputDisabled: {
+      color: colors.textMuted,
+    },
+    toggle: {
+      marginLeft: Spacing.sm,
+      padding: Spacing.xs,
+    },
+    error: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.error,
+    },
+  });
+}

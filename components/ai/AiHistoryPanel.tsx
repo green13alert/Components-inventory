@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AI_COPY, type ChatSession } from '@/constants/ai';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Radii, Spacing, Typography } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type AiHistoryPanelProps = {
   sessions: ChatSession[];
@@ -20,6 +22,9 @@ export function AiHistoryPanel({
   onSelectChat,
   onClose,
 }: AiHistoryPanelProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.overlay} pointerEvents="box-none">
       <Pressable
@@ -35,7 +40,7 @@ export function AiHistoryPanel({
           accessibilityLabel={AI_COPY.newChat}
           style={({ pressed }) => [styles.newChat, pressed && styles.pressed]}>
           <View style={styles.newChatIcon}>
-            <Ionicons name="add" size={18} color={SolderiColors.accent} />
+            <Ionicons name="add" size={18} color={colors.accent} />
           </View>
           <Text style={styles.newChatLabel}>{AI_COPY.newChat}</Text>
         </Pressable>
@@ -67,68 +72,70 @@ export function AiHistoryPanel({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 20,
-  },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: SolderiColors.overlayLight,
-  },
-  panel: {
-    marginTop: Spacing.sm,
-    marginHorizontal: Spacing.lg,
-    padding: Spacing.lg,
-    borderRadius: Radii.lg,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SolderiColors.border,
-    gap: Spacing.lg,
-  },
-  newChat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  newChatIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.sm,
-    backgroundColor: SolderiColors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newChatLabel: {
-    ...Typography.body,
-    fontWeight: '600',
-    color: SolderiColors.textPrimary,
-  },
-  section: {
-    ...Typography.sectionTitle,
-    color: SolderiColors.textMuted,
-  },
-  list: {
-    gap: 2,
-  },
-  row: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: Radii.sm,
-  },
-  rowSelected: {
-    backgroundColor: SolderiColors.accentMuted,
-  },
-  rowTitle: {
-    ...Typography.body,
-    color: SolderiColors.textSecondary,
-  },
-  rowTitleSelected: {
-    color: SolderiColors.textPrimary,
-    fontWeight: '600',
-  },
-  pressed: {
-    opacity: 0.72,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 20,
+    },
+    scrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.overlayLight,
+    },
+    panel: {
+      marginTop: Spacing.sm,
+      marginHorizontal: Spacing.lg,
+      padding: Spacing.lg,
+      borderRadius: Radii.lg,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      gap: Spacing.lg,
+    },
+    newChat: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingVertical: Spacing.sm,
+    },
+    newChatIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: Radii.sm,
+      backgroundColor: colors.accentMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    newChatLabel: {
+      ...Typography.body,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    section: {
+      ...Typography.sectionTitle,
+      color: colors.textMuted,
+    },
+    list: {
+      gap: 2,
+    },
+    row: {
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.sm,
+      borderRadius: Radii.sm,
+    },
+    rowSelected: {
+      backgroundColor: colors.accentMuted,
+    },
+    rowTitle: {
+      ...Typography.body,
+      color: colors.textSecondary,
+    },
+    rowTitleSelected: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    pressed: {
+      opacity: 0.72,
+    },
+  });
+}

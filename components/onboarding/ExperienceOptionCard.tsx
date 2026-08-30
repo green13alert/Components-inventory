@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -10,9 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { SkillLevelIllustration } from '@/components/onboarding/experience/SkillLevelIllustrations';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import type { ExperienceLevel } from '@/constants/onboarding';
 import { Radii, Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type ExperienceOptionCardProps = {
   tier: ExperienceLevel;
@@ -32,6 +33,8 @@ export function ExperienceOptionCard({
   selected,
   onPress,
 }: ExperienceOptionCardProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export function ExperienceOptionCard({
           <View style={styles.titleRow}>
             <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
             {selected ? (
-              <Ionicons name="checkmark-circle" size={18} color={SolderiColors.accent} />
+              <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
             ) : null}
           </View>
           <Text style={[styles.subtitle, selected && styles.subtitleSelected]} numberOfLines={2}>
@@ -80,68 +83,70 @@ export function ExperienceOptionCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    minHeight: 68,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radii.lg,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  cardSelected: {
-    backgroundColor: SolderiColors.accentMuted,
-    borderColor: SolderiColors.accentBorder,
-    shadowColor: SolderiColors.accent,
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  illustrationWrap: {
-    width: ILLUSTRATION_SIZE,
-    height: ILLUSTRATION_SIZE,
-    borderRadius: Radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: SolderiColors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  illustrationWrapSelected: {
-    backgroundColor: 'rgba(255, 181, 71, 0.12)',
-    borderColor: SolderiColors.accentBorder,
-  },
-  copy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-    flexShrink: 1,
-  },
-  titleSelected: {
-    color: SolderiColors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: SolderiColors.textSecondary,
-  },
-  subtitleSelected: {
-    color: SolderiColors.textPrimary,
-    opacity: 0.88,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      minHeight: 68,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radii.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardSelected: {
+      backgroundColor: colors.accentMuted,
+      borderColor: colors.accentBorder,
+      shadowColor: colors.accent,
+      shadowOpacity: 0.18,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    illustrationWrap: {
+      width: ILLUSTRATION_SIZE,
+      height: ILLUSTRATION_SIZE,
+      borderRadius: Radii.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    illustrationWrapSelected: {
+      backgroundColor: 'rgba(255, 181, 71, 0.12)',
+      borderColor: colors.accentBorder,
+    },
+    copy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 4,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      flexShrink: 1,
+    },
+    titleSelected: {
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    subtitleSelected: {
+      color: colors.textPrimary,
+      opacity: 0.88,
+    },
+  });
+}

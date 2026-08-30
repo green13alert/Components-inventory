@@ -1,40 +1,40 @@
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AtlasProvider } from '@/context/atlas-context';
-import { NavigationTheme } from '@/constants/theme';
-
-SystemUI.setBackgroundColorAsync(NavigationTheme.background);
+import { SolderiThemeProvider, useSolderiTheme } from '@/context/theme-context';
+import { getNavigationTheme } from '@/constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-const AtlasDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: NavigationTheme.background,
-    card: NavigationTheme.card,
-    border: NavigationTheme.border,
-    primary: NavigationTheme.primary,
-    text: NavigationTheme.text,
-  },
-};
+function ThemedRoot() {
+  const { colors, resolvedScheme } = useSolderiTheme();
+  const navigationTheme = getNavigationTheme(colors, resolvedScheme);
 
-export default function RootLayout() {
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.background);
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.backgroundColor = colors.background;
+      document.documentElement.style.colorScheme = resolvedScheme;
+      document.body.style.backgroundColor = colors.background;
+    }
+  }, [colors.background, resolvedScheme]);
+
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: NavigationTheme.background }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <AtlasProvider>
-        <ThemeProvider value={AtlasDarkTheme}>
+        <NavigationThemeProvider value={navigationTheme}>
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: NavigationTheme.background },
+              contentStyle: { backgroundColor: colors.background },
               animation: 'default',
             }}>
             <Stack.Screen
@@ -45,14 +45,23 @@ export default function RootLayout() {
             />
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="profile" />
+            <Stack.Screen name="settings/notifications" />
             <Stack.Screen name="ai" />
             <Stack.Screen name="project/[id]" />
             <Stack.Screen name="project/build/[id]" />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          <StatusBar style="light" />
-        </ThemeProvider>
+          <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        </NavigationThemeProvider>
       </AtlasProvider>
     </GestureHandlerRootView>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <SolderiThemeProvider>
+      <ThemedRoot />
+    </SolderiThemeProvider>
   );
 }

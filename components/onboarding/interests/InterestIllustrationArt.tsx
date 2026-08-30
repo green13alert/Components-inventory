@@ -2,8 +2,8 @@ import { type ReactNode } from 'react';
 import { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 
 import { HW } from '@/constants/component-illustration-palette';
-import { SolderiColors } from '@/constants/colors';
 import type { OnboardingInterest } from '@/constants/onboarding';
+import { useSolderiColors } from '@/context/theme-context';
 
 type AccentProps = { accent?: boolean };
 
@@ -51,7 +51,8 @@ function CardWrap({ children }: { children: ReactNode }) {
 
 /** Industrial robotic arm — base → joints → segments → gripper. */
 export function RoboticsArt({ accent = false }: AccentProps) {
-  const joint = accent ? SolderiColors.accent : '#E87722';
+  const colors = useSolderiColors();
+  const joint = accent ? colors.accent : '#E87722';
   const armFill = '#6B7280';
   const armDark = '#4B5563';
   const baseFill = '#525C65';
@@ -85,6 +86,7 @@ export function RoboticsArt({ accent = false }: AccentProps) {
 
 /** Detailed rocket with nose, body panels, fins, engine. */
 export function AerospaceArt({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const body = '#E8EDF2';
   const panel = '#C5CDD6';
   const fin = '#889099';
@@ -93,7 +95,7 @@ export function AerospaceArt({ accent = false }: AccentProps) {
     <CardWrap>
       <Rect x={22} y={52} width={20} height={4} rx={1} fill={HW.metalDark} />
       <Rect x={24} y={50} width={16} height={2} rx={0.5} fill={HW.metal} />
-      <Path d="M 28 50 L 32 14 L 36 50 Z" fill={body} stroke={accent ? SolderiColors.accentBorder : panel} strokeWidth={0.7} />
+      <Path d="M 28 50 L 32 14 L 36 50 Z" fill={body} stroke={accent ? colors.accentBorder : panel} strokeWidth={0.7} />
       <TopSheen x={30} y={18} w={4} h={14} rx={1} />
       <Rect x={29} y={28} width={6} height={10} rx={1} fill={panel} opacity={0.55} />
       <Circle cx={32} cy={32} r={2.2} fill={HW.screenMid} stroke={HW.metalDark} strokeWidth={0.4} />
@@ -111,7 +113,8 @@ export function AerospaceArt({ accent = false }: AccentProps) {
 
 /** Two meshed gears on a mount — simple, reads correctly at card size. */
 export function MechanicalArt({ accent = false }: AccentProps) {
-  const gold = accent ? SolderiColors.accent : '#C9A227';
+  const colors = useSolderiColors();
+  const gold = accent ? colors.accent : '#C9A227';
   const bronze = '#A67C3D';
   const drive = { cx: 28, cy: 34, outerR: 11, innerR: 7.5, teeth: 10 };
   const driven = {
@@ -146,6 +149,7 @@ export function MechanicalArt({ accent = false }: AccentProps) {
 
 /** Breadboard with components plugged in (pins down, rails top/bottom). */
 export function ElectronicsArt({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   return (
     <CardWrap>
       <Rect x={8} y={28} width={48} height={22} rx={2} fill={HW.breadWhite} stroke={HW.breadHole} strokeWidth={0.6} />
@@ -169,7 +173,7 @@ export function ElectronicsArt({ accent = false }: AccentProps) {
       <Ellipse cx={42} cy={43} rx={4} ry={1.6} fill={HW.resistorBody} stroke={HW.bandBrown} strokeWidth={0.3} />
       <Line x1={38} y1={43} x2={36} y2={43} stroke={HW.pinGold} strokeWidth={0.8} />
       <Line x1={46} y1={43} x2={48} y2={43} stroke={HW.pinGold} strokeWidth={0.8} />
-      <Circle cx={18} cy={43} r={2.2} fill={accent ? SolderiColors.accent : HW.ledRed} stroke="#B91C1C" strokeWidth={0.4} />
+      <Circle cx={18} cy={43} r={2.2} fill={accent ? colors.accent : HW.ledRed} stroke="#B91C1C" strokeWidth={0.4} />
       <Line x1={18} y1={45.2} x2={18} y2={47} stroke={HW.pinGold} strokeWidth={0.8} />
       <Line x1={20.2} y1={43} x2={22} y2={43} stroke={HW.pinGold} strokeWidth={0.8} />
       <Line x1={22} y1={43} x2={26} y2={38} stroke={HW.wireYellow} strokeWidth={1.1} />
@@ -180,9 +184,10 @@ export function ElectronicsArt({ accent = false }: AccentProps) {
 
 /** Modern house + smart hub + wireless indicator. */
 export function SmartHomeArt({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const wall = '#EDE8E0';
   const roof = '#7A8490';
-  const trim = accent ? SolderiColors.accentBorder : '#98A3AC';
+  const trim = accent ? colors.accentBorder : '#98A3AC';
 
   return (
     <CardWrap>
@@ -204,6 +209,7 @@ export function SmartHomeArt({ accent = false }: AccentProps) {
 
 /** Side-view vehicle with body, windows, lights, wheels. */
 export function VehiclesArt({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const body = '#2563EB';
   const bodyDark = '#1D4ED8';
 
@@ -212,7 +218,7 @@ export function VehiclesArt({ accent = false }: AccentProps) {
       <Path
         d="M 8 38 L 12 38 L 14 34 L 18 28 L 40 28 L 46 30 L 50 34 L 52 38 L 52 42 L 8 42 Z"
         fill={body}
-        stroke={accent ? SolderiColors.accentBorder : bodyDark}
+        stroke={accent ? colors.accentBorder : bodyDark}
         strokeWidth={0.65}
         strokeLinejoin="round"
       />
@@ -231,9 +237,10 @@ export function VehiclesArt({ accent = false }: AccentProps) {
 
 /** Monitor + tower + keyboard hint. */
 export function ComputingArt({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   return (
     <CardWrap>
-      <Rect x={14} y={18} width={36} height={24} rx={2} fill="#374151" stroke={accent ? SolderiColors.accentBorder : '#525C65'} strokeWidth={0.6} />
+      <Rect x={14} y={18} width={36} height={24} rx={2} fill="#374151" stroke={accent ? colors.accentBorder : '#525C65'} strokeWidth={0.6} />
       <TopSheen x={16} y={19} w={22} h={4} rx={1} />
       <Rect x={18} y={22} width={28} height={16} rx={1} fill={HW.screenDark} stroke={HW.screenMid} strokeWidth={0.5} />
       <Line x1={21} y1={26} x2={38} y2={26} stroke={HW.screenGlow} strokeWidth={0.9} opacity={0.75} />
@@ -254,7 +261,8 @@ export function ComputingArt({ accent = false }: AccentProps) {
 
 /** Factory cell — gantry beside conveyor, arm reaches over the belt. */
 export function AutomationArt({ accent = false }: AccentProps) {
-  const joint = jointColor(accent);
+  const colors = useSolderiColors();
+  const joint = jointColor(accent, colors.accent);
   const armFill = '#6B7280';
   const beltY = 44;
 
@@ -270,7 +278,7 @@ export function AutomationArt({ accent = false }: AccentProps) {
       <Rect x={55} y={43} width={3} height={3} rx={0.5} fill={HW.metalLight} />
 
       {/* Conveyor belt */}
-      <Rect x={18} y={beltY} width={36} height={8} rx={2} fill="#78838C" stroke={accent ? SolderiColors.accentBorder : '#525C65'} strokeWidth={0.5} />
+      <Rect x={18} y={beltY} width={36} height={8} rx={2} fill="#78838C" stroke={accent ? colors.accentBorder : '#525C65'} strokeWidth={0.5} />
       <TopSheen x={20} y={beltY + 1} w={24} h={2} rx={0.5} />
       {[22, 30, 38, 46].map((rx) => (
         <Circle key={rx} cx={rx} cy={beltY + 4} r={2.5} fill={HW.motorBody} stroke={HW.motorShaft} strokeWidth={0.3} />
@@ -298,8 +306,8 @@ export function AutomationArt({ accent = false }: AccentProps) {
   );
 }
 
-function jointColor(accent: boolean) {
-  return accent ? SolderiColors.accent : '#E87722';
+function jointColor(accent: boolean, accentColor: string) {
+  return accent ? accentColor : '#E87722';
 }
 
 const CARD_ART: Record<OnboardingInterest['id'], (props: AccentProps) => ReactNode> = {
@@ -359,10 +367,11 @@ export function HeroWorkbenchEnvironment() {
 
 /** Detailed rocket prototype for hero scene (scene coordinates). */
 export function HeroRocketGraphic({ cx = 178, accent = false }: { cx?: number; accent?: boolean }) {
+  const colors = useSolderiColors();
   const body = '#E8EDF2';
   const panel = '#C5CDD6';
   const fin = '#889099';
-  const stroke = accent ? SolderiColors.accentBorder : '#98A3AC';
+  const stroke = accent ? colors.accentBorder : '#98A3AC';
 
   return (
     <G>
@@ -396,10 +405,11 @@ export function HeroRocketGraphic({ cx = 178, accent = false }: { cx?: number; a
 
 /** Smart-home house for hero scene — clear readable silhouette. */
 export function HeroSmartHomeGraphic({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const wall = '#EDE8E0';
   const wallDark = '#D6D0C8';
   const roof = '#7A8490';
-  const trim = accent ? SolderiColors.accentBorder : '#98A3AC';
+  const trim = accent ? colors.accentBorder : '#98A3AC';
 
   return (
     <G>
@@ -468,6 +478,7 @@ function conveyorRollerXs(): number[] {
 }
 
 export function HeroConveyorGraphic({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const b = CONVEYOR_BELT;
   const frameEnd = b.frameX + b.frameW;
 
@@ -478,7 +489,7 @@ export function HeroConveyorGraphic({ accent = false }: AccentProps) {
       <Rect x={b.frameX - 2} y={b.frameY - 2} width={4} height={12} rx={1} fill="#525C65" stroke="#454B50" strokeWidth={0.4} />
       <Rect x={frameEnd - 2} y={b.frameY - 2} width={4} height={12} rx={1} fill="#525C65" stroke="#454B50" strokeWidth={0.4} />
       {/* Belt frame + surface */}
-      <Rect x={b.frameX} y={b.frameY} width={b.frameW} height={b.frameH} rx={2} fill="#78838C" stroke={accent ? SolderiColors.accentBorder : '#525C65'} strokeWidth={0.55} />
+      <Rect x={b.frameX} y={b.frameY} width={b.frameW} height={b.frameH} rx={2} fill="#78838C" stroke={accent ? colors.accentBorder : '#525C65'} strokeWidth={0.55} />
       <TopSheen x={b.innerX} y={b.frameY + 1} w={70} h={2} rx={0.5} />
       <Rect x={b.innerX} y={b.innerY} width={b.innerW} height={b.innerH} rx={1} fill="#626C75" />
       {/* Rollers */}
@@ -515,6 +526,7 @@ export function HeroConveyorPackagesGraphic() {
 
 /** Side-view vehicle body — local viewBox 0 0 60 36 (wheels separate). */
 export function HeroVehicleBodyGraphic({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const body = '#2563EB';
   const bodyDark = '#1D4ED8';
   const glass = '#1E3A5F';
@@ -525,7 +537,7 @@ export function HeroVehicleBodyGraphic({ accent = false }: AccentProps) {
       <Path
         d="M 4 26 L 8 26 L 11 22 L 16 15 L 38 15 L 46 18 L 52 22 L 56 26 L 56 30 L 4 30 Z"
         fill={body}
-        stroke={accent ? SolderiColors.accentBorder : bodyDark}
+        stroke={accent ? colors.accentBorder : bodyDark}
         strokeWidth={0.7}
         strokeLinejoin="round"
       />
@@ -569,7 +581,8 @@ export function HeroWheelGraphic() {
 
 /** Robotic arm segments drawn in scene coordinates — pivot at (108, 128). */
 export function HeroArmSceneGraphic({ accent = false }: AccentProps) {
-  const joint = accent ? SolderiColors.accent : '#E87722';
+  const colors = useSolderiColors();
+  const joint = accent ? colors.accent : '#E87722';
   const ox = 108;
   const oy = 128;
 
@@ -627,6 +640,7 @@ export function HeroVehicleSceneGraphic({
   accent = false,
   wheelRotation = 0,
 }: AccentProps & { wheelRotation?: number }) {
+  const colors = useSolderiColors();
   const body = '#2563EB';
   const bodyDark = '#1D4ED8';
   const glass = '#1E3A5F';
@@ -638,7 +652,7 @@ export function HeroVehicleSceneGraphic({
       <Path
         d="M 40 144 L 46 144 L 49 140 L 54 133 L 76 133 L 82 136 L 88 140 L 92 144 L 92 148 L 40 148 Z"
         fill={body}
-        stroke={accent ? SolderiColors.accentBorder : bodyDark}
+        stroke={accent ? colors.accentBorder : bodyDark}
         strokeWidth={0.7}
         strokeLinejoin="round"
       />
@@ -692,7 +706,8 @@ export function HeroConveyorPackagesSceneGraphic() {
 
 /** Robotic arm segments — shoulder pivot at local (0, 36). viewBox 0 0 54 36 */
 export function HeroArmSegmentsGraphic({ accent = false }: AccentProps) {
-  const joint = accent ? SolderiColors.accent : '#E87722';
+  const colors = useSolderiColors();
+  const joint = accent ? colors.accent : '#E87722';
   return (
     <>
       <Path
@@ -728,7 +743,8 @@ export function HeroGearGraphic({
   teeth: number;
   accent?: boolean;
 }) {
-  const gold = accent ? SolderiColors.accent : '#C9A227';
+  const colors = useSolderiColors();
+  const gold = accent ? colors.accent : '#C9A227';
   return (
     <>
       <Path d={gearPath(cx, cy, outerR, innerR, teeth)} fill={gold} stroke="#A67C3D" strokeWidth={0.6} />

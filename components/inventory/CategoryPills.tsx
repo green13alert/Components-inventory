@@ -10,7 +10,8 @@ import {
   View,
 } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 const CHIP_GAP = 8;
 const CHIP_VERTICAL_INSET = 2;
@@ -30,6 +31,8 @@ export function CategoryPills<T extends string>({
   onSelect,
   edgePadding = 20,
 }: CategoryPillsProps<T>) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const chipX = useRef<Record<string, number>>({});
   const [viewportWidth, setViewportWidth] = useState(0);
   const [contentWidth, setContentWidth] = useState(0);
@@ -40,6 +43,7 @@ export function CategoryPills<T extends string>({
   const canScroll = maxOffset > 1;
   const showLeftFade = canScroll && scrollX > 4;
   const showRightFade = canScroll && scrollX < maxOffset - 4;
+  const fadeTransparent = `${colors.background}00`;
 
   const snapOffsets = useMemo(() => {
     const limit = Math.max(0, Math.round(maxOffset));
@@ -101,7 +105,7 @@ export function CategoryPills<T extends string>({
       {showLeftFade ? (
         <LinearGradient
           pointerEvents="none"
-          colors={[SolderiColors.background, 'rgba(24, 27, 30, 0)']}
+          colors={[colors.background, fadeTransparent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.fade, styles.fadeLeft]}
@@ -110,7 +114,7 @@ export function CategoryPills<T extends string>({
       {showRightFade ? (
         <LinearGradient
           pointerEvents="none"
-          colors={['rgba(24, 27, 30, 0)', SolderiColors.background]}
+          colors={[fadeTransparent, colors.background]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.fade, styles.fadeRight]}
@@ -120,46 +124,48 @@ export function CategoryPills<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  clip: {
-    overflow: 'hidden',
-  },
-  list: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: CHIP_GAP,
-  },
-  fade: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: FADE_WIDTH,
-  },
-  fadeLeft: {
-    left: 0,
-  },
-  fadeRight: {
-    right: 0,
-  },
-  chip: {
-    flexShrink: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  chipActive: {
-    backgroundColor: SolderiColors.accentMuted,
-    borderColor: SolderiColors.accent,
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: SolderiColors.textSecondary,
-  },
-  chipTextActive: {
-    color: SolderiColors.accent,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    clip: {
+      overflow: 'hidden',
+    },
+    list: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: CHIP_GAP,
+    },
+    fade: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      width: FADE_WIDTH,
+    },
+    fadeLeft: {
+      left: 0,
+    },
+    fadeRight: {
+      right: 0,
+    },
+    chip: {
+      flexShrink: 0,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    chipActive: {
+      backgroundColor: colors.accentMuted,
+      borderColor: colors.accent,
+    },
+    chipText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    chipTextActive: {
+      color: colors.accent,
+    },
+  });
+}

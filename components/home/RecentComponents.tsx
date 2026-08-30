@@ -1,16 +1,21 @@
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { InventoryComponent } from '@/constants/inventory';
 import { Radii, Spacing, Typography } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type RecentComponentsProps = {
   items: InventoryComponent[];
 };
 
 function RecentComponentChip({ item, onPress }: { item: InventoryComponent; onPress: () => void }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Pressable
       style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
@@ -28,6 +33,8 @@ function RecentComponentChip({ item, onPress }: { item: InventoryComponent; onPr
 }
 
 export function RecentComponents({ items }: RecentComponentsProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
 
   return (
@@ -47,33 +54,35 @@ export function RecentComponents({ items }: RecentComponentsProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  list: {
-    gap: Spacing.md,
-    paddingRight: Spacing.xs,
-  },
-  chip: {
-    width: 100,
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    alignItems: 'center',
-  },
-  chipPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.97 }],
-  },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: Radii.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipName: {
-    ...Typography.metadata,
-    color: SolderiColors.textSecondary,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    list: {
+      gap: Spacing.md,
+      paddingRight: Spacing.xs,
+    },
+    chip: {
+      width: 100,
+      gap: Spacing.sm,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.sm,
+      alignItems: 'center',
+    },
+    chipPressed: {
+      opacity: 0.75,
+      transform: [{ scale: 0.97 }],
+    },
+    iconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: Radii.md,
+      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    chipName: {
+      ...Typography.metadata,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+}

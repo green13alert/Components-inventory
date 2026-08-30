@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ProfileAvatar } from '@/components/ui/profile-avatar';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Spacing, Typography } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -16,6 +18,9 @@ type HomeHeaderProps = {
 };
 
 export function HomeHeader({ name = 'Maker' }: HomeHeaderProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <View style={styles.textWrap}>
@@ -27,24 +32,26 @@ export function HomeHeader({ name = 'Maker' }: HomeHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: Spacing.lg,
-    paddingTop: Spacing.sm,
-  },
-  textWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  greeting: {
-    ...Typography.greeting,
-    color: SolderiColors.textSecondary,
-  },
-  name: {
-    ...Typography.heading,
-    color: SolderiColors.textPrimary,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: Spacing.lg,
+      paddingTop: Spacing.sm,
+    },
+    textWrap: {
+      flex: 1,
+      gap: 2,
+    },
+    greeting: {
+      ...Typography.greeting,
+      color: colors.textSecondary,
+    },
+    name: {
+      ...Typography.heading,
+      color: colors.textPrimary,
+    },
+  });
+}

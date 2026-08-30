@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,19 +11,22 @@ import { HomeRecommendedCard } from '@/components/home/HomeRecommendedCard';
 import { RecentComponents } from '@/components/home/RecentComponents';
 import { SectionHeading } from '@/components/home/SectionHeading';
 import { WorkshopStats } from '@/components/home/WorkshopStats';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { DEV_ONBOARDING_SHORTCUTS } from '@/constants/onboarding-dev';
 import { tabBarBottomPadding } from '@/constants/layout';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { getProjectSteps } from '@/constants/project-steps';
 import { Spacing } from '@/constants/tokens';
 import { useAtlas } from '@/context/atlas-context';
+import { useSolderiColors } from '@/context/theme-context';
 
 const RECOMMENDED_PROJECT_IDS = ['3', '7', '8'];
 
 const RECENT_COMPONENT_IDS = ['6', '4', '3', '9'];
 
 export default function HomeScreen() {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { getProjectsWithStatus, inventory, getCurrentStepIndex } = useAtlas();
 
@@ -119,22 +123,24 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing['3xl'],
-  },
-  section: {
-    gap: Spacing.lg,
-  },
-  recommendedList: {
-    gap: Spacing.xs,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: Spacing.xl,
+      gap: Spacing['3xl'],
+    },
+    section: {
+      gap: Spacing.lg,
+    },
+    recommendedList: {
+      gap: Spacing.xs,
+    },
+  });
+}

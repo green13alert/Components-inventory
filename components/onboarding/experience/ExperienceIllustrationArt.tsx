@@ -6,8 +6,8 @@ import { type ReactNode } from 'react';
 import { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 
 import { HW } from '@/constants/component-illustration-palette';
-import { SolderiColors } from '@/constants/colors';
 import type { ExperienceLevel } from '@/constants/onboarding';
+import { useSolderiColors } from '@/context/theme-context';
 
 type AccentProps = { accent?: boolean };
 
@@ -30,7 +30,8 @@ function CardWrap({ children }: { children: ReactNode }) {
 
 /** Beginner — minimal breadboard circuit, generous empty space. */
 function BeginnerCardArt({ accent = false }: AccentProps) {
-  const led = accent ? SolderiColors.accent : HW.ledRed;
+  const colors = useSolderiColors();
+  const led = accent ? colors.accent : HW.ledRed;
   return (
     <CardWrap>
       {/* Battery — left, separate */}
@@ -62,13 +63,14 @@ function BeginnerCardArt({ accent = false }: AccentProps) {
 
 /** Intermediate — Arduino, sensor, motor; each in its own zone, wired together. */
 function IntermediateCardArt({ accent = false }: AccentProps) {
-  const boardStroke = accent ? SolderiColors.accentBorder : HW.pcbBlue;
+  const colors = useSolderiColors();
+  const boardStroke = accent ? colors.accentBorder : HW.pcbBlue;
   return (
     <CardWrap>
       {/* Sensor — top left */}
       <Rect x={8} y={14} width={16} height={11} rx={1.2} fill={HW.pcbBlueDark} stroke={HW.pcbBlue} strokeWidth={0.45} />
-      <Circle cx={14} cy={17.5} r={2} fill={accent ? SolderiColors.accent : HW.sensorVent} opacity={0.7} />
-      <Circle cx={20} cy={17.5} r={2} fill={accent ? SolderiColors.accent : HW.sensorVent} opacity={0.7} />
+      <Circle cx={14} cy={17.5} r={2} fill={accent ? colors.accent : HW.sensorVent} opacity={0.7} />
+      <Circle cx={20} cy={17.5} r={2} fill={accent ? colors.accent : HW.sensorVent} opacity={0.7} />
       <Line x1={16} y1={25} x2={24} y2={34} stroke={HW.wireYellow} strokeWidth={1} strokeLinecap="round" />
 
       {/* Arduino — bottom centre */}
@@ -90,8 +92,9 @@ function IntermediateCardArt({ accent = false }: AccentProps) {
 
 /** Advanced — compact mechatronic chassis; structured, not cluttered. */
 function AdvancedCardArt({ accent = false }: AccentProps) {
+  const colors = useSolderiColors();
   const frame = '#5A6570';
-  const joint = accent ? SolderiColors.accent : '#E87722';
+  const joint = accent ? colors.accent : '#E87722';
 
   return (
     <CardWrap>

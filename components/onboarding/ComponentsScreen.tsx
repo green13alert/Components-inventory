@@ -9,7 +9,7 @@ import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { WorkbenchCategoryTabs } from '@/components/onboarding/WorkbenchCategoryTabs';
 import { WorkbenchComponentTile } from '@/components/onboarding/WorkbenchComponentTile';
 import { WorkbenchSurface, getBenchFaceOverlayInsets } from '@/components/onboarding/WorkbenchSurface';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import {
   ONBOARDING_COMPONENTS,
   ONBOARDING_CONTINUE,
@@ -17,6 +17,7 @@ import {
   type OnboardingComponent,
 } from '@/constants/onboarding';
 import { Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type ComponentsScreenProps = {
   selectedIds: string[];
@@ -45,6 +46,8 @@ export function ComponentsScreen({
   onBack,
   onContinue,
 }: ComponentsScreenProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [activeCategory, setActiveCategory] = useState<ComponentCategory>('boards');
@@ -100,7 +103,7 @@ export function ComponentsScreen({
             style={styles.backButton}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={22} color={SolderiColors.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
           <View style={styles.progressWrap}>
             <OnboardingProgress currentStep={3} />
@@ -176,7 +179,7 @@ export function ComponentsScreen({
                   </ScrollView>
                   {benchOverflows ? (
                     <View style={styles.benchScrollHint} pointerEvents="none">
-                      <Ionicons name="chevron-forward" size={14} color={SolderiColors.textMuted} />
+                      <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
                     </View>
                   ) : null}
                 </View>
@@ -231,177 +234,179 @@ export function ComponentsScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  topSection: {
-    paddingHorizontal: 28,
-    zIndex: 2,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backSpacer: {
-    width: 40,
-  },
-  progressWrap: {
-    flex: 1,
-  },
-  headerCopy: {
-    gap: 8,
-    marginBottom: Spacing.lg,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.6,
-    lineHeight: 34,
-    color: SolderiColors.textPrimary,
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: SolderiColors.textSecondary,
-    maxWidth: 320,
-  },
-  inventoryBar: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  inventoryLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: SolderiColors.textMuted,
-  },
-  inventoryCount: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.accent,
-  },
-  workbenchZone: {
-    flex: 1,
-  },
-  pickerScroll: {
-    flex: 1,
-  },
-  pickerScrollContent: {
-    flexGrow: 1,
-  },
-  surfaceStage: {
-    position: 'relative',
-    marginTop: Spacing.xs,
-    marginBottom: -Spacing.sm,
-  },
-  surfaceOverlay: {
-    position: 'absolute',
-    left: 28,
-    right: 28,
-    justifyContent: 'flex-start',
-  },
-  emptyBench: {
-    flex: 1,
-    paddingTop: Spacing.sm,
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
-  },
-  surfaceLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    color: SolderiColors.textMuted,
-    opacity: 0.85,
-  },
-  benchLabel: {
-    width: BENCH_LABEL_WIDTH,
-    paddingTop: BENCH_SCROLL_TOP_PAD + 18,
-  },
-  benchCollection: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-  },
-  benchScrollWrap: {
-    flex: 1,
-    height: BENCH_SCROLL_AREA_HEIGHT,
-    position: 'relative',
-  },
-  benchScroll: {
-    flex: 1,
-    height: BENCH_SCROLL_AREA_HEIGHT,
-  },
-  benchScrollContent: {
-    height: BENCH_SCROLL_AREA_HEIGHT,
-    paddingTop: BENCH_SCROLL_TOP_PAD,
-    paddingRight: Spacing.lg,
-    alignItems: 'flex-start',
-  },
-  benchScrollHint: {
-    position: 'absolute',
-    right: 0,
-    top: BENCH_SCROLL_TOP_PAD + BENCH_GRID_HEIGHT / 2 - 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: SolderiColors.overlayLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  benchGrid: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    height: BENCH_GRID_HEIGHT,
-    gap: BENCH_COL_GAP,
-  },
-  benchColumn: {
-    gap: BENCH_ROW_GAP,
-  },
-  benchTileSlot: {
-    width: BENCH_TILE_WIDTH,
-    height: BENCH_TILE_HEIGHT,
-  },
-  emptyBenchText: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: SolderiColors.textSecondary,
-    opacity: 0.8,
-    maxWidth: 260,
-  },
-  pickerSection: {
-    gap: Spacing.md,
-    paddingTop: Spacing.xs,
-  },
-  pickerGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    justifyContent: 'space-between',
-  },
-  pickerCell: {
-    width: '48%',
-  },
-  floatingCta: {
-    position: 'absolute',
-    left: 28,
-    right: 28,
-    bottom: 0,
-    zIndex: 2,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topSection: {
+      paddingHorizontal: 28,
+      zIndex: 2,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      marginBottom: Spacing.xl,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    backSpacer: {
+      width: 40,
+    },
+    progressWrap: {
+      flex: 1,
+    },
+    headerCopy: {
+      gap: 8,
+      marginBottom: Spacing.lg,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      letterSpacing: -0.6,
+      lineHeight: 34,
+      color: colors.textPrimary,
+    },
+    description: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+      maxWidth: 320,
+    },
+    inventoryBar: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      marginBottom: Spacing.sm,
+    },
+    inventoryLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: colors.textMuted,
+    },
+    inventoryCount: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    workbenchZone: {
+      flex: 1,
+    },
+    pickerScroll: {
+      flex: 1,
+    },
+    pickerScrollContent: {
+      flexGrow: 1,
+    },
+    surfaceStage: {
+      position: 'relative',
+      marginTop: Spacing.xs,
+      marginBottom: -Spacing.sm,
+    },
+    surfaceOverlay: {
+      position: 'absolute',
+      left: 28,
+      right: 28,
+      justifyContent: 'flex-start',
+    },
+    emptyBench: {
+      flex: 1,
+      paddingTop: Spacing.sm,
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.xs,
+    },
+    surfaceLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      color: colors.textMuted,
+      opacity: 0.85,
+    },
+    benchLabel: {
+      width: BENCH_LABEL_WIDTH,
+      paddingTop: BENCH_SCROLL_TOP_PAD + 18,
+    },
+    benchCollection: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: Spacing.sm,
+    },
+    benchScrollWrap: {
+      flex: 1,
+      height: BENCH_SCROLL_AREA_HEIGHT,
+      position: 'relative',
+    },
+    benchScroll: {
+      flex: 1,
+      height: BENCH_SCROLL_AREA_HEIGHT,
+    },
+    benchScrollContent: {
+      height: BENCH_SCROLL_AREA_HEIGHT,
+      paddingTop: BENCH_SCROLL_TOP_PAD,
+      paddingRight: Spacing.lg,
+      alignItems: 'flex-start',
+    },
+    benchScrollHint: {
+      position: 'absolute',
+      right: 0,
+      top: BENCH_SCROLL_TOP_PAD + BENCH_GRID_HEIGHT / 2 - 8,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.overlayLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    benchGrid: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      height: BENCH_GRID_HEIGHT,
+      gap: BENCH_COL_GAP,
+    },
+    benchColumn: {
+      gap: BENCH_ROW_GAP,
+    },
+    benchTileSlot: {
+      width: BENCH_TILE_WIDTH,
+      height: BENCH_TILE_HEIGHT,
+    },
+    emptyBenchText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSecondary,
+      opacity: 0.8,
+      maxWidth: 260,
+    },
+    pickerSection: {
+      gap: Spacing.md,
+      paddingTop: Spacing.xs,
+    },
+    pickerGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.lg,
+      justifyContent: 'space-between',
+    },
+    pickerCell: {
+      width: '48%',
+    },
+    floatingCta: {
+      position: 'absolute',
+      left: 28,
+      right: 28,
+      bottom: 0,
+      zIndex: 2,
+    },
+  });
+}

@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Spacing, Typography } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type SectionHeadingProps = {
   title: string;
@@ -9,6 +11,9 @@ type SectionHeadingProps = {
 };
 
 export function SectionHeading({ title, subtitle }: SectionHeadingProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
@@ -17,16 +22,18 @@ export function SectionHeading({ title, subtitle }: SectionHeadingProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: Spacing.xs,
-  },
-  title: {
-    ...Typography.sectionTitle,
-    color: SolderiColors.textMuted,
-  },
-  subtitle: {
-    ...Typography.caption,
-    color: SolderiColors.textSecondary,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    container: {
+      gap: Spacing.xs,
+    },
+    title: {
+      ...Typography.sectionTitle,
+      color: colors.textMuted,
+    },
+    subtitle: {
+      ...Typography.caption,
+      color: colors.textSecondary,
+    },
+  });
+}

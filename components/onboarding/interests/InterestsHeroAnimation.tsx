@@ -36,7 +36,7 @@ import {
   HeroWorkbenchEnvironment,
 } from '@/components/onboarding/interests/InterestIllustrationArt';
 import { HW } from '@/constants/component-illustration-palette';
-import { SolderiColors } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 const VB_W = 360;
 const VB_H = 200;
@@ -89,6 +89,7 @@ function useSceneAngleLoop(shared: SharedValue<number>, setter: (v: number) => v
 
 /** Hero scene — animated parts use SVG rotation/translate in scene coords (reliable on iOS). */
 export function InterestsHeroAnimation({ width, height, selectedIds }: InterestsHeroAnimationProps) {
+  const colors = useSolderiColors();
   const selected = new Set(selectedIds);
 
   const armRot = useSharedValue(-8);
@@ -227,7 +228,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
   const automationActive = selected.has('automation');
   const smartHomeActive = selected.has('smart-home');
 
-  const joint = (active: boolean) => (active ? SolderiColors.accent : '#E87722');
+  const joint = (active: boolean) => (active ? colors.accent : '#E87722');
 
   return (
     <View style={[styles.wrap, { width, height }]}>
@@ -235,11 +236,11 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
         <Defs>
           <LinearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#32373B" />
-            <Stop offset="1" stopColor="#212528" />
+            <Stop offset="1" stopColor={colors.surface} />
           </LinearGradient>
           <LinearGradient id="frameGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={SolderiColors.surfaceElevated} />
-            <Stop offset="1" stopColor={SolderiColors.surface} />
+            <Stop offset="0" stopColor={colors.surfaceElevated} />
+            <Stop offset="1" stopColor={colors.surface} />
           </LinearGradient>
           <ClipPath id="beltClip">
             <Rect x={CONVEYOR_BELT.innerX} y={CONVEYOR_BELT.frameY} width={CONVEYOR_BELT.innerW} height={CONVEYOR_BELT.frameH} />
@@ -251,7 +252,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
 
         <G>
           <Ellipse cx={52} cy={138} rx={28} ry={5} fill="#000" opacity={0.22} />
-          <Rect x={28} y={118} width={48} height={20} rx={2} fill={HW.breadWhite} stroke={electronicsActive ? SolderiColors.accentBorder : HW.breadHole} strokeWidth={0.5} />
+          <Rect x={28} y={118} width={48} height={20} rx={2} fill={HW.breadWhite} stroke={electronicsActive ? colors.accentBorder : HW.breadHole} strokeWidth={0.5} />
           <TopSheen x={30} y={119} w={30} h={4} rx={1} />
           {[32, 36, 40, 44, 48, 52, 56, 60, 64, 68].map((hx) =>
             [124, 128, 132].map((hy) => <Circle key={`${hx}-${hy}`} cx={hx} cy={hy} r={0.6} fill={HW.breadHole} opacity={0.5} />),
@@ -261,7 +262,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
           <Line x1={38} y1={112} x2={34} y2={122} stroke={HW.wireYellow} strokeWidth={1.2} />
           <Line x1={56} y1={110} x2={62} y2={120} stroke={HW.wireGreen} strokeWidth={1.2} />
           <Ellipse cx={44} cy={125} rx={4} ry={3} fill={HW.ledRedGlow} opacity={0.25} />
-          <Circle cx={44} cy={126} r={2.8} fill={electronicsActive ? SolderiColors.accent : HW.ledRed} opacity={ledAOp} />
+          <Circle cx={44} cy={126} r={2.8} fill={electronicsActive ? colors.accent : HW.ledRed} opacity={ledAOp} />
           <Circle cx={58} cy={124} r={2.2} fill={HW.ledGreen} opacity={ledBOp} />
         </G>
 
@@ -283,7 +284,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
         </G>
 
         <HeroRocketGraphic accent={aerospaceActive} />
-        <Circle cx={178} cy={96} r={2.5} fill={SolderiColors.accent} opacity={rocketOp} />
+        <Circle cx={178} cy={96} r={2.5} fill={colors.accent} opacity={rocketOp} />
         <Circle cx={174} cy={102} r={1.8} fill="#DC2626" opacity={rocketOp} />
 
         {/* Gear mount (static) */}
@@ -315,7 +316,7 @@ export function InterestsHeroAnimation({ width, height, selectedIds }: Interests
 
         <G>
           <Ellipse cx={296} cy={138} rx={24} ry={4} fill="#000" opacity={0.18} />
-          <Rect x={272} y={96} width={48} height={34} rx={2.5} fill="#374151" stroke={computingActive ? SolderiColors.accentBorder : '#525C65'} strokeWidth={0.6} />
+          <Rect x={272} y={96} width={48} height={34} rx={2.5} fill="#374151" stroke={computingActive ? colors.accentBorder : '#525C65'} strokeWidth={0.6} />
           <TopSheen x={276} y={98} w={28} h={5} rx={1} />
           <Rect x={278} y={102} width={36} height={24} rx={1.5} fill={HW.screenDark} stroke={HW.screenMid} strokeWidth={0.5} />
           <Rect x={282} y={108} width={28} height={2.5} rx={1} fill={HW.screenGlow} opacity={screenAOp} />

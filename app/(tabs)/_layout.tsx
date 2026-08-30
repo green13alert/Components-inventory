@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { CustomTabBar } from '@/components/ui/custom-tab-bar';
-import { SolderiColors } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -12,14 +12,16 @@ function TabIcon({ name, color }: { name: TabIconName; color: string }) {
 }
 
 export default function TabLayout() {
+  const colors = useSolderiColors();
+
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         lazy: false,
-        tabBarActiveTintColor: SolderiColors.accent,
-        tabBarInactiveTintColor: SolderiColors.textMuted,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarButton: HapticTab,
         tabBarStyle: {
           position: 'absolute',
@@ -33,7 +35,7 @@ export default function TabLayout() {
           fontWeight: '500',
         },
         sceneStyle: {
-          backgroundColor: SolderiColors.background,
+          backgroundColor: colors.background,
         },
       }}>
       <Tabs.Screen

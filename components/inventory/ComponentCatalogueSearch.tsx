@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import type { CatalogueComponent } from '@/constants/component-catalogue';
 import { COMPONENT_FILTERS } from '@/constants/inventory';
+import { useSolderiColors } from '@/context/theme-context';
 
 function categoryLabel(category: CatalogueComponent['category']): string {
   return COMPONENT_FILTERS.find((filter) => filter.id === category)?.label ?? category;
@@ -30,6 +32,8 @@ export function ComponentCatalogueSearch({
   onSelectCustom,
   autoFocus,
 }: ComponentCatalogueSearchProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const showEmpty = dropdownOpen && query.trim().length > 0 && results.length === 0;
 
   return (
@@ -38,7 +42,7 @@ export function ComponentCatalogueSearch({
       <TextInput
         style={[styles.input, dropdownOpen && styles.inputOpen]}
         placeholder="Search DHT22, HC-SR04, Arduino Uno…"
-        placeholderTextColor={SolderiColors.textMuted}
+        placeholderTextColor={colors.textMuted}
         value={query}
         onChangeText={onChangeQuery}
         autoFocus={autoFocus}
@@ -98,106 +102,108 @@ export function ComponentCatalogueSearch({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    gap: 12,
-    zIndex: 2,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  input: {
-    backgroundColor: SolderiColors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: SolderiColors.textPrimary,
-  },
-  inputOpen: {
-    borderColor: SolderiColors.accentBorder,
-  },
-  dropdown: {
-    backgroundColor: SolderiColors.surfaceElevated,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    overflow: 'hidden',
-  },
-  resultList: {
-    maxHeight: 260,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: SolderiColors.border,
-  },
-  resultRowPressed: {
-    backgroundColor: SolderiColors.accentMuted,
-  },
-  resultCopy: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
-  resultName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  resultDescription: {
-    fontSize: 13,
-    color: SolderiColors.textSecondary,
-  },
-  categoryChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  categoryChipText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: SolderiColors.textSecondary,
-  },
-  emptyBlock: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 4,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  emptyBody: {
-    fontSize: 13,
-    color: SolderiColors.textSecondary,
-  },
-  customRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: SolderiColors.border,
-    gap: 2,
-  },
-  customTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.accent,
-  },
-  customHint: {
-    fontSize: 12,
-    color: SolderiColors.textMuted,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    wrap: {
+      gap: 12,
+      zIndex: 2,
+    },
+    label: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    input: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    inputOpen: {
+      borderColor: colors.accentBorder,
+    },
+    dropdown: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    resultList: {
+      maxHeight: 260,
+    },
+    resultRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    resultRowPressed: {
+      backgroundColor: colors.accentMuted,
+    },
+    resultCopy: {
+      flex: 1,
+      gap: 2,
+      minWidth: 0,
+    },
+    resultName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    resultDescription: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    categoryChip: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    categoryChipText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    emptyBlock: {
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      gap: 4,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    emptyBody: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    customRow: {
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      gap: 2,
+    },
+    customTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    customHint: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+  });
+}

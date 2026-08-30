@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Spacing, Typography } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type WorkshopStatsProps = {
   componentCount: number;
@@ -16,6 +18,9 @@ type StatItemProps = {
 };
 
 function StatItem({ value, label, showDivider }: StatItemProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <>
       <View style={styles.stat}>
@@ -32,6 +37,9 @@ export function WorkshopStats({
   projectCount,
   completedCount,
 }: WorkshopStatsProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <StatItem value={componentCount} label="Components" showDivider />
@@ -41,31 +49,33 @@ export function WorkshopStats({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: SolderiColors.surface,
-    borderRadius: 16,
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  value: {
-    ...Typography.stat,
-    color: SolderiColors.textPrimary,
-  },
-  label: {
-    ...Typography.metadata,
-    color: SolderiColors.textMuted,
-  },
-  divider: {
-    width: 1,
-    height: 32,
-    backgroundColor: SolderiColors.border,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      paddingVertical: Spacing.xl,
+      paddingHorizontal: Spacing.lg,
+    },
+    stat: {
+      flex: 1,
+      alignItems: 'center',
+      gap: Spacing.xs,
+    },
+    value: {
+      ...Typography.stat,
+      color: colors.textPrimary,
+    },
+    label: {
+      ...Typography.metadata,
+      color: colors.textMuted,
+    },
+    divider: {
+      width: 1,
+      height: 32,
+      backgroundColor: colors.border,
+    },
+  });
+}

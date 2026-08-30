@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,9 +14,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { AUTH_SIGN_UP } from '@/constants/auth';
 import { Radii, Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type SignUpScreenProps = {
   email: string;
@@ -40,13 +42,16 @@ function SocialAuthButton({
   icon: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.socialButton, pressed && styles.socialButtonPressed]}
       accessibilityRole="button"
       accessibilityLabel={label}>
-      <Ionicons name={icon} size={20} color={SolderiColors.textPrimary} />
+      <Ionicons name={icon} size={20} color={colors.textPrimary} />
       <Text style={styles.socialLabel}>{label}</Text>
     </Pressable>
   );
@@ -65,12 +70,14 @@ export function SignUpScreen({
   onSocialApple,
   onSocialGoogle,
 }: SignUpScreenProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={['#1E2226', '#181B1E', '#181B1E']}
+        colors={[colors.gradientStart, colors.background, colors.background]}
         locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -96,7 +103,7 @@ export function SignUpScreen({
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={22} color={SolderiColors.textSecondary} />
+            <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
           </Pressable>
 
           <View style={styles.header}>
@@ -179,101 +186,103 @@ export function SignUpScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 28,
-    gap: Spacing.lg,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    width: 40,
-    height: 40,
-    marginLeft: -8,
-    marginBottom: -Spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  header: {
-    gap: Spacing.sm,
-  },
-  title: {
-    fontSize: 23,
-    fontWeight: '700',
-    letterSpacing: -0.45,
-    lineHeight: 28,
-    color: SolderiColors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: SolderiColors.textSecondary,
-    maxWidth: 320,
-  },
-  form: {
-    gap: Spacing.md,
-  },
-  actions: {
-    gap: Spacing.lg,
-  },
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  loginPrompt: {
-    fontSize: 15,
-    color: SolderiColors.textSecondary,
-  },
-  loginLink: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.accent,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: SolderiColors.border,
-  },
-  dividerText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SolderiColors.textMuted,
-    textTransform: 'lowercase',
-  },
-  socialStack: {
-    gap: Spacing.sm,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    minHeight: 52,
-    borderRadius: Radii.md,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  socialButtonPressed: {
-    opacity: 0.88,
-    backgroundColor: SolderiColors.surfaceElevated,
-  },
-  socialLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: SolderiColors.textPrimary,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 28,
+      gap: Spacing.lg,
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      width: 40,
+      height: 40,
+      marginLeft: -8,
+      marginBottom: -Spacing.xs,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    header: {
+      gap: Spacing.sm,
+    },
+    title: {
+      fontSize: 23,
+      fontWeight: '700',
+      letterSpacing: -0.45,
+      lineHeight: 28,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+      maxWidth: 320,
+    },
+    form: {
+      gap: Spacing.md,
+    },
+    actions: {
+      gap: Spacing.lg,
+    },
+    loginRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+    },
+    loginPrompt: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    loginLink: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    dividerText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textMuted,
+      textTransform: 'lowercase',
+    },
+    socialStack: {
+      gap: Spacing.sm,
+    },
+    socialButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      minHeight: 52,
+      borderRadius: Radii.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    socialButtonPressed: {
+      opacity: 0.88,
+      backgroundColor: colors.surfaceElevated,
+    },
+    socialLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+  });
+}

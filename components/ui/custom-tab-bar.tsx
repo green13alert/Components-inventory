@@ -3,18 +3,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 const MAIN_TABS = [
   { routeName: 'index', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
@@ -23,7 +24,6 @@ const MAIN_TABS = [
 ] as const;
 
 const TAB_COUNT = MAIN_TABS.length;
-const BAR_SURFACE = SolderiColors.barSurface;
 const AI_BUTTON_SIZE = 52;
 const H_PADDING = 6;
 const TAB_GAP = 4;
@@ -68,6 +68,8 @@ function getMainTabIndex(state: BottomTabBarProps['state']) {
 }
 
 export function CustomTabBar({ navigation, state }: BottomTabBarProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -94,7 +96,7 @@ export function CustomTabBar({ navigation, state }: BottomTabBarProps) {
         accessibilityState={{ selected: isAiActive }}>
         <BlurView
           intensity={Platform.OS === 'ios' ? 60 : 48}
-          tint="dark"
+          tint={colors.blurTint}
           style={StyleSheet.absoluteFill}
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
@@ -102,7 +104,7 @@ export function CustomTabBar({ navigation, state }: BottomTabBarProps) {
         <Ionicons
           name={isAiActive ? 'sparkles' : 'sparkles-outline'}
           size={22}
-          color={isAiActive ? SolderiColors.accent : SolderiColors.textSecondary}
+          color={isAiActive ? colors.accent : colors.textSecondary}
         />
       </Pressable>
     </View>
@@ -116,6 +118,8 @@ function SlidingTabBar({
   navigation: BottomTabBarProps['navigation'];
   state: BottomTabBarProps['state'];
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const activeIndex = getMainTabIndex(state);
   const [visualIndex, setVisualIndex] = useState(activeIndex);
   const [barWidth, setBarWidth] = useState(0);
@@ -215,7 +219,7 @@ function SlidingTabBar({
     <View style={styles.mainBar}>
       <BlurView
         intensity={Platform.OS === 'ios' ? 60 : 48}
-        tint="dark"
+        tint={colors.blurTint}
         style={StyleSheet.absoluteFill}
         experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       />
@@ -265,6 +269,9 @@ function TabButton({
   isFocused: boolean;
   onPress: () => void;
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Pressable
       style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}
@@ -275,7 +282,7 @@ function TabButton({
         <Ionicons
           name={icon as never}
           size={20}
-          color={isFocused ? SolderiColors.accent : SolderiColors.textMuted}
+          color={isFocused ? colors.accent : colors.textMuted}
         />
         <Text style={[styles.label, isFocused && styles.labelActive]} numberOfLines={1}>
           {label}
@@ -285,90 +292,92 @@ function TabButton({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  mainBar: {
-    flex: 1,
-    borderRadius: 28,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SolderiColors.border,
-  },
-  barOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: BAR_SURFACE,
-  },
-  barContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: BUBBLE_TOP,
-    paddingHorizontal: H_PADDING,
-    gap: TAB_GAP,
-    position: 'relative',
-    minHeight: BUBBLE_HEIGHT + BUBBLE_TOP * 2,
-  },
-  slidingBubble: {
-    position: 'absolute',
-    top: BUBBLE_TOP,
-    height: BUBBLE_HEIGHT,
-    borderRadius: 22,
-    backgroundColor: SolderiColors.accentMuted,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SolderiColors.accentBorder,
-  },
-  tabButton: {
-    flex: 1,
-    zIndex: 1,
-  },
-  tabContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    minWidth: 72,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: SolderiColors.textMuted,
-    letterSpacing: 0.1,
-  },
-  labelActive: {
-    color: SolderiColors.accent,
-    fontWeight: '600',
-  },
-  aiButton: {
-    width: AI_BUTTON_SIZE,
-    height: AI_BUTTON_SIZE,
-    borderRadius: AI_BUTTON_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SolderiColors.border,
-  },
-  aiButtonActive: {
-    borderColor: SolderiColors.accentBorder,
-  },
-  aiOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: BAR_SURFACE,
-  },
-  aiOverlayActive: {
-    backgroundColor: SolderiColors.accentMuted,
-  },
-  pressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.96 }],
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    wrapper: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      gap: 10,
+    },
+    mainBar: {
+      flex: 1,
+      borderRadius: 28,
+      overflow: 'hidden',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    barOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.barSurface,
+    },
+    barContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: BUBBLE_TOP,
+      paddingHorizontal: H_PADDING,
+      gap: TAB_GAP,
+      position: 'relative',
+      minHeight: BUBBLE_HEIGHT + BUBBLE_TOP * 2,
+    },
+    slidingBubble: {
+      position: 'absolute',
+      top: BUBBLE_TOP,
+      height: BUBBLE_HEIGHT,
+      borderRadius: 22,
+      backgroundColor: colors.accentMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.accentBorder,
+    },
+    tabButton: {
+      flex: 1,
+      zIndex: 1,
+    },
+    tabContent: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 3,
+      paddingVertical: 7,
+      paddingHorizontal: 10,
+      minWidth: 72,
+    },
+    label: {
+      fontSize: 10,
+      fontWeight: '500',
+      color: colors.textMuted,
+      letterSpacing: 0.1,
+    },
+    labelActive: {
+      color: colors.accent,
+      fontWeight: '600',
+    },
+    aiButton: {
+      width: AI_BUTTON_SIZE,
+      height: AI_BUTTON_SIZE,
+      borderRadius: AI_BUTTON_SIZE / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    aiButtonActive: {
+      borderColor: colors.accentBorder,
+    },
+    aiOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.barSurface,
+    },
+    aiOverlayActive: {
+      backgroundColor: colors.accentMuted,
+    },
+    pressed: {
+      opacity: 0.8,
+      transform: [{ scale: 0.96 }],
+    },
+  });
+}

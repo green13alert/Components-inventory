@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { SolderiColors } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -41,6 +41,7 @@ export function ExperienceProgressionRail({
   stageCenters,
   activeStage,
 }: ExperienceProgressionRailProps) {
+  const colors = useSolderiColors();
   const [y0, y1, y2] = stageCenters;
 
   const segment0 = useSharedValue(0);
@@ -124,7 +125,7 @@ export function ExperienceProgressionRail({
     <Svg width={72} height={height} viewBox={`0 0 72 ${height}`}>
       <Path
         d={trunkPath}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1.5}
         fill="none"
         strokeLinecap="round"
@@ -134,7 +135,7 @@ export function ExperienceProgressionRail({
 
       <AnimatedPath
         d={seg0Path}
-        stroke={SolderiColors.accent}
+        stroke={colors.accent}
         strokeWidth={2}
         fill="none"
         strokeLinecap="round"
@@ -142,7 +143,7 @@ export function ExperienceProgressionRail({
       />
       <AnimatedPath
         d={seg1Path}
-        stroke={SolderiColors.accent}
+        stroke={colors.accent}
         strokeWidth={2}
         fill="none"
         strokeLinecap="round"
@@ -154,7 +155,7 @@ export function ExperienceProgressionRail({
         y1={y0}
         x2={RAIL_X + 28}
         y2={y0 + 10}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1}
         opacity={0.4}
       />
@@ -163,7 +164,7 @@ export function ExperienceProgressionRail({
         y1={y1}
         x2={RAIL_X + 34}
         y2={y1 + 14}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1}
         opacity={0.45}
       />
@@ -172,7 +173,7 @@ export function ExperienceProgressionRail({
         y1={y1 + 14}
         x2={RAIL_X + 46}
         y2={y1 + 14}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1}
         opacity={0.45}
       />
@@ -181,7 +182,7 @@ export function ExperienceProgressionRail({
         y1={y2}
         x2={RAIL_X + 42}
         y2={y2 + 12}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1}
         opacity={0.5}
       />
@@ -190,7 +191,7 @@ export function ExperienceProgressionRail({
         y1={y2 + 12}
         x2={RAIL_X + 56}
         y2={y2 + 12}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1}
         opacity={0.5}
       />
@@ -199,32 +200,32 @@ export function ExperienceProgressionRail({
         y1={y2 + 12}
         x2={RAIL_X + 56}
         y2={y2 + 22}
-        stroke={SolderiColors.border}
+        stroke={colors.border}
         strokeWidth={1}
         opacity={0.5}
       />
 
-      <Circle cx={RAIL_X + 46} cy={y1 + 14} r={PAD_R} fill={SolderiColors.border} opacity={0.35} />
-      <Circle cx={RAIL_X + 56} cy={y2 + 12} r={PAD_R} fill={SolderiColors.border} opacity={0.4} />
-      <Circle cx={RAIL_X + 56} cy={y2 + 22} r={PAD_R} fill={SolderiColors.border} opacity={0.4} />
-      <Circle cx={RAIL_X + 14} cy={y2 - 8} r={PAD_R} fill={SolderiColors.border} opacity={0.3} />
+      <Circle cx={RAIL_X + 46} cy={y1 + 14} r={PAD_R} fill={colors.border} opacity={0.35} />
+      <Circle cx={RAIL_X + 56} cy={y2 + 12} r={PAD_R} fill={colors.border} opacity={0.4} />
+      <Circle cx={RAIL_X + 56} cy={y2 + 22} r={PAD_R} fill={colors.border} opacity={0.4} />
+      <Circle cx={RAIL_X + 14} cy={y2 - 8} r={PAD_R} fill={colors.border} opacity={0.3} />
 
       <AnimatedCircle
         cx={RAIL_X + 10}
         cy={y0}
-        fill={SolderiColors.accent}
+        fill={colors.accent}
         animatedProps={node0Props}
       />
       <AnimatedCircle
         cx={RAIL_X + 12}
         cy={y1}
-        fill={SolderiColors.accent}
+        fill={colors.accent}
         animatedProps={node1Props}
       />
       <AnimatedCircle
         cx={RAIL_X + 14}
         cy={y2}
-        fill={SolderiColors.accent}
+        fill={colors.accent}
         animatedProps={node2Props}
       />
     </Svg>

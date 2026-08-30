@@ -10,7 +10,7 @@ import {
 import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
 
 import { SectionHeading } from '@/components/home/SectionHeading';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import {
   ActivityLevel,
   CELL_GAP,
@@ -23,21 +23,27 @@ import {
   toDateKey,
   YearGrid,
   computeYearMetrics,
+  CALENDAR_COLUMNS,
   YEAR_PAGE_COUNT,
 } from '@/constants/build-activity';
 import { Spacing, Typography } from '@/constants/tokens';
-
-const LEVEL_COLORS: Record<ActivityLevel, string> = {
-  0: '#2A2E31',
-  1: 'rgba(255, 181, 71, 0.20)',
-  2: 'rgba(255, 181, 71, 0.42)',
-  3: 'rgba(255, 181, 71, 0.68)',
-  4: SolderiColors.accent,
-};
+import { useSolderiColors } from '@/context/theme-context';
 
 const CELL_RADIUS = 3;
 
+function getLevelColors(colors: SolderiPalette): Record<ActivityLevel, string> {
+  return {
+    0: colors.graphEmpty,
+    1: 'rgba(255, 181, 71, 0.20)',
+    2: 'rgba(255, 181, 71, 0.42)',
+    3: 'rgba(255, 181, 71, 0.68)',
+    4: colors.accent,
+  };
+}
+
 export function BuildActivitySection() {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [yearPageIndex, setYearPageIndex] = useState(0);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
@@ -138,6 +144,9 @@ function YearView({
   onSelectDate: (dateKey: string) => void;
   onScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.yearView}>
       <ScrollView
@@ -158,6 +167,7 @@ function YearView({
               <YearPage
                 weeks={page.weeks}
                 monthRegions={monthRegions}
+                containerWidth={containerWidth}
                 gridHeight={gridHeight}
                 gap={gap}
                 selectedDateKey={selectedDateKey}
@@ -183,6 +193,7 @@ function YearView({
 function YearPage({
   weeks,
   monthRegions,
+  containerWidth,
   gridHeight,
   gap,
   selectedDateKey,
@@ -190,11 +201,20 @@ function YearPage({
 }: {
   weeks: YearGrid['weeks'];
   monthRegions: MonthRegion[];
+  containerWidth: number;
   gridHeight: number;
   gap: number;
   selectedDateKey: string | null;
   onSelectDate: (dateKey: string) => void;
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const weekCount = weeks.length;
+  const cellSize =
+    weekCount > 0 ? (containerWidth - (weekCount - 1) * gap) / weekCount : 0;
+  const rowSlotHeight =
+    (gridHeight - (CALENDAR_COLUMNS - 1) * gap) / CALENDAR_COLUMNS;
+
   return (
     <View style={styles.yearPage}>
       <View style={[styles.monthLabelRow, { gap }]}>
@@ -217,8 +237,10 @@ function YearPage({
             {week.map((day, dayIndex) => {
               if (!day) {
                 return (
-                  <View key={`${weekIndex}-${dayIndex}`} style={styles.yearCellSlot}>
-                    <View style={styles.emptyCell} />
+                  <View
+                    key={`${weekIndex}-${dayIndex}`}
+                    style={[styles.cellSlot, { height: rowSlotHeight }]}>
+                    <View style={[styles.emptyCell, { width: cellSize, height: cellSize }]} />
                   </View>
                 );
               }
@@ -226,13 +248,17 @@ function YearPage({
               const dateKey = toDateKey(day.date);
 
               return (
-                <ActivityCell
+                <View
                   key={`${weekIndex}-${dayIndex}`}
-                  dateKey={dateKey}
-                  level={day.level}
-                  selected={selectedDateKey === dateKey}
-                  onSelectDate={onSelectDate}
-                />
+                  style={[styles.cellSlot, { height: rowSlotHeight }]}>
+                  <ActivityCell
+                    dateKey={dateKey}
+                    level={day.level}
+                    cellSize={cellSize}
+                    selected={selectedDateKey === dateKey}
+                    onSelectDate={onSelectDate}
+                  />
+                </View>
               );
             })}
           </View>
@@ -245,27 +271,33 @@ function YearPage({
 const ActivityCell = memo(function ActivityCell({
   dateKey,
   level,
+  cellSize,
   selected,
   onSelectDate,
 }: {
   dateKey: string;
   level: ActivityLevel;
+  cellSize: number;
   selected: boolean;
   onSelectDate: (dateKey: string) => void;
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const levelColors = useMemo(() => getLevelColors(colors), [colors]);
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={() => onSelectDate(dateKey)}
       pressRetentionOffset={8}
-      style={styles.cellTouchable}
+      style={{ width: cellSize, height: cellSize }}
       accessibilityRole="button"
       accessibilityLabel={`${dateKey}, activity level ${level}`}>
       <View
         pointerEvents="none"
         style={[
           styles.cell,
-          { backgroundColor: LEVEL_COLORS[level] },
+          { backgroundColor: levelColors[level] },
           selected && styles.cellSelected,
         ]}
       />
@@ -273,86 +305,79 @@ const ActivityCell = memo(function ActivityCell({
   );
 });
 
-const styles = StyleSheet.create({
-  section: {
-    gap: Spacing.lg,
-  },
-  graph: {
-    gap: Spacing.sm,
-    width: '100%',
-  },
-  yearView: {
-    width: '100%',
-    gap: Spacing.xs,
-  },
-  yearPage: {
-    width: '100%',
-    gap: Spacing.xs,
-  },
-  yearPager: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: Spacing.xs,
-  },
-  yearPagerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: SolderiColors.border,
-  },
-  yearPagerDotActive: {
-    backgroundColor: SolderiColors.accent,
-  },
-  monthLabelRow: {
-    flexDirection: 'row',
-    minHeight: 14,
-  },
-  monthLabel: {
-    ...Typography.metadata,
-    fontSize: 10,
-    color: SolderiColors.textMuted,
-  },
-  yearGrid: {
-    flexDirection: 'row',
-    width: '100%',
-  },
-  yearWeekColumn: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  yearCellSlot: {
-    flex: 1,
-  },
-  cellTouchable: {
-    flex: 1,
-    alignSelf: 'stretch',
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cell: {
-    width: '100%',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    aspectRatio: 1,
-    borderRadius: CELL_RADIUS,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: SolderiColors.borderSubtle,
-  },
-  emptyCell: {
-    width: '100%',
-    maxHeight: '100%',
-    aspectRatio: 1,
-  },
-  cellSelected: {
-    borderColor: SolderiColors.accent,
-    borderWidth: 1.5,
-  },
-  selectedDateLabel: {
-    ...Typography.metadata,
-    fontSize: 12,
-    color: SolderiColors.textSecondary,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    section: {
+      gap: Spacing.lg,
+    },
+    graph: {
+      gap: Spacing.sm,
+      width: '100%',
+    },
+    yearView: {
+      width: '100%',
+      gap: Spacing.xs,
+    },
+    yearPage: {
+      width: '100%',
+      gap: Spacing.xs,
+    },
+    yearPager: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 6,
+      marginTop: Spacing.xs,
+    },
+    yearPagerDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.border,
+    },
+    yearPagerDotActive: {
+      backgroundColor: colors.accent,
+    },
+    monthLabelRow: {
+      flexDirection: 'row',
+      minHeight: 14,
+    },
+    monthLabel: {
+      ...Typography.metadata,
+      fontSize: 10,
+      color: colors.textMuted,
+    },
+    yearGrid: {
+      flexDirection: 'row',
+      width: '100%',
+    },
+    yearWeekColumn: {
+      flex: 1,
+      flexDirection: 'column',
+    },
+    cellSlot: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cell: {
+      flex: 1,
+      width: '100%',
+      height: '100%',
+      borderRadius: CELL_RADIUS,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.borderSubtle,
+    },
+    emptyCell: {
+      borderRadius: CELL_RADIUS,
+    },
+    cellSelected: {
+      borderColor: colors.accent,
+      borderWidth: 1.5,
+    },
+    selectedDateLabel: {
+      ...Typography.metadata,
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+}

@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { SolderiColors } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -25,6 +25,7 @@ type AiNetworkVisualProps = {
 };
 
 export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
+  const colors = useSolderiColors();
   const travelA = useSharedValue(220);
   const travelB = useSharedValue(260);
   const pulse = useSharedValue(0.28);
@@ -67,7 +68,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
       <Svg width={size} height={size} viewBox="0 0 200 220">
         <Path
           d="M100 28 V110"
-          stroke={SolderiColors.border}
+          stroke={colors.border}
           strokeWidth={1.15}
           fill="none"
           strokeLinecap="round"
@@ -75,7 +76,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
         />
         <Path
           d="M38 92 H100"
-          stroke={SolderiColors.border}
+          stroke={colors.border}
           strokeWidth={1.15}
           fill="none"
           strokeLinecap="round"
@@ -83,7 +84,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
         />
         <Path
           d="M100 110 H174 V64"
-          stroke={SolderiColors.border}
+          stroke={colors.border}
           strokeWidth={1.15}
           fill="none"
           strokeLinecap="round"
@@ -91,7 +92,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
         />
         <Path
           d="M100 110 H174 V178"
-          stroke={SolderiColors.border}
+          stroke={colors.border}
           strokeWidth={1.15}
           fill="none"
           strokeLinecap="round"
@@ -99,7 +100,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
         />
         <Path
           d="M100 110 V186 H52"
-          stroke={SolderiColors.border}
+          stroke={colors.border}
           strokeWidth={1.15}
           fill="none"
           strokeLinecap="round"
@@ -107,7 +108,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
         />
         <Path
           d="M38 92 V150 H100"
-          stroke={SolderiColors.border}
+          stroke={colors.border}
           strokeWidth={1}
           fill="none"
           strokeLinecap="round"
@@ -116,7 +117,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
 
         <AnimatedPath
           d={PATH_A}
-          stroke={SolderiColors.accent}
+          stroke={colors.accent}
           strokeWidth={1.35}
           fill="none"
           strokeLinecap="round"
@@ -126,7 +127,7 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
         />
         <AnimatedPath
           d={PATH_B}
-          stroke={SolderiColors.accent}
+          stroke={colors.accent}
           strokeWidth={1.2}
           fill="none"
           strokeLinecap="round"
@@ -139,19 +140,19 @@ export function AiNetworkVisual({ size = SIZE }: AiNetworkVisualProps) {
           cx={100}
           cy={110}
           r={11}
-          stroke={SolderiColors.accent}
+          stroke={colors.accent}
           strokeWidth={1}
           fill="none"
           animatedProps={coreProps}
         />
-        <Circle cx={100} cy={110} r={2.6} fill={SolderiColors.accent} opacity={0.85} />
+        <Circle cx={100} cy={110} r={2.6} fill={colors.accent} opacity={0.85} />
 
-        <Circle cx={100} cy={28} r={2.1} fill={SolderiColors.textMuted} opacity={0.55} />
-        <Circle cx={38} cy={92} r={2.1} fill={SolderiColors.textMuted} opacity={0.5} />
-        <Circle cx={174} cy={64} r={2.1} fill={SolderiColors.textMuted} opacity={0.5} />
-        <Circle cx={174} cy={178} r={2.1} fill={SolderiColors.accent} opacity={0.35} />
-        <Circle cx={52} cy={186} r={2.1} fill={SolderiColors.textMuted} opacity={0.45} />
-        <Circle cx={38} cy={150} r={1.8} fill={SolderiColors.textMuted} opacity={0.4} />
+        <Circle cx={100} cy={28} r={2.1} fill={colors.textMuted} opacity={0.55} />
+        <Circle cx={38} cy={92} r={2.1} fill={colors.textMuted} opacity={0.5} />
+        <Circle cx={174} cy={64} r={2.1} fill={colors.textMuted} opacity={0.5} />
+        <Circle cx={174} cy={178} r={2.1} fill={colors.accent} opacity={0.35} />
+        <Circle cx={52} cy={186} r={2.1} fill={colors.textMuted} opacity={0.45} />
+        <Circle cx={38} cy={150} r={1.8} fill={colors.textMuted} opacity={0.4} />
       </Svg>
     </View>
   );

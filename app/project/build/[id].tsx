@@ -5,16 +5,19 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
-import { useAtlas } from '@/context/atlas-context';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { getProjectSteps } from '@/constants/project-steps';
 import { getProjectById, getStartButtonLabel } from '@/constants/projects-data';
 import { getProjectSketch } from '@/constants/walkthrough-content';
+import { useAtlas } from '@/context/atlas-context';
+import { useSolderiColors } from '@/context/theme-context';
 
 export default function ProjectBuildScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     getCurrentStepIndex,
     setProjectStep,
@@ -31,7 +34,7 @@ export default function ProjectBuildScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.notFound}>
-          <Ionicons name="alert-circle-outline" size={40} color={SolderiColors.textMuted} />
+          <Ionicons name="alert-circle-outline" size={40} color={colors.textMuted} />
           <Text style={styles.notFoundTitle}>Project not found</Text>
           <Pressable style={styles.notFoundButton} onPress={() => router.back()}>
             <Text style={styles.notFoundButtonText}>Go Back</Text>
@@ -78,7 +81,7 @@ export default function ProjectBuildScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
           </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>
             {project.title}
@@ -87,7 +90,7 @@ export default function ProjectBuildScreen() {
         </View>
         <View style={styles.readyState}>
           <View style={styles.readyIcon}>
-            <Ionicons name="construct-outline" size={48} color={SolderiColors.textSecondary} />
+            <Ionicons name="construct-outline" size={48} color={colors.textSecondary} />
           </View>
           <Text style={styles.readyTitle}>Ready to build?</Text>
           <Text style={styles.readySubtitle}>
@@ -99,7 +102,7 @@ export default function ProjectBuildScreen() {
               handleStartOrContinue();
             }}
             accessibilityRole="button">
-            <Ionicons name="play" size={20} color={SolderiColors.onAccent} />
+            <Ionicons name="play" size={20} color={colors.onAccent} />
             <Text style={styles.primaryButtonText}>{getStartButtonLabel(status)}</Text>
           </Pressable>
         </View>
@@ -127,7 +130,7 @@ export default function ProjectBuildScreen() {
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <View style={styles.topBarCenter}>
           <Text style={styles.topBarTitle} numberOfLines={1}>
@@ -142,7 +145,7 @@ export default function ProjectBuildScreen() {
           onPress={() => router.replace({ pathname: '/project/[id]', params: { id: project.id } })}
           accessibilityRole="button"
           accessibilityLabel="Exit build">
-          <Ionicons name="close" size={22} color={SolderiColors.textSecondary} />
+          <Ionicons name="close" size={22} color={colors.textSecondary} />
         </Pressable>
       </View>
 
@@ -187,12 +190,12 @@ export default function ProjectBuildScreen() {
           onPress={handlePrev}
           disabled={isFirstStep}
           accessibilityRole="button">
-          <Ionicons name="chevron-back" size={18} color={SolderiColors.textPrimary} />
+          <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
           <Text style={styles.secondaryButtonText}>Previous</Text>
         </Pressable>
         <Pressable style={styles.primaryButton} onPress={handleNext} accessibilityRole="button">
           <Text style={styles.primaryButtonText}>{isLastStep ? 'Complete' : 'Next Step'}</Text>
-          <Ionicons name={isLastStep ? 'checkmark' : 'chevron-forward'} size={18} color={SolderiColors.onAccent} />
+          <Ionicons name={isLastStep ? 'checkmark' : 'chevron-forward'} size={18} color={colors.onAccent} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -212,6 +215,8 @@ function ProjectCompleteView({
   onBrowseProjects: () => void;
   sketch: ReturnType<typeof getProjectSketch>;
 }) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [showCode, setShowCode] = useState(false);
 
   return (
@@ -222,7 +227,7 @@ function ProjectCompleteView({
           onPress={onBackToProject}
           accessibilityRole="button"
           accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={24} color={SolderiColors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </Pressable>
         <View style={styles.topBarCenter}>
           <Text style={styles.topBarTitle} numberOfLines={1}>
@@ -236,7 +241,7 @@ function ProjectCompleteView({
         contentContainerStyle={styles.completeScroll}
         showsVerticalScrollIndicator={false}>
         <View style={[styles.readyIcon, styles.completedIcon]}>
-          <Ionicons name="checkmark-circle" size={48} color={SolderiColors.success} />
+          <Ionicons name="checkmark-circle" size={48} color={colors.success} />
         </View>
         <Text style={styles.completeKicker}>Project complete</Text>
         <Text style={styles.readyTitle}>You've finished the project.</Text>
@@ -255,11 +260,11 @@ function ProjectCompleteView({
             style={styles.secondaryButtonWide}
             onPress={() => setShowCode((open) => !open)}
             accessibilityRole="button">
-            <Ionicons name="code-slash-outline" size={18} color={SolderiColors.textPrimary} />
+            <Ionicons name="code-slash-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>{showCode ? 'Hide code' : 'View code'}</Text>
           </Pressable>
           <Pressable style={styles.secondaryButtonWide} onPress={onBrowseProjects} accessibilityRole="button">
-            <Ionicons name="albums-outline" size={18} color={SolderiColors.textPrimary} />
+            <Ionicons name="albums-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>Start another project</Text>
           </Pressable>
           <Pressable style={styles.primaryButton} onPress={onBackToProject} accessibilityRole="button">
@@ -271,255 +276,257 @@ function ProjectCompleteView({
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topBarCenter: {
-    flex: 1,
-    gap: 2,
-  },
-  topBarTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-    textAlign: 'center',
-  },
-  topBarSubtitle: {
-    fontSize: 13,
-    color: SolderiColors.textSecondary,
-    textAlign: 'center',
-  },
-  progressSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    gap: 8,
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SolderiColors.textSecondary,
-  },
-  progressValue: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: SolderiColors.accent,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: SolderiColors.surfaceElevated,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: SolderiColors.accent,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  stepBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: SolderiColors.accentMuted,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  stepBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: SolderiColors.accent,
-    textTransform: 'uppercase',
-  },
-  stepTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: SolderiColors.textPrimary,
-    letterSpacing: -0.5,
-    lineHeight: 32,
-  },
-  stepDescription: {
-    fontSize: 16,
-    lineHeight: 26,
-    color: SolderiColors.textSecondary,
-  },
-  stepDots: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingTop: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: SolderiColors.surfaceElevated,
-  },
-  dotActive: {
-    backgroundColor: SolderiColors.accent,
-    width: 20,
-  },
-  dotCompleted: {
-    backgroundColor: SolderiColors.success,
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: SolderiColors.border,
-    backgroundColor: SolderiColors.background,
-  },
-  primaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: SolderiColors.accent,
-    borderRadius: 16,
-    paddingVertical: 16,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.onAccent,
-  },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: SolderiColors.textPrimary,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  readyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 16,
-  },
-  readyIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: SolderiColors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  completedIcon: {
-    backgroundColor: SolderiColors.successMuted,
-  },
-  readyTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: SolderiColors.textPrimary,
-    textAlign: 'center',
-  },
-  readySubtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: SolderiColors.textSecondary,
-    textAlign: 'center',
-  },
-  completeScroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 16,
-    alignItems: 'center',
-  },
-  completeKicker: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: SolderiColors.success,
-    textAlign: 'center',
-  },
-  completeActions: {
-    width: '100%',
-    gap: 10,
-    marginTop: 8,
-  },
-  completeCode: {
-    width: '100%',
-    alignSelf: 'stretch',
-  },
-  secondaryButtonWide: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  notFound: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-  },
-  notFoundTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  notFoundButton: {
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  notFoundButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: SolderiColors.textPrimary,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingTop: 4,
+      paddingBottom: 12,
+      gap: 8,
+    },
+    iconButton: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    topBarCenter: {
+      flex: 1,
+      gap: 2,
+    },
+    topBarTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    topBarSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    progressSection: {
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      gap: 8,
+    },
+    progressLabels: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    progressLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    progressValue: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.accent,
+    },
+    progressTrack: {
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.surfaceElevated,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 4,
+      backgroundColor: colors.accent,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      gap: 16,
+    },
+    stepBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.accentMuted,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    stepBadgeText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.accent,
+      textTransform: 'uppercase',
+    },
+    stepTitle: {
+      fontSize: 26,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      letterSpacing: -0.5,
+      lineHeight: 32,
+    },
+    stepDescription: {
+      fontSize: 16,
+      lineHeight: 26,
+      color: colors.textSecondary,
+    },
+    stepDots: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      paddingTop: 8,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.surfaceElevated,
+    },
+    dotActive: {
+      backgroundColor: colors.accent,
+      width: 20,
+    },
+    dotCompleted: {
+      backgroundColor: colors.success,
+    },
+    footer: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    primaryButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.accent,
+      borderRadius: 16,
+      paddingVertical: 16,
+    },
+    primaryButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.onAccent,
+    },
+    secondaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    secondaryButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    buttonDisabled: {
+      opacity: 0.4,
+    },
+    readyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      gap: 16,
+    },
+    readyIcon: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: colors.accentMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    completedIcon: {
+      backgroundColor: colors.successMuted,
+    },
+    readyTitle: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    readySubtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    completeScroll: {
+      paddingHorizontal: 20,
+      paddingBottom: 32,
+      gap: 16,
+      alignItems: 'center',
+    },
+    completeKicker: {
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: colors.success,
+      textAlign: 'center',
+    },
+    completeActions: {
+      width: '100%',
+      gap: 10,
+      marginTop: 8,
+    },
+    completeCode: {
+      width: '100%',
+      alignSelf: 'stretch',
+    },
+    secondaryButtonWide: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingVertical: 16,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    notFound: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      paddingHorizontal: 20,
+    },
+    notFoundTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    notFoundButton: {
+      marginTop: 8,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    notFoundButtonText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+  });
+}

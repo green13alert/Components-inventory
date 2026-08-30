@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type OnboardingProgressProps = {
   currentStep: number;
@@ -9,6 +11,9 @@ type OnboardingProgressProps = {
 };
 
 export function OnboardingProgress({ currentStep, totalSteps = 5 }: OnboardingProgressProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.row} accessibilityRole="progressbar">
       {Array.from({ length: totalSteps }, (_, index) => {
@@ -31,22 +36,24 @@ export function OnboardingProgress({ currentStep, totalSteps = 5 }: OnboardingPr
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingHorizontal: 2,
-  },
-  segment: {
-    flex: 1,
-    height: 3,
-    borderRadius: 999,
-    backgroundColor: SolderiColors.borderSubtle,
-  },
-  complete: {
-    backgroundColor: SolderiColors.accentBorder,
-  },
-  current: {
-    backgroundColor: SolderiColors.accent,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+      paddingHorizontal: 2,
+    },
+    segment: {
+      flex: 1,
+      height: 3,
+      borderRadius: 999,
+      backgroundColor: colors.borderSubtle,
+    },
+    complete: {
+      backgroundColor: colors.accentBorder,
+    },
+    current: {
+      backgroundColor: colors.accent,
+    },
+  });
+}

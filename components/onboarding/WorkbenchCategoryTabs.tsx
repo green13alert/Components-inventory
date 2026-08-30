@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { COMPONENT_CATEGORY_LABELS, COMPONENT_CATEGORY_ORDER, type ComponentCategory } from '@/constants/onboarding';
 import { Radii, Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 const CATEGORIES = COMPONENT_CATEGORY_ORDER;
 
@@ -12,6 +14,9 @@ type WorkbenchCategoryTabsProps = {
 };
 
 export function WorkbenchCategoryTabs({ active, onChange }: WorkbenchCategoryTabsProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <ScrollView
       horizontal
@@ -36,29 +41,31 @@ export function WorkbenchCategoryTabs({ active, onChange }: WorkbenchCategoryTab
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: Radii.xl,
-    backgroundColor: SolderiColors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  tabActive: {
-    backgroundColor: SolderiColors.accentMuted,
-    borderColor: SolderiColors.accentBorder,
-  },
-  tabLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: SolderiColors.textSecondary,
-  },
-  tabLabelActive: {
-    color: SolderiColors.textPrimary,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    row: {
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.lg,
+    },
+    tab: {
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      borderRadius: Radii.xl,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    tabActive: {
+      backgroundColor: colors.accentMuted,
+      borderColor: colors.accentBorder,
+    },
+    tabLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    tabLabelActive: {
+      color: colors.textPrimary,
+    },
+  });
+}

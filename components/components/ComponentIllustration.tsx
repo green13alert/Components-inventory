@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, Line, Path, Rect } from 'react-native-svg';
 
 import { HW } from '@/constants/component-illustration-palette';
-import { SolderiColors } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 import {
   resolveComponentIllustration,
   type ComponentIllustrationId,
@@ -475,6 +475,7 @@ function JumperWires({ size, showGroundShadow = true }: IllustrationProps) {
 
 /** Empty-state cluster — generic parts, not one identifiable product. */
 function ElectronicsKit({ size, showGroundShadow = true }: IllustrationProps) {
+  const colors = useSolderiColors();
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Generic PCB */}
@@ -494,7 +495,7 @@ function ElectronicsKit({ size, showGroundShadow = true }: IllustrationProps) {
       {[16, 20, 24, 28, 32].map((x) => (
         <Rect key={x} x={x} y={30} width={1.6} height={4} rx={0.3} fill={HW.pinGold} />
       ))}
-      <Circle cx={38} cy={20} r={1.6} fill={SolderiColors.accent} />
+      <Circle cx={38} cy={20} r={1.6} fill={colors.accent} />
       <Circle cx={38} cy={20} r={0.6} fill={HW.highlight} opacity={0.7} />
 
       {/* Generic sensor / module */}
@@ -528,13 +529,13 @@ function ElectronicsKit({ size, showGroundShadow = true }: IllustrationProps) {
       <Path d="M 42 34 Q 50 38 48 48" stroke={HW.wireRed} strokeWidth={1.8} fill="none" strokeLinecap="round" />
       <Path
         d="M 40 34 Q 44 42 54 46"
-        stroke={SolderiColors.accent}
+        stroke={colors.accent}
         strokeWidth={1.8}
         fill="none"
         strokeLinecap="round"
       />
       <Circle cx={48} cy={48} r={2} fill={HW.wireRed} />
-      <Circle cx={54} cy={46} r={2} fill={SolderiColors.accent} />
+      <Circle cx={54} cy={46} r={2} fill={colors.accent} />
 
       {/* Small LED */}
       <Ellipse cx={44} cy={42} rx={3.2} ry={3} fill={HW.ledRed} />

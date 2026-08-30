@@ -3,20 +3,23 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { ComponentModal } from '@/components/inventory/ComponentModal';
 import { FilterChips } from '@/components/inventory/FilterChips';
 import { InventoryItemCard } from '@/components/inventory/InventoryItemCard';
-import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { SearchBar } from '@/components/home/SearchBar';
 import { PageHeader } from '@/components/ui/page-header';
-import { useAtlas } from '@/context/atlas-context';
+import type { SolderiPalette } from '@/constants/colors';
 import { tabBarBottomPadding } from '@/constants/layout';
-import { SolderiColors } from '@/constants/colors';
 import { COMPONENT_FILTERS, ComponentCategory, type InventoryComponent } from '@/constants/inventory';
+import { useAtlas } from '@/context/atlas-context';
+import { useSolderiColors } from '@/context/theme-context';
 
 export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
   const { inventory, addInventoryItem, updateInventoryItem, removeInventoryItem } = useAtlas();
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<ComponentCategory>('all');
   const [modalVisible, setModalVisible] = useState(false);
@@ -74,7 +77,7 @@ export default function InventoryScreen() {
         />
 
         <Pressable style={styles.addButton} onPress={openAddModal} accessibilityRole="button">
-          <Ionicons name="add-circle-outline" size={22} color={SolderiColors.onAccent} />
+          <Ionicons name="add-circle-outline" size={22} color={colors.onAccent} />
           <Text style={styles.addButtonText}>Add Components</Text>
         </Pressable>
 
@@ -106,7 +109,7 @@ export default function InventoryScreen() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="search-outline" size={32} color={SolderiColors.textMuted} />
+                  <Ionicons name="search-outline" size={32} color={colors.textMuted} />
                   <Text style={styles.emptyTitle}>No components found</Text>
                   <Text style={styles.emptySubtitle}>Try a different search or filter</Text>
                 </>
@@ -128,61 +131,63 @@ export default function InventoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 20,
-    gap: 20,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: SolderiColors.accent,
-    borderRadius: 14,
-    paddingVertical: 16,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.onAccent,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  listCount: {
-    fontSize: 14,
-    color: SolderiColors.textSecondary,
-  },
-  list: {
-    gap: 10,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: SolderiColors.textSecondary,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: 20,
+      gap: 20,
+    },
+    addButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.accent,
+      borderRadius: 14,
+      paddingVertical: 16,
+    },
+    addButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.onAccent,
+    },
+    listHeader: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+    },
+    listTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    listCount: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    list: {
+      gap: 10,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 40,
+      gap: 8,
+    },
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+  });
+}

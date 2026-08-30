@@ -4,17 +4,13 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
 import Animated, { useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { SolderiColors } from '@/constants/colors';
+import { useSolderiColors } from '@/context/theme-context';
 
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 const VIEW_W = 390;
 const VIEW_H = 844;
 const TRANSITION_MS = 720;
-
-const TRACE = SolderiColors.textMuted;
-const TRACE_SOFT = SolderiColors.border;
-const TRACE_ACCENT = SolderiColors.accent;
 
 type TraceWeight = 'primary' | 'medium' | 'fine' | 'subtle';
 
@@ -41,11 +37,12 @@ function TracePath({
   weight?: TraceWeight;
   accent?: boolean;
 }) {
+  const colors = useSolderiColors();
   const w = WEIGHTS[weight];
   return (
     <Path
       d={d}
-      stroke={accent ? TRACE_ACCENT : TRACE}
+      stroke={accent ? colors.accent : colors.textMuted}
       strokeWidth={w.strokeWidth}
       fill="none"
       strokeLinecap="round"
@@ -70,6 +67,7 @@ function TraceLine({
   weight?: TraceWeight;
   accent?: boolean;
 }) {
+  const colors = useSolderiColors();
   const w = WEIGHTS[weight];
   return (
     <Line
@@ -77,7 +75,7 @@ function TraceLine({
       y1={y1}
       x2={x2}
       y2={y2}
-      stroke={accent ? TRACE_ACCENT : TRACE_SOFT}
+      stroke={accent ? colors.accent : colors.border}
       strokeWidth={w.strokeWidth}
       opacity={accent ? w.opacity * 0.7 : w.opacity}
     />
@@ -95,12 +93,13 @@ function Pad({
   r?: number;
   accent?: boolean;
 }) {
+  const colors = useSolderiColors();
   return (
     <Circle
       cx={cx}
       cy={cy}
       r={r}
-      fill={accent ? TRACE_ACCENT : TRACE}
+      fill={accent ? colors.accent : colors.textMuted}
       opacity={accent ? 0.72 : 0.62}
     />
   );
@@ -119,6 +118,7 @@ function Chip({
   height: number;
   pins?: number;
 }) {
+  const colors = useSolderiColors();
   const pinSpacing = height / (pins + 1);
   return (
     <G>
@@ -128,7 +128,7 @@ function Chip({
         width={width}
         height={height}
         rx={3}
-        stroke={TRACE}
+        stroke={colors.textMuted}
         strokeWidth={1.4}
         fill="rgba(42, 46, 49, 0.35)"
         opacity={0.75}
@@ -137,13 +137,13 @@ function Chip({
         const py = y + pinSpacing * (i + 1);
         return (
           <G key={i}>
-            <Line x1={x - 10} y1={py} x2={x} y2={py} stroke={TRACE_SOFT} strokeWidth={1} opacity={0.55} />
+            <Line x1={x - 10} y1={py} x2={x} y2={py} stroke={colors.border} strokeWidth={1} opacity={0.55} />
             <Line
               x1={x + width}
               y1={py}
               x2={x + width + 10}
               y2={py}
-              stroke={TRACE_SOFT}
+              stroke={colors.border}
               strokeWidth={1}
               opacity={0.55}
             />
@@ -250,34 +250,7 @@ function AdvancedLayer() {
       <Chip x={68} y={620} width={40} height={30} pins={2} />
       <Chip x={288} y={280} width={44} height={32} pins={2} />
 
-      <Rect
-        x={52}
-        y={748}
-        width={36}
-        height={18}
-        rx={2}
-        stroke={TRACE_SOFT}
-        strokeWidth={1.2}
-        fill="none"
-        opacity={0.55}
-      />
-      <Rect
-        x={302}
-        y={748}
-        width={44}
-        height={18}
-        rx={2}
-        stroke={TRACE_SOFT}
-        strokeWidth={1.2}
-        fill="none"
-        opacity={0.55}
-      />
-
-      {gridX.flatMap((x) =>
-        gridY.map((y) => (
-          <Circle key={`${x}-${y}`} cx={x} cy={y} r={2} fill={TRACE_SOFT} opacity={0.45} />
-        )),
-      )}
+      <AdvancedConnectors />
 
       <Pad cx={130} cy={250} accent />
       <Pad cx={200} cy={390} accent />
@@ -289,12 +262,51 @@ function AdvancedLayer() {
   );
 }
 
+function AdvancedConnectors() {
+  const colors = useSolderiColors();
+  const gridY = [250, 320, 390, 460, 530, 600, 670];
+  const gridX = [60, 130, 200, 270, 340];
+
+  return (
+    <>
+      <Rect
+        x={52}
+        y={748}
+        width={36}
+        height={18}
+        rx={2}
+        stroke={colors.border}
+        strokeWidth={1.2}
+        fill="none"
+        opacity={0.55}
+      />
+      <Rect
+        x={302}
+        y={748}
+        width={44}
+        height={18}
+        rx={2}
+        stroke={colors.border}
+        strokeWidth={1.2}
+        fill="none"
+        opacity={0.55}
+      />
+
+      {gridX.flatMap((x) =>
+        gridY.map((y) => (
+          <Circle key={`${x}-${y}`} cx={x} cy={y} r={2} fill={colors.border} opacity={0.45} />
+        )),
+      )}
+    </>
+  );
+}
+
 export function ExperienceCircuitBackground({
   activeStage,
   width,
   height,
 }: ExperienceCircuitBackgroundProps) {
-
+  const colors = useSolderiColors();
   const backboneOpacity = useSharedValue(0.9);
   const beginnerOpacity = useSharedValue(0.88);
   const intermediateOpacity = useSharedValue(0.95);
@@ -352,7 +364,7 @@ export function ExperienceCircuitBackground({
       </Svg>
 
       <LinearGradient
-        colors={['#181B1E', '#181B1E00']}
+        colors={[colors.background, `${colors.background}00`]}
         locations={[0, 1]}
         style={styles.topFade}
         pointerEvents="none"

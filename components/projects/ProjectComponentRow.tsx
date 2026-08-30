@@ -1,15 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import { ProjectComponent } from '@/constants/projects-data';
+import { useSolderiColors } from '@/context/theme-context';
 
 type ProjectComponentRowProps = {
   component: ProjectComponent;
 };
 
 export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.row}>
       <View style={[styles.iconWrap, !component.owned && styles.iconWrapMissing]}>
@@ -26,7 +31,7 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
         <Ionicons
           name={component.owned ? 'checkmark' : 'close'}
           size={12}
-          color={component.owned ? SolderiColors.success : SolderiColors.warning}
+          color={component.owned ? colors.success : colors.warning}
         />
         <Text style={[styles.badgeText, component.owned ? styles.badgeTextOwned : styles.badgeTextMissing]}>
           {component.owned ? 'Owned' : 'Missing'}
@@ -36,65 +41,67 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: SolderiColors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    padding: 14,
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapMissing: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    opacity: 0.75,
-  },
-  name: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: SolderiColors.textPrimary,
-  },
-  nameMissing: {
-    color: SolderiColors.textSecondary,
-  },
-  quantity: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: SolderiColors.textMuted,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  badgeOwned: {
-    backgroundColor: SolderiColors.successMuted,
-  },
-  badgeMissing: {
-    backgroundColor: SolderiColors.accentMuted,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  badgeTextOwned: {
-    color: SolderiColors.success,
-  },
-  badgeTextMissing: {
-    color: SolderiColors.warning,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+    },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: 'rgba(255, 255, 255, 0.04)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconWrapMissing: {
+      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+      opacity: 0.75,
+    },
+    name: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    nameMissing: {
+      color: colors.textSecondary,
+    },
+    quantity: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textMuted,
+    },
+    badge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    badgeOwned: {
+      backgroundColor: colors.successMuted,
+    },
+    badgeMissing: {
+      backgroundColor: colors.accentMuted,
+    },
+    badgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    badgeTextOwned: {
+      color: colors.success,
+    },
+    badgeTextMissing: {
+      color: colors.warning,
+    },
+  });
+}

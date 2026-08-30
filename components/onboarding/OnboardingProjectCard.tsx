@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import {
   EXPERIENCE_LABELS,
   PROJECT_BUILD_FEATURES,
@@ -9,6 +10,7 @@ import {
 } from '@/constants/onboarding';
 import { PROJECT_IMAGES } from '@/constants/projects';
 import { Radii, Spacing } from '@/constants/tokens';
+import { useSolderiColors } from '@/context/theme-context';
 
 type OnboardingProjectCardProps = {
   project: MockRecommendedProject;
@@ -21,6 +23,8 @@ const ONBOARDING_PROJECT_IMAGES = {
 } as const;
 
 export function OnboardingProjectCard({ project }: OnboardingProjectCardProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const complete = project.matched >= project.total;
   const metaLine = `${EXPERIENCE_LABELS[project.difficulty]} · ${project.matched}/${project.total} components`;
   const image =
@@ -56,75 +60,77 @@ export function OnboardingProjectCard({ project }: OnboardingProjectCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    padding: Spacing.md,
-    borderRadius: Radii.lg,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: Radii.md,
-    overflow: 'hidden',
-    backgroundColor: SolderiColors.surfaceElevated,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  content: {
-    flex: 1,
-    minWidth: 0,
-    justifyContent: 'center',
-    gap: 6,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  meta: {
-    fontSize: 13,
-    color: SolderiColors.textSecondary,
-  },
-  readyBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: SolderiColors.success,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: SolderiColors.successMuted,
-    overflow: 'hidden',
-  },
-  featuresRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 2,
-  },
-  featureChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: Radii.sm,
-    backgroundColor: SolderiColors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-  },
-  featureText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: SolderiColors.textMuted,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      gap: Spacing.md,
+      padding: Spacing.md,
+      borderRadius: Radii.lg,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    iconWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: Radii.md,
+      overflow: 'hidden',
+      backgroundColor: colors.surfaceElevated,
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+    },
+    content: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: 'center',
+      gap: 6,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: Spacing.sm,
+    },
+    meta: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    readyBadge: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.success,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 999,
+      backgroundColor: colors.successMuted,
+      overflow: 'hidden',
+    },
+    featuresRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginTop: 2,
+    },
+    featureChip: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: Radii.sm,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    featureText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textMuted,
+    },
+  });
+}

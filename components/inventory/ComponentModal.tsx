@@ -13,10 +13,10 @@ import {
   View,
 } from 'react-native';
 
+import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { CategoryPills } from '@/components/inventory/CategoryPills';
 import { ComponentCatalogueSearch } from '@/components/inventory/ComponentCatalogueSearch';
-import { ComponentIllustration } from '@/components/components/ComponentIllustration';
-import { SolderiColors } from '@/constants/colors';
+import type { SolderiPalette } from '@/constants/colors';
 import {
   matchCatalogueToInventoryItem,
   searchComponentCatalogue,
@@ -28,6 +28,7 @@ import {
   type ComponentCategory,
   type InventoryComponent,
 } from '@/constants/inventory';
+import { useSolderiColors } from '@/context/theme-context';
 
 const ADDABLE_CATEGORIES = COMPONENT_FILTERS.filter((f) => f.id !== 'all') as {
   id: Exclude<ComponentCategory, 'all'>;
@@ -55,6 +56,8 @@ export function ComponentModal({
   onUpdate,
   onDelete,
 }: ComponentModalProps) {
+  const colors = useSolderiColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isEditing = editingItem != null;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<CatalogueComponent | null>(null);
@@ -273,7 +276,7 @@ export function ComponentModal({
                 onPress={() => setQuantity((q) => Math.max(1, q - 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Decrease quantity">
-                <Ionicons name="remove" size={22} color={SolderiColors.textPrimary} />
+                <Ionicons name="remove" size={22} color={colors.textPrimary} />
               </Pressable>
               <Text style={styles.quantityValue}>{quantity}</Text>
               <Pressable
@@ -281,14 +284,14 @@ export function ComponentModal({
                 onPress={() => setQuantity((q) => q + 1)}
                 accessibilityRole="button"
                 accessibilityLabel="Increase quantity">
-                <Ionicons name="add" size={22} color={SolderiColors.textPrimary} />
+                <Ionicons name="add" size={22} color={colors.textPrimary} />
               </Pressable>
             </View>
           </View>
 
           {isEditing ? (
             <Pressable style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button">
-              <Ionicons name="trash-outline" size={18} color={SolderiColors.error} />
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
               <Text style={styles.deleteText}>Remove from inventory</Text>
             </Pressable>
           ) : null}
@@ -298,161 +301,163 @@ export function ComponentModal({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: SolderiColors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: SolderiColors.border,
-  },
-  headerButton: {
-    minWidth: 64,
-  },
-  saveButton: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    marginRight: -4,
-  },
-  saveButtonReady: {
-    backgroundColor: SolderiColors.accentMuted,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: SolderiColors.textSecondary,
-  },
-  saveText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.accent,
-    textAlign: 'right',
-  },
-  saveTextDisabled: {
-    opacity: 0.4,
-  },
-  content: {
-    paddingHorizontal: CONTENT_PADDING,
-    paddingTop: 16,
-    paddingBottom: 40,
-    gap: 20,
-  },
-  previewStage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    gap: 12,
-  },
-  previewWell: {
-    width: PREVIEW_WELL,
-    height: PREVIEW_WELL,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewCopy: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  previewTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  previewHint: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: SolderiColors.textSecondary,
-  },
-  previewCategory: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: SolderiColors.accent,
-  },
-  field: {
-    gap: 12,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: SolderiColors.textPrimary,
-  },
-  lockedCategory: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: SolderiColors.accentMuted,
-    borderWidth: 1,
-    borderColor: SolderiColors.accent,
-  },
-  lockedCategoryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: SolderiColors.accent,
-  },
-  lockedHint: {
-    fontSize: 13,
-    color: SolderiColors.textMuted,
-  },
-  categoryBleed: {
-    marginHorizontal: -CONTENT_PADDING,
-  },
-  quantityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-    alignSelf: 'flex-start',
-  },
-  quantityButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: SolderiColors.surface,
-    borderWidth: 1,
-    borderColor: SolderiColors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quantityValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: SolderiColors.textPrimary,
-    minWidth: 40,
-    textAlign: 'center',
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: SolderiColors.errorMuted,
-    backgroundColor: SolderiColors.errorMuted,
-  },
-  deleteText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: SolderiColors.error,
-  },
-});
+function createStyles(colors: SolderiPalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerButton: {
+      minWidth: 64,
+    },
+    saveButton: {
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 10,
+      marginRight: -4,
+    },
+    saveButtonReady: {
+      backgroundColor: colors.accentMuted,
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    cancelText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    saveText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.accent,
+      textAlign: 'right',
+    },
+    saveTextDisabled: {
+      opacity: 0.4,
+    },
+    content: {
+      paddingHorizontal: CONTENT_PADDING,
+      paddingTop: 16,
+      paddingBottom: 40,
+      gap: 20,
+    },
+    previewStage: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 12,
+    },
+    previewWell: {
+      width: PREVIEW_WELL,
+      height: PREVIEW_WELL,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    previewCopy: {
+      flex: 1,
+      gap: 4,
+      minWidth: 0,
+    },
+    previewTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    previewHint: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    previewCategory: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+    field: {
+      gap: 12,
+    },
+    label: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    lockedCategory: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.accentMuted,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    lockedCategoryText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.accent,
+    },
+    lockedHint: {
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    categoryBleed: {
+      marginHorizontal: -CONTENT_PADDING,
+    },
+    quantityRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 20,
+      alignSelf: 'flex-start',
+    },
+    quantityButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quantityValue: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      minWidth: 40,
+      textAlign: 'center',
+    },
+    deleteButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingVertical: 16,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.errorMuted,
+      backgroundColor: colors.errorMuted,
+    },
+    deleteText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.error,
+    },
+  });
+}

@@ -2,35 +2,51 @@
  * Theme configuration for React Navigation and shared app styling.
  */
 
+import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
-import { SolderiColors } from './colors';
+import { SolderiDarkColors, SolderiLightColors, type SolderiPalette } from './colors';
+
+export function getNavigationTheme(colors: SolderiPalette, scheme: 'light' | 'dark'): Theme {
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      background: colors.background,
+      card: colors.surface,
+      border: colors.border,
+      primary: colors.accent,
+      text: colors.textPrimary,
+    },
+  };
+}
 
 export const Colors = {
   light: {
-    text: SolderiColors.textPrimary,
-    background: SolderiColors.background,
-    tint: SolderiColors.accent,
-    icon: SolderiColors.textSecondary,
-    tabIconDefault: SolderiColors.textMuted,
-    tabIconSelected: SolderiColors.accent,
+    text: SolderiLightColors.textPrimary,
+    background: SolderiLightColors.background,
+    tint: SolderiLightColors.accent,
+    icon: SolderiLightColors.textSecondary,
+    tabIconDefault: SolderiLightColors.textMuted,
+    tabIconSelected: SolderiLightColors.accent,
   },
   dark: {
-    text: SolderiColors.textPrimary,
-    background: SolderiColors.background,
-    tint: SolderiColors.accent,
-    icon: SolderiColors.textSecondary,
-    tabIconDefault: SolderiColors.textMuted,
-    tabIconSelected: SolderiColors.accent,
+    text: SolderiDarkColors.textPrimary,
+    background: SolderiDarkColors.background,
+    tint: SolderiDarkColors.accent,
+    icon: SolderiDarkColors.textSecondary,
+    tabIconDefault: SolderiDarkColors.textMuted,
+    tabIconSelected: SolderiDarkColors.accent,
   },
 };
 
 export const NavigationTheme = {
-  background: SolderiColors.background,
-  card: SolderiColors.surface,
-  border: SolderiColors.border,
-  primary: SolderiColors.accent,
-  text: SolderiColors.textPrimary,
+  background: SolderiDarkColors.background,
+  card: SolderiDarkColors.surface,
+  border: SolderiDarkColors.border,
+  primary: SolderiDarkColors.accent,
+  text: SolderiDarkColors.textPrimary,
 } as const;
 
 export const Fonts = Platform.select({

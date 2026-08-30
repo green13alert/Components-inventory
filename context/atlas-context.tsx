@@ -10,10 +10,21 @@ export type ProjectProgress = {
   completed: boolean;
 };
 
+export type WorkshopActivityKind = 'started' | 'continued' | 'completed' | 'component_added';
+
+export type WorkshopActivity = {
+  id: string;
+  kind: WorkshopActivityKind;
+  title: string;
+  createdAt: number;
+  projectId?: string;
+};
+
 type AtlasContextValue = {
   inventory: InventoryComponent[];
   favouriteProjectIds: Set<string>;
   projectProgress: Record<string, ProjectProgress>;
+  recentActivity: WorkshopActivity[];
   addInventoryItem: (item: Omit<InventoryComponent, 'id'>) => void;
   updateInventoryItem: (id: string, item: Omit<InventoryComponent, 'id'>) => void;
   updateInventoryQuantity: (id: string, quantity: number) => void;
@@ -51,21 +62,73 @@ function buildInitialProgress(): Record<string, ProjectProgress> {
   return progress;
 }
 
+const MAX_ACTIVITY = 20;
+
+function buildInitialActivity(): WorkshopActivity[] {
+  const events: WorkshopActivity[] = [];
+  let createdAt = Date.now();
+
+  for (const project of MOCK_PROJECTS) {
+    if (project.status === 'in_progress') {
+      const continued = (project.progress ?? 0) > 0;
+      events.push({
+        id: `activity-project-${project.id}`,
+        kind: continued ? 'continued' : 'started',
+        title: project.title,
+        createdAt: createdAt--,
+        projectId: project.id,
+      });
+    } else if (project.status === 'completed') {
+      events.push({
+        id: `activity-project-${project.id}`,
+        kind: 'completed',
+        title: project.title,
+        createdAt: createdAt--,
+        projectId: project.id,
+      });
+    }
+  }
+
+  return events;
+}
+
+function prependActivity(prev: WorkshopActivity[], event: WorkshopActivity): WorkshopActivity[] {
+  const withoutStale = event.projectId
+    ? prev.filter((item) => {
+        if (item.projectId !== event.projectId) return true;
+        if (event.kind === 'completed') return false;
+        return item.kind === 'completed';
+      })
+    : prev;
+
+  return [event, ...withoutStale].slice(0, MAX_ACTIVITY);
+}
+
 export function AtlasProvider({ children }: { children: ReactNode }) {
   const [inventory, setInventory] = useState<InventoryComponent[]>(MOCK_INVENTORY);
   const [favouriteProjectIds, setFavouriteProjectIds] = useState<Set<string>>(buildInitialFavouriteIds);
   const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>(
     buildInitialProgress,
   );
+  const [recentActivity, setRecentActivity] = useState<WorkshopActivity[]>(buildInitialActivity);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const hideToast = useCallback(() => setToastMessage(null), []);
 
   const addInventoryItem = useCallback((item: Omit<InventoryComponent, 'id'>) => {
+    const createdAt = Date.now();
     setInventory((prev) => [
       ...prev,
-      { ...item, id: `inv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` },
+      { ...item, id: `inv-${createdAt}-${Math.random().toString(36).slice(2, 7)}` },
     ]);
+    setRecentActivity((prev) =>
+      prependActivity(prev, {
+        id: `activity-component-${createdAt}`,
+        kind: 'component_added',
+        title: item.name,
+        createdAt,
+      }),
+    );
   }, []);
 
   const updateInventoryItem = useCallback((id: string, item: Omit<InventoryComponent, 'id'>) => {
@@ -136,8 +199,20 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   );
 
   const startProject = useCallback((projectId: string) => {
+    const project = MOCK_PROJECTS.find((item) => item.id === projectId);
     setProjectProgress((prev) => {
       if (prev[projectId]) return prev;
+      if (project) {
+        setRecentActivity((activity) =>
+          prependActivity(activity, {
+            id: `activity-project-${projectId}-${Date.now()}`,
+            kind: 'started',
+            title: project.title,
+            createdAt: Date.now(),
+            projectId,
+          }),
+        );
+      }
       return { ...prev, [projectId]: { currentStep: 0, completed: false } };
     });
   }, []);
@@ -147,6 +222,17 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       ...prev,
       [projectId]: { currentStep: stepIndex, completed: false },
     }));
+    const project = MOCK_PROJECTS.find((item) => item.id === projectId);
+    if (!project) return;
+    setRecentActivity((prev) =>
+      prependActivity(prev, {
+        id: `activity-project-${projectId}-${Date.now()}`,
+        kind: 'continued',
+        title: project.title,
+        createdAt: Date.now(),
+        projectId,
+      }),
+    );
   }, []);
 
   const completeProject = useCallback((projectId: string) => {
@@ -158,6 +244,17 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
         [projectId]: { currentStep: total - 1, completed: true },
       };
     });
+    const project = MOCK_PROJECTS.find((item) => item.id === projectId);
+    if (!project) return;
+    setRecentActivity((prev) =>
+      prependActivity(prev, {
+        id: `activity-project-${projectId}-completed`,
+        kind: 'completed',
+        title: project.title,
+        createdAt: Date.now(),
+        projectId,
+      }),
+    );
   }, []);
 
   const getProjectsWithStatus = useCallback(() => {
@@ -176,6 +273,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       inventory,
       favouriteProjectIds,
       projectProgress,
+      recentActivity,
       addInventoryItem,
       updateInventoryItem,
       updateInventoryQuantity,
@@ -194,6 +292,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       inventory,
       favouriteProjectIds,
       projectProgress,
+      recentActivity,
       addInventoryItem,
       updateInventoryItem,
       updateInventoryQuantity,

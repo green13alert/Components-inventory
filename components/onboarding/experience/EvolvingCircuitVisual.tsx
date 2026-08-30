@@ -17,8 +17,8 @@ import {
   type CircuitPart,
 } from '@/components/onboarding/experience/circuit-layout';
 import { HW } from '@/constants/component-illustration-palette';
-import { SolderiColors } from '@/constants/colors';
 import type { ExperienceLevel } from '@/constants/onboarding';
+import { useSolderiColors } from '@/context/theme-context';
 
 type Props = {
   level: ExperienceLevel | null;
@@ -26,7 +26,6 @@ type Props = {
   height: number;
 };
 
-const ACCENT = SolderiColors.accent;
 const GHOST = '#2E3438';
 const GHOST_TRACE = '#252A2E';
 const PULSE_MS = 64;
@@ -39,7 +38,7 @@ function easeOutCubic(t: number) {
   return 1 - (1 - t) ** 3;
 }
 
-function PartGraphic({ part, opacity }: { part: CircuitPart; opacity: number }) {
+function PartGraphic({ part, opacity, accent }: { part: CircuitPart; opacity: number; accent: string }) {
   if (opacity <= 0.01) return null;
 
   const { kind, x, y } = part;
@@ -49,7 +48,7 @@ function PartGraphic({ part, opacity }: { part: CircuitPart; opacity: number }) 
       <G opacity={opacity}>
         <Rect x={x} y={y} width={18} height={28} rx={2} fill="#3A4046" stroke={GHOST} strokeWidth={0.6} />
         <Rect x={x + 5} y={y - 3} width={8} height={4} rx={1} fill={GHOST} />
-        <Rect x={x + 4} y={y + 8} width={10} height={3} rx={0.5} fill={ACCENT} opacity={0.45} />
+        <Rect x={x + 4} y={y + 8} width={10} height={3} rx={0.5} fill={accent} opacity={0.45} />
       </G>
     );
   }
@@ -91,8 +90,8 @@ function PartGraphic({ part, opacity }: { part: CircuitPart; opacity: number }) 
     return (
       <G opacity={opacity}>
         <Rect x={x} y={y} width={28} height={16} rx={2} fill={HW.pcbBlueDark} stroke={HW.pcbBlue} strokeWidth={0.5} />
-        <Circle cx={x + 9} cy={y + 8} r={3} fill={ACCENT} opacity={0.5} />
-        <Circle cx={x + 19} cy={y + 8} r={3} fill={ACCENT} opacity={0.5} />
+        <Circle cx={x + 9} cy={y + 8} r={3} fill={accent} opacity={0.5} />
+        <Circle cx={x + 19} cy={y + 8} r={3} fill={accent} opacity={0.5} />
       </G>
     );
   }
@@ -117,6 +116,8 @@ function PartGraphic({ part, opacity }: { part: CircuitPart; opacity: number }) 
 
 /** Evolving circuit — same system grows from simple → complex with draw-in traces. */
 export function EvolvingCircuitVisual({ level, width, height }: Props) {
+  const colors = useSolderiColors();
+  const accent = colors.accent;
   const pulseCfg = useMemo(() => getPulseConfig(level), [level]);
   const [pulses, setPulses] = useState<Pulse[]>([]);
   const [reveal, setReveal] = useState(1);
@@ -187,7 +188,7 @@ export function EvolvingCircuitVisual({ level, width, height }: Props) {
             <G key={trace.id}>
               <Path
                 d={trace.d}
-                stroke={ACCENT}
+                stroke={accent}
                 strokeWidth={w + 0.35}
                 fill="none"
                 strokeLinecap="round"
@@ -198,7 +199,7 @@ export function EvolvingCircuitVisual({ level, width, height }: Props) {
               />
               <Path
                 d={trace.d}
-                stroke={ACCENT}
+                stroke={accent}
                 strokeWidth={w}
                 fill="none"
                 strokeLinecap="round"
@@ -214,7 +215,7 @@ export function EvolvingCircuitVisual({ level, width, height }: Props) {
         {/* Components */}
         {CIRCUIT_PARTS.map((part) => {
           const p = getTierProgress(part.tier, level, fromLevel.current, reveal);
-          return <PartGraphic key={part.id} part={part} opacity={p} />;
+          return <PartGraphic key={part.id} part={part} opacity={p} accent={accent} />;
         })}
 
         {/* Nodes */}
@@ -223,8 +224,8 @@ export function EvolvingCircuitVisual({ level, width, height }: Props) {
           if (p <= 0.01) return null;
           return (
             <G key={node.id}>
-              <Circle cx={node.cx} cy={node.cy} r={node.r + 2} fill={ACCENT} opacity={p * 0.08} />
-              <Circle cx={node.cx} cy={node.cy} r={node.r * 0.85} fill={ACCENT} opacity={p * 0.6} />
+              <Circle cx={node.cx} cy={node.cy} r={node.r + 2} fill={accent} opacity={p * 0.08} />
+              <Circle cx={node.cx} cy={node.cy} r={node.r * 0.85} fill={accent} opacity={p * 0.6} />
             </G>
           );
         })}
@@ -232,8 +233,8 @@ export function EvolvingCircuitVisual({ level, width, height }: Props) {
         {/* Pulses on active traces */}
         {pulses.map((pulse, i) => (
           <G key={`p-${i}`}>
-            <Circle cx={pulse.x} cy={pulse.y} r={4} fill={ACCENT} opacity={pulse.opacity * 0.1} />
-            <Circle cx={pulse.x} cy={pulse.y} r={1.6} fill={ACCENT} opacity={pulse.opacity * 0.7} />
+            <Circle cx={pulse.x} cy={pulse.y} r={4} fill={accent} opacity={pulse.opacity * 0.1} />
+            <Circle cx={pulse.x} cy={pulse.y} r={1.6} fill={accent} opacity={pulse.opacity * 0.7} />
           </G>
         ))}
       </Svg>
