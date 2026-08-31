@@ -35,12 +35,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-        "backgroundColor": "#181B1E",
-        "dark": {
-          "backgroundColor": "#181B1E"
+          "backgroundColor": "#181B1E",
+          "dark": {
+            "backgroundColor": "#181B1E"
+          }
         }
-        }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

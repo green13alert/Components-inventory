@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 import { AtlasProvider } from '@/context/atlas-context';
 import { SolderiThemeProvider, useSolderiTheme } from '@/context/theme-context';
 import { getNavigationTheme } from '@/constants/theme';
+import { testSupabaseConnection } from '@/lib/supabase';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -26,6 +27,20 @@ function ThemedRoot() {
       document.body.style.backgroundColor = colors.background;
     }
   }, [colors.background, resolvedScheme]);
+
+  useEffect(() => {
+    if (!__DEV__) {
+      return;
+    }
+
+    void testSupabaseConnection().then((result) => {
+      if (result.ok) {
+        console.log(`[Solderi] ${result.message}`);
+      } else {
+        console.warn(`[Solderi] ${result.message}`);
+      }
+    });
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
