@@ -6,7 +6,9 @@ import { ActionSheetIOS, Alert, Platform, Pressable, StyleSheet, Text, View } fr
 import { SettingsRow } from '@/components/profile/SettingsRow';
 import { SettingsSection } from '@/components/profile/SettingsSection';
 import { SettingsSelectModal } from '@/components/profile/SettingsSelectModal';
+import { AUTH_ERRORS } from '@/constants/auth';
 import type { SolderiPalette, ThemePreference } from '@/constants/colors';
+import { useAuth } from '@/context/auth-context';
 import { useSolderiTheme } from '@/context/theme-context';
 
 const THEME_OPTIONS = [
@@ -26,6 +28,7 @@ function unavailable(title: string) {
 
 export function SettingsPanel() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
   const { preference, resolvedScheme, colors, setPreference } = useSolderiTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -34,6 +37,7 @@ export function SettingsPanel() {
   const [units, setUnits] = useState<(typeof UNIT_OPTIONS)[number]['id']>('metric');
   const [unitsPickerOpen, setUnitsPickerOpen] = useState(false);
   const [language, setLanguage] = useState('English');
+  const [signingOut, setSigningOut] = useState(false);
 
   const themeLabel = THEME_OPTIONS.find((option) => option.id === preference)?.label ?? 'Dark';
   const unitsLabel = UNIT_OPTIONS.find((option) => option.id === units)?.label ?? 'Metric';
@@ -44,7 +48,24 @@ export function SettingsPanel() {
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: () => router.replace('/onboarding/login'),
+        onPress: () => {
+          void (async () => {
+            if (signingOut) {
+              return;
+            }
+
+            setSigningOut(true);
+            const result = await signOut();
+            setSigningOut(false);
+
+            if (result.error) {
+              Alert.alert('Sign out', AUTH_ERRORS.signOutFailed);
+              return;
+            }
+
+            router.replace('/onboarding/login');
+          })();
+        },
       },
     ]);
   };
@@ -183,8 +204,10 @@ export function SettingsPanel() {
       <Pressable
         style={({ pressed }) => [styles.signOut, pressed && styles.signOutPressed]}
         onPress={confirmSignOut}
+        disabled={signingOut}
         accessibilityRole="button"
-        accessibilityLabel="Sign Out">
+        accessibilityLabel="Sign Out"
+        accessibilityState={{ disabled: signingOut, busy: signingOut }}>
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>
 

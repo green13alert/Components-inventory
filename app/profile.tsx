@@ -8,6 +8,7 @@ import { ProfileStatCard } from '@/components/profile/ProfileStatCard';
 import { SettingsPanel } from '@/components/profile/SettingsPanel';
 import type { SolderiPalette } from '@/constants/colors';
 import { useAtlas, type WorkshopActivity, type WorkshopActivityKind } from '@/context/atlas-context';
+import { useAuth } from '@/context/auth-context';
 import { useSolderiColors } from '@/context/theme-context';
 
 const ACTIVITY_PREVIEW = 2;
@@ -40,6 +41,7 @@ export default function ProfileScreen() {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const router = useRouter();
+  const { user } = useAuth();
   const { getProjectsWithStatus, inventory, recentActivity } = useAtlas();
   const [activityExpanded, setActivityExpanded] = useState(false);
 
@@ -80,7 +82,7 @@ export default function ProfileScreen() {
             <Ionicons name="person" size={40} color={colors.textSecondary} />
           </View>
           <Text style={styles.name}>Maker</Text>
-          <Text style={styles.email}>maker@solderi.app</Text>
+          <Text style={styles.email}>{user?.email ?? ''}</Text>
         </View>
 
         <View style={styles.statsRow}>

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import type { SolderiPalette } from '@/constants/colors';
@@ -11,6 +11,7 @@ type OnboardingCtaProps = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  loading?: boolean;
   variant?: 'primary' | 'surface';
 };
 
@@ -20,11 +21,13 @@ export function OnboardingCta({
   label,
   onPress,
   disabled = false,
+  loading = false,
   variant = 'primary',
 }: OnboardingCtaProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const scale = useSharedValue(1);
+  const isDisabled = disabled || loading;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -33,9 +36,9 @@ export function OnboardingCta({
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={isDisabled}
       onPressIn={() => {
-        if (disabled) return;
+        if (isDisabled) return;
         scale.value = withSpring(0.975, PRESS_SPRING);
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
@@ -44,17 +47,25 @@ export function OnboardingCta({
       }}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled }}>
+      accessibilityState={{ disabled: isDisabled, busy: loading }}>
       {({ pressed }) => (
         <Animated.View
           style={[
             styles.button,
             variant === 'surface' && styles.buttonSurface,
-            pressed && !disabled && (variant === 'surface' ? styles.pressedSurface : styles.pressed),
-            disabled && styles.disabled,
+            pressed && !isDisabled && (variant === 'surface' ? styles.pressedSurface : styles.pressed),
+            isDisabled && styles.disabled,
             animatedStyle,
           ]}>
-          <Text style={[styles.label, variant === 'surface' && styles.labelSurface]}>{label}</Text>
+          <View style={styles.content}>
+            {loading ? (
+              <ActivityIndicator
+                size="small"
+                color={variant === 'surface' ? colors.accentStrong : colors.onAccent}
+              />
+            ) : null}
+            <Text style={[styles.label, variant === 'surface' && styles.labelSurface]}>{label}</Text>
+          </View>
         </Animated.View>
       )}
     </Pressable>
@@ -76,6 +87,12 @@ function createStyles(colors: SolderiPalette) {
       shadowRadius: 16,
       shadowOffset: { width: 0, height: 8 },
       elevation: 8,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
     },
     pressed: {
       backgroundColor: colors.accentStrong,

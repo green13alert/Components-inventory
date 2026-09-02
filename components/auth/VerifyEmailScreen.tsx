@@ -13,43 +13,45 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
+import { AUTH_VERIFY_EMAIL } from '@/constants/auth';
 import type { SolderiPalette } from '@/constants/colors';
-import { AUTH_LOGIN } from '@/constants/auth';
 import { Spacing } from '@/constants/tokens';
 import { useSolderiColors } from '@/context/theme-context';
 
-type LoginScreenProps = {
+type VerifyEmailScreenProps = {
   email: string;
-  password: string;
-  onEmailChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onLogIn: () => void;
-  onSignUp: () => void;
+  code: string;
+  onCodeChange: (value: string) => void;
+  onVerify: () => void;
+  onResend: () => void;
   onBack?: () => void;
-  showSignUpLink?: boolean;
-  emailError?: string;
-  passwordError?: string;
+  codeError?: string;
   formError?: string | null;
   submitting?: boolean;
+  resending?: boolean;
+  cooldownSeconds: number;
 };
 
-export function LoginScreen({
+export function VerifyEmailScreen({
   email,
-  password,
-  onEmailChange,
-  onPasswordChange,
-  onLogIn,
-  onSignUp,
+  code,
+  onCodeChange,
+  onVerify,
+  onResend,
   onBack,
-  showSignUpLink = true,
-  emailError,
-  passwordError,
+  codeError,
   formError,
   submitting = false,
-}: LoginScreenProps) {
+  resending = false,
+  cooldownSeconds,
+}: VerifyEmailScreenProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const canVerify = code.length === 6 && !submitting;
+  const canResend = cooldownSeconds <= 0 && !resending && !submitting;
+  const resendLabel =
+    cooldownSeconds > 0 ? `${AUTH_VERIFY_EMAIL.resend} in ${cooldownSeconds}s` : AUTH_VERIFY_EMAIL.resend;
 
   return (
     <View style={styles.screen}>
@@ -84,56 +86,58 @@ export function LoginScreen({
           ) : null}
 
           <View style={styles.header}>
-            <Text style={styles.title}>{AUTH_LOGIN.title}</Text>
-            <Text style={styles.subtitle}>{AUTH_LOGIN.subtitle}</Text>
+            <Text style={styles.title}>{AUTH_VERIFY_EMAIL.title}</Text>
+            <Text style={styles.subtitle}>
+              {AUTH_VERIFY_EMAIL.subtitle}
+              {email ? ` ${email}` : '.'}
+            </Text>
           </View>
 
           <View style={styles.form}>
             <AuthTextField
-              label={AUTH_LOGIN.emailLabel}
-              placeholder={AUTH_LOGIN.emailPlaceholder}
-              value={email}
-              onChangeText={onEmailChange}
-              error={emailError}
+              label={AUTH_VERIFY_EMAIL.codeLabel}
+              placeholder={AUTH_VERIFY_EMAIL.codePlaceholder}
+              value={code}
+              onChangeText={onCodeChange}
+              error={codeError}
               disabled={submitting}
-              keyboardType="email-address"
+              keyboardType="number-pad"
               autoCapitalize="none"
               autoCorrect={false}
-              textContentType="emailAddress"
-              autoComplete="email"
-            />
-            <AuthTextField
-              label={AUTH_LOGIN.passwordLabel}
-              placeholder={AUTH_LOGIN.passwordPlaceholder}
-              value={password}
-              onChangeText={onPasswordChange}
-              error={passwordError}
-              disabled={submitting}
-              secureTextEntry
-              textContentType="password"
-              autoComplete="password"
+              textContentType="oneTimeCode"
+              autoComplete="one-time-code"
+              maxLength={6}
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (canVerify) {
+                  onVerify();
+                }
+              }}
             />
           </View>
 
           <View style={styles.actions}>
             {formError ? <Text style={styles.formError}>{formError}</Text> : null}
             <OnboardingCta
-              label={AUTH_LOGIN.logIn}
-              onPress={onLogIn}
-              disabled={submitting}
+              label={AUTH_VERIFY_EMAIL.verify}
+              onPress={onVerify}
+              disabled={!canVerify}
               loading={submitting}
             />
 
-            {showSignUpLink ? (
+            <View style={styles.resendBlock}>
+              <Text style={styles.resendPrompt}>{AUTH_VERIFY_EMAIL.resendPrompt}</Text>
               <Pressable
-                onPress={onSignUp}
-                style={styles.linkRow}
+                onPress={onResend}
+                disabled={!canResend}
                 accessibilityRole="button"
-                accessibilityLabel={`${AUTH_LOGIN.signUpPrompt} ${AUTH_LOGIN.signUpLink}`}>
-                <Text style={styles.linkPrompt}>{AUTH_LOGIN.signUpPrompt} </Text>
-                <Text style={styles.linkAccent}>{AUTH_LOGIN.signUpLink}</Text>
+                accessibilityLabel={resendLabel}
+                accessibilityState={{ disabled: !canResend }}>
+                <Text style={[styles.resendAction, !canResend && styles.resendActionDisabled]}>
+                  {resendLabel}
+                </Text>
               </Pressable>
-            ) : null}
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -193,19 +197,21 @@ function createStyles(colors: SolderiPalette) {
       color: colors.error,
       textAlign: 'center',
     },
-    linkRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      flexWrap: 'wrap',
+    resendBlock: {
+      alignItems: 'center',
+      gap: Spacing.sm,
     },
-    linkPrompt: {
+    resendPrompt: {
       fontSize: 15,
       color: colors.textSecondary,
     },
-    linkAccent: {
+    resendAction: {
       fontSize: 15,
       fontWeight: '700',
       color: colors.accent,
+    },
+    resendActionDisabled: {
+      color: colors.textMuted,
     },
   });
 }

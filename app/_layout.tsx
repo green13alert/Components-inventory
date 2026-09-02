@@ -1,12 +1,14 @@
 import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AtlasProvider } from '@/context/atlas-context';
+import { AuthProvider, useAuth } from '@/context/auth-context';
 import { SolderiThemeProvider, useSolderiTheme } from '@/context/theme-context';
 import { getNavigationTheme } from '@/constants/theme';
 import { testSupabaseConnection } from '@/lib/supabase';
@@ -17,6 +19,10 @@ export const unstable_settings = {
 
 function ThemedRoot() {
   const { colors, resolvedScheme } = useSolderiTheme();
+  const { session, isReady } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  const navigationState = useRootNavigationState();
   const navigationTheme = getNavigationTheme(colors, resolvedScheme);
 
   useEffect(() => {
@@ -42,6 +48,22 @@ function ThemedRoot() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isReady || !navigationState?.key || !session) {
+      return;
+    }
+
+    const inAuthForm =
+      segments[1] === 'login' || segments[1] === 'sign-up' || segments[1] === 'verify-email';
+    if (inAuthForm) {
+      router.replace('/(tabs)');
+    }
+  }, [isReady, session, segments, router, navigationState?.key]);
+
+  if (!isReady) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <AtlasProvider>
@@ -52,19 +74,21 @@ function ThemedRoot() {
               contentStyle: { backgroundColor: colors.background },
               animation: 'default',
             }}>
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                freezeOnBlur: false,
-              }}
-            />
+            <Stack.Protected guard={!!session}>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  freezeOnBlur: false,
+                }}
+              />
+              <Stack.Screen name="profile" />
+              <Stack.Screen name="settings/notifications" />
+              <Stack.Screen name="ai" />
+              <Stack.Screen name="project/[id]" />
+              <Stack.Screen name="project/build/[id]" />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack.Protected>
             <Stack.Screen name="onboarding" />
-            <Stack.Screen name="profile" />
-            <Stack.Screen name="settings/notifications" />
-            <Stack.Screen name="ai" />
-            <Stack.Screen name="project/[id]" />
-            <Stack.Screen name="project/build/[id]" />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
           <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         </NavigationThemeProvider>
@@ -76,7 +100,9 @@ function ThemedRoot() {
 export default function RootLayout() {
   return (
     <SolderiThemeProvider>
-      <ThemedRoot />
+      <AuthProvider>
+        <ThemedRoot />
+      </AuthProvider>
     </SolderiThemeProvider>
   );
 }

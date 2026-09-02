@@ -31,6 +31,12 @@ type SignUpScreenProps = {
   onBack: () => void;
   onSocialApple?: () => void;
   onSocialGoogle?: () => void;
+  emailError?: string;
+  passwordError?: string;
+  confirmPasswordError?: string;
+  formError?: string | null;
+  infoMessage?: string | null;
+  submitting?: boolean;
 };
 
 function SocialAuthButton({
@@ -69,6 +75,12 @@ export function SignUpScreen({
   onBack,
   onSocialApple,
   onSocialGoogle,
+  emailError,
+  passwordError,
+  confirmPasswordError,
+  formError,
+  infoMessage,
+  submitting = false,
 }: SignUpScreenProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -118,6 +130,8 @@ export function SignUpScreen({
               placeholder={AUTH_SIGN_UP.emailPlaceholder}
               value={email}
               onChangeText={onEmailChange}
+              error={emailError}
+              disabled={submitting}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -131,6 +145,8 @@ export function SignUpScreen({
               placeholder={AUTH_SIGN_UP.passwordPlaceholder}
               value={password}
               onChangeText={onPasswordChange}
+              error={passwordError}
+              disabled={submitting}
               secureTextEntry
               textContentType="newPassword"
               autoComplete="new-password"
@@ -142,6 +158,8 @@ export function SignUpScreen({
               placeholder={AUTH_SIGN_UP.confirmPasswordPlaceholder}
               value={confirmPassword}
               onChangeText={onConfirmPasswordChange}
+              error={confirmPasswordError}
+              disabled={submitting}
               secureTextEntry
               textContentType="newPassword"
               autoComplete="new-password"
@@ -150,7 +168,14 @@ export function SignUpScreen({
           </View>
 
           <View style={styles.actions}>
-            <OnboardingCta label={AUTH_SIGN_UP.createAccount} onPress={onCreateAccount} />
+            {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+            {infoMessage ? <Text style={styles.infoMessage}>{infoMessage}</Text> : null}
+            <OnboardingCta
+              label={AUTH_SIGN_UP.createAccount}
+              onPress={onCreateAccount}
+              disabled={submitting}
+              loading={submitting}
+            />
 
             <Pressable
               onPress={onLogIn}
@@ -230,6 +255,18 @@ function createStyles(colors: SolderiPalette) {
     },
     actions: {
       gap: Spacing.lg,
+    },
+    formError: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.error,
+      textAlign: 'center',
+    },
+    infoMessage: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
     },
     loginRow: {
       flexDirection: 'row',
