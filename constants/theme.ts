@@ -2,7 +2,7 @@
  * Theme configuration for React Navigation and shared app styling.
  */
 
-import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, type Theme } from 'expo-router/react-navigation';
 import { Platform } from 'react-native';
 
 import { SolderiDarkColors, SolderiLightColors, type SolderiPalette } from './colors';

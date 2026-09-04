@@ -75,11 +75,11 @@ export function AiHistoryPanel({
 function createStyles(colors: SolderiPalette) {
   return StyleSheet.create({
     overlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       zIndex: 20,
     },
     scrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.overlayLight,
     },
     panel: {

@@ -92,6 +92,32 @@ export const ONBOARDING_COMPONENTS: OnboardingComponent[] = [
   { id: 'dht11', name: 'DHT11', category: 'sensors' },
 ];
 
+/**
+ * Maps onboarding picker IDs to `public.components.slug`.
+ * Inventory rows store the catalogue UUID, not these slugs or display names.
+ */
+export const ONBOARDING_COMPONENT_SLUGS: Record<(typeof ONBOARDING_COMPONENTS)[number]['id'], string> = {
+  'arduino-uno': 'arduino-uno-r3',
+  esp32: 'esp32',
+  'servo-sg90': 'sg90',
+  'hc-sr04': 'hc-sr04',
+  oled: 'oled-096',
+  led: 'led',
+  resistor: 'resistor',
+  breadboard: 'breadboard',
+  'dc-motor': 'dc-motor',
+  dht11: 'dht11',
+};
+
+/** `user_preferences.key` for onboarding topic / interest picks. */
+export const USER_PREFERENCE_TOPIC_KEY = 'topic';
+
+export const ONBOARDING_SAVE_ERRORS = {
+  unauthenticated: 'Sign in to save your workshop.',
+  generic: 'Could not save your workshop. Please try again.',
+  missingComponents: 'Some selected components are not in the catalogue yet. Please try again later.',
+} as const;
+
 export type OnboardingInterest = {
   id: string;
   emoji: string;

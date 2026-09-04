@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import type { ColorValue } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { CustomTabBar } from '@/components/ui/custom-tab-bar';
@@ -7,7 +8,7 @@ import { useSolderiColors } from '@/context/theme-context';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
-function TabIcon({ name, color }: { name: TabIconName; color: string }) {
+function TabIcon({ name, color }: { name: TabIconName; color: ColorValue }) {
   return <Ionicons name={name} size={24} color={color} />;
 }
 

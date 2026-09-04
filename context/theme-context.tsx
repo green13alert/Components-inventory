@@ -54,7 +54,7 @@ export function SolderiThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof Appearance.setColorScheme !== 'function') return;
-    Appearance.setColorScheme(preference === 'system' ? null : preference);
+    Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference);
   }, [preference]);
 
   const setPreference = useCallback((next: ThemePreference) => {

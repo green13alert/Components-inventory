@@ -1,5 +1,5 @@
-import { BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
+import { BottomTabBar, type BottomTabBarProps } from 'expo-router/tabs';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,12 +12,12 @@ export function FrostedTabBar(props: BottomTabBarProps) {
         intensity={Platform.OS === 'ios' ? 100 : 80}
         tint="systemChromeMaterialDark"
         style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        blurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       />
       <View style={styles.separator} />
       <BottomTabBar
         {...props}
-        style={[props.style, styles.transparentBar]}
+        style={styles.transparentBar}
       />
     </View>
   );

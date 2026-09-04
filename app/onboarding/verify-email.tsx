@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { VerifyEmailScreen } from '@/components/auth/VerifyEmailScreen';
 import { AUTH_ERRORS } from '@/constants/auth';
 import { useAuth } from '@/context/auth-context';
+import { persistStashedOnboardingSelections } from '@/lib/onboarding-persistence';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -56,10 +57,17 @@ export default function VerifyEmailRoute() {
     setFormError(null);
     setSubmitting(true);
     const result = await verifyEmailOtp(email, code);
-    setSubmitting(false);
 
     if (result.error) {
+      setSubmitting(false);
       setFormError(result.error);
+      return;
+    }
+
+    const persistResult = await persistStashedOnboardingSelections();
+    setSubmitting(false);
+    if (persistResult.error) {
+      setFormError(persistResult.error);
       return;
     }
 

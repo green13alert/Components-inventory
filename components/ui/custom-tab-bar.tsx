@@ -1,5 +1,5 @@
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabBarProps } from 'expo-router/tabs';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter } from 'expo-router';
@@ -98,7 +98,7 @@ export function CustomTabBar({ navigation, state }: BottomTabBarProps) {
           intensity={Platform.OS === 'ios' ? 60 : 48}
           tint={colors.blurTint}
           style={StyleSheet.absoluteFill}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          blurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
         <View style={[styles.aiOverlay, isAiActive && styles.aiOverlayActive]} />
         <Ionicons
@@ -221,7 +221,7 @@ function SlidingTabBar({
         intensity={Platform.OS === 'ios' ? 60 : 48}
         tint={colors.blurTint}
         style={StyleSheet.absoluteFill}
-        experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        blurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       />
       <View style={styles.barOverlay} />
 
@@ -312,7 +312,7 @@ function createStyles(colors: SolderiPalette) {
       borderColor: colors.border,
     },
     barOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.barSurface,
     },
     barContent: {
@@ -369,7 +369,7 @@ function createStyles(colors: SolderiPalette) {
       borderColor: colors.accentBorder,
     },
     aiOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.barSurface,
     },
     aiOverlayActive: {

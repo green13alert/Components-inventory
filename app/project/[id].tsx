@@ -227,7 +227,7 @@ function createStyles(colors: SolderiPalette) {
       backgroundColor: colors.surfaceElevated,
     },
     heroOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.overlayLight,
     },
     heroTopBar: {

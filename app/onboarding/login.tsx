@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { LoginScreen } from '@/components/auth/LoginScreen';
 import { AUTH_ERRORS } from '@/constants/auth';
 import { useAuth } from '@/context/auth-context';
+import { persistStashedOnboardingSelections } from '@/lib/onboarding-persistence';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,10 +42,17 @@ export default function LoginRoute() {
 
     setSubmitting(true);
     const result = await signInWithEmail(trimmedEmail, password);
-    setSubmitting(false);
 
     if (result.error) {
+      setSubmitting(false);
       setFormError(result.error);
+      return;
+    }
+
+    const persistResult = await persistStashedOnboardingSelections();
+    setSubmitting(false);
+    if (persistResult.error) {
+      setFormError(persistResult.error);
       return;
     }
 

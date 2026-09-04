@@ -75,7 +75,7 @@ export function WorkbenchComponentTile({
           scale.value = withSpring(selected ? 1.05 : 1, SPRING);
         }
       }}
-      delayPressIn={onSurface ? 80 : 0}
+      unstable_pressDelay={onSurface ? 80 : 0}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       style={

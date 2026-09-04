@@ -5,6 +5,7 @@ import { Alert } from 'react-native';
 import { SignUpScreen } from '@/components/auth/SignUpScreen';
 import { AUTH_ERRORS, AUTH_SOCIAL_UNAVAILABLE } from '@/constants/auth';
 import { useAuth } from '@/context/auth-context';
+import { persistStashedOnboardingSelections } from '@/lib/onboarding-persistence';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -57,18 +58,26 @@ export default function SignUpRoute() {
 
     setSubmitting(true);
     const result = await signUpWithEmail(trimmedEmail, password);
-    setSubmitting(false);
 
     if (result.error) {
+      setSubmitting(false);
       setFormError(result.error);
       return;
     }
 
     if (result.needsEmailConfirmation) {
+      setSubmitting(false);
       router.push({
         pathname: '/onboarding/verify-email',
         params: { email: trimmedEmail },
       });
+      return;
+    }
+
+    const persistResult = await persistStashedOnboardingSelections();
+    setSubmitting(false);
+    if (persistResult.error) {
+      setFormError(persistResult.error);
       return;
     }
 

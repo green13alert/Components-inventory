@@ -32,17 +32,17 @@ export function PcbBackground({ source = ONBOARDING_PCB_IMAGE }: PcbBackgroundPr
 function createStyles(colors: SolderiPalette) {
   return StyleSheet.create({
     layer: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     fallback: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.background,
     },
     image: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     overlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
   });
 }

@@ -8,8 +8,11 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
 
 import { AUTH_ERRORS } from '@/constants/auth';
+import { processAuthCallbackUrl } from '@/lib/auth-callback';
+import { getEmailRedirectTo } from '@/lib/auth-redirect';
 import { supabase } from '@/lib/supabase';
 
 type SignUpResult = {
@@ -78,21 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setSession(data.session);
-          setIsReady(true);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSession(null);
-          setIsReady(true);
-        }
-      });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -101,14 +89,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    const hydrate = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!cancelled) {
+          setSession(data.session);
+        }
+      } catch {
+        if (!cancelled) {
+          setSession(null);
+        }
+      }
+
+      try {
+        const initialUrl = await Linking.getInitialURL();
+        if (!cancelled && initialUrl) {
+          await processAuthCallbackUrl(initialUrl);
+        }
+      } catch {
+        // Link handling is best-effort; session hydration should still complete.
+      }
+
+      if (!cancelled) {
+        setIsReady(true);
+      }
+    };
+
+    void hydrate();
+
+    const linking = Linking.addEventListener('url', (event) => {
+      void processAuthCallbackUrl(event.url);
+    });
+
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      linking.remove();
     };
   }, []);
 
   const signUpWithEmail = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: getEmailRedirectTo(),
+      },
+    });
 
     if (error) {
       return { error: mapAuthError(error.message), needsEmailConfirmation: false };
@@ -154,6 +181,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
+      options: {
+        emailRedirectTo: getEmailRedirectTo(),
+      },
     });
 
     if (error) {

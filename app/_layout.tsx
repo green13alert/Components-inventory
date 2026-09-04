@@ -1,4 +1,4 @@
-import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as NavigationThemeProvider } from 'expo-router/react-navigation';
 import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -11,6 +11,7 @@ import { AtlasProvider } from '@/context/atlas-context';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { SolderiThemeProvider, useSolderiTheme } from '@/context/theme-context';
 import { getNavigationTheme } from '@/constants/theme';
+import { persistStashedOnboardingSelections } from '@/lib/onboarding-persistence';
 import { testSupabaseConnection } from '@/lib/supabase';
 
 export const unstable_settings = {
@@ -49,13 +50,22 @@ function ThemedRoot() {
   }, []);
 
   useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    void persistStashedOnboardingSelections();
+  }, [session]);
+
+  useEffect(() => {
     if (!isReady || !navigationState?.key || !session) {
       return;
     }
 
     const inAuthForm =
       segments[1] === 'login' || segments[1] === 'sign-up' || segments[1] === 'verify-email';
-    if (inAuthForm) {
+    const inAuthCallback = segments[0] === 'auth';
+    if (inAuthForm || inAuthCallback) {
       router.replace('/(tabs)');
     }
   }, [isReady, session, segments, router, navigationState?.key]);
@@ -89,6 +99,7 @@ function ThemedRoot() {
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack.Protected>
             <Stack.Screen name="onboarding" />
+            <Stack.Screen name="auth" />
           </Stack>
           <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         </NavigationThemeProvider>

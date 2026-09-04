@@ -50,9 +50,20 @@ export const AUTH_ERRORS = {
   otpInvalid: 'That code is invalid or has expired. Request a new code and try again.',
   otpRequired: 'Enter the 6-digit code from your email.',
   resendFailed: 'Could not resend the code. Please try again.',
+  confirmationExpired: 'This confirmation link has expired. Request a new code or email and try again.',
+  confirmationUsed: 'This confirmation link has already been used. Log in, or request a new code if you still need to verify.',
+  confirmationInvalid: 'This confirmation link is invalid. Request a new code or email and try again.',
+  confirmationMissing: 'No confirmation details were found in this link. Enter the 6-digit code from your email instead.',
   network: 'Could not connect. Check your internet connection and try again.',
   generic: 'Something went wrong. Please try again.',
   signOutFailed: 'Could not sign out. Please try again.',
+} as const;
+
+export const AUTH_CALLBACK = {
+  title: 'Confirming your email',
+  subtitle: 'Finishing sign-in…',
+  errorTitle: 'Could not confirm email',
+  useCode: 'Enter verification code',
 } as const;
 
 export const AUTH_INFO = {

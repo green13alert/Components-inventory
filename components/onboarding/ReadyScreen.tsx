@@ -21,6 +21,7 @@ type ReadyScreenProps = {
   projects: MockRecommendedProject[];
   onBack: () => void;
   onFinish: () => void;
+  saving?: boolean;
 };
 
 export function ReadyScreen({
@@ -30,6 +31,7 @@ export function ReadyScreen({
   projects,
   onBack,
   onFinish,
+  saving = false,
 }: ReadyScreenProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -48,7 +50,7 @@ export function ReadyScreen({
       description={ONBOARDING_READY.description}
       onBack={onBack}
       background="pcb-subtle"
-      footer={<OnboardingCta label={ONBOARDING_WELCOME.cta} onPress={onFinish} />}>
+      footer={<OnboardingCta label={ONBOARDING_WELCOME.cta} onPress={onFinish} loading={saving} />}>
       <Animated.View entering={FadeInDown.duration(420)} style={styles.summaryCard}>
         <Text style={styles.summaryText}>{summaryLine}</Text>
       </Animated.View>
