@@ -13,11 +13,13 @@ import {
   PROJECT_DIFFICULTY_FILTERS,
   type ProjectDifficultyFilter,
 } from '@/constants/projects-data';
-import { fetchProjects, PROJECT_ERRORS, type Project } from '@/lib/projects';
+import { useAtlas } from '@/context/atlas-context';
+import { fetchProjects, matchProjectInventory, PROJECT_ERRORS, type Project } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
 
 export default function ProjectsScreen() {
   const insets = useSafeAreaInsets();
+  const { inventory, inventoryLoading } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +46,12 @@ export default function ProjectsScreen() {
   useEffect(() => {
     void loadProjects();
   }, [loadProjects]);
+
+  const matchesByProjectId = useMemo(() => {
+    return new Map(
+      projects.map((project) => [project.id, matchProjectInventory(project.bom, inventory)] as const),
+    );
+  }, [projects, inventory]);
 
   const filteredProjects = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -104,7 +112,12 @@ export default function ProjectsScreen() {
           <View style={styles.list}>
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project) => (
-                <ProjectListCard key={project.id} project={project} />
+                <ProjectListCard
+                  key={project.id}
+                  project={project}
+                  match={matchesByProjectId.get(project.id)!}
+                  inventoryReady={!inventoryLoading}
+                />
               ))
             ) : (
               <View style={styles.emptyState}>

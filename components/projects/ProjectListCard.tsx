@@ -7,26 +7,33 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { SolderiPalette } from '@/constants/colors';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { getProjectImage } from '@/constants/projects';
-import type { Project } from '@/lib/projects';
+import type { Project, ProjectInventoryMatch } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
 
 type ProjectListCardProps = {
   project: Project;
+  match: ProjectInventoryMatch;
+  inventoryReady: boolean;
 };
 
-export function ProjectListCard({ project }: ProjectListCardProps) {
+export function ProjectListCard({ project, match, inventoryReady }: ProjectListCardProps) {
   const router = useRouter();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const requiredLabel =
-    project.requiredComponentCount === 1
-      ? '1 required component'
-      : `${project.requiredComponentCount} required components`;
   const difficultyColors = {
     beginner: colors.success,
     intermediate: colors.warning,
     advanced: colors.error,
   };
+
+  let partsLabel = 'Checking inventory…';
+  if (inventoryReady) {
+    if (match.matchPercentage == null) {
+      partsLabel = 'Components not yet defined';
+    } else {
+      partsLabel = `${Math.round(match.matchPercentage)}% ready · ${match.ownedCount}/${match.totalRequired} available`;
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -62,7 +69,7 @@ export function ProjectListCard({ project }: ProjectListCardProps) {
           <View style={styles.footer}>
             <View style={styles.partsRow}>
               <Ionicons name="cube-outline" size={13} color={colors.textMuted} />
-              <Text style={styles.partsText}>{requiredLabel}</Text>
+              <Text style={styles.partsText}>{partsLabel}</Text>
             </View>
           </View>
         </View>

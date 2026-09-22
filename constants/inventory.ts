@@ -14,6 +14,8 @@ export type InventoryComponent = {
   quantity: number;
   /** Present when the item was chosen from the component catalogue. */
   catalogueId?: string;
+  /** `public.components.id` for the catalogue row. */
+  componentId?: string;
   /** Catalogue subtype, e.g. temperature_humidity. */
   type?: string;
   /** ISO timestamp from inventory_items.created_at. */

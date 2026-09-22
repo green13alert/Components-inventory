@@ -20,10 +20,12 @@ import { getProjectImage } from '@/constants/projects';
 import {
   fetchProjectBySlug,
   fetchProjectComponents,
+  matchProjectInventory,
   PROJECT_ERRORS,
   type Project,
   type ProjectBomComponent,
 } from '@/lib/projects';
+import { useAtlas } from '@/context/atlas-context';
 import { useSolderiColors } from '@/context/theme-context';
 
 function illustrationForSlug(slug: string) {
@@ -35,6 +37,7 @@ export default function ProjectDetailScreen() {
   const slug = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { inventory, inventoryLoading } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [project, setProject] = useState<Project | null>(null);
@@ -122,9 +125,17 @@ export default function ProjectDetailScreen() {
       ? project.learningObjectives
       : getProjectLearningPoints(project);
   const stepCount = getStepCount(project.difficulty);
-  const requiredCount = components.length;
-  const requiredLabel =
-    requiredCount === 1 ? '1 required component' : `${requiredCount} required components`;
+  const match = matchProjectInventory(components, inventory);
+  const partsValue = inventoryLoading
+    ? '…'
+    : match.matchPercentage == null
+      ? '—'
+      : `${Math.round(match.matchPercentage)}%`;
+  const componentsCountLabel = inventoryLoading
+    ? 'Checking inventory…'
+    : match.matchPercentage == null
+      ? 'Components not yet defined'
+      : `${match.ownedCount} / ${match.totalRequired} components available`;
 
   const handleStart = () => {
     router.push({ pathname: '/project/build/[id]', params: { id: project.slug } });
@@ -177,7 +188,7 @@ export default function ProjectDetailScreen() {
           <View style={styles.statsRow}>
             <ProjectDetailStat icon="time-outline" label="Time" value={project.durationLabel} />
             <ProjectDetailStat icon="list-outline" label="Steps" value={`${stepCount}`} />
-            <ProjectDetailStat icon="cube-outline" label="Parts" value={`${requiredCount}`} />
+            <ProjectDetailStat icon="cube-outline" label="Parts" value={partsValue} />
           </View>
 
           <View style={styles.section}>
@@ -207,21 +218,42 @@ export default function ProjectDetailScreen() {
           <View style={styles.section}>
             <View style={styles.componentsHeader}>
               <Text style={styles.sectionTitle}>Components</Text>
-              <Text style={styles.componentsCount}>{requiredLabel}</Text>
+              <Text style={styles.componentsCount}>{componentsCountLabel}</Text>
             </View>
             {error ? <Text style={styles.overviewText}>{error}</Text> : null}
+            {!inventoryLoading && match.matchPercentage != null && match.missingCount > 0 ? (
+              <View style={styles.missingBanner}>
+                <Ionicons name="warning-outline" size={16} color={colors.warning} />
+                <Text style={styles.missingBannerText}>
+                  {match.missingCount} component{match.missingCount !== 1 ? 's' : ''} missing from your inventory
+                </Text>
+              </View>
+            ) : null}
+            {!inventoryLoading && match.matchPercentage != null && match.missingCount === 0 ? (
+              <View style={styles.readyBanner}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
+                <Text style={styles.readyBannerText}>You have all the parts needed!</Text>
+              </View>
+            ) : null}
             <View style={styles.componentsList}>
-              {components.map((component) => (
-                <ProjectComponentRow
-                  key={component.id}
-                  component={{
-                    id: component.componentId,
-                    name: component.name,
-                    quantity: component.quantity,
-                    illustrationId: illustrationForSlug(component.slug),
-                  }}
-                />
-              ))}
+              {match.lines.length === 0 && !error ? (
+                <Text style={styles.overviewText}>Components not yet defined</Text>
+              ) : (
+                match.lines.map((component) => (
+                  <ProjectComponentRow
+                    key={component.componentId}
+                    component={{
+                      id: component.componentId,
+                      name: component.name,
+                      illustrationId: illustrationForSlug(component.slug),
+                      requiredQuantity: component.requiredQuantity,
+                      ownedQuantity: component.ownedQuantity,
+                      missingQuantity: component.missingQuantity,
+                      isOwned: component.isOwned,
+                    }}
+                  />
+                ))
+              )}
             </View>
           </View>
         </View>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -10,22 +11,45 @@ type ProjectComponentRowProps = {
   component: {
     id: string;
     name: string;
-    quantity: number;
     illustrationId: ComponentIllustrationId;
+    requiredQuantity: number;
+    ownedQuantity: number;
+    missingQuantity: number;
+    isOwned: boolean;
   };
 };
 
 export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-
   return (
     <View style={styles.row}>
-      <View style={styles.iconWrap}>
-        <ComponentIllustration id={component.illustrationId} name={component.name} size={40} plate />
+      <View style={[styles.iconWrap, !component.isOwned && styles.iconWrapMissing]}>
+        <ComponentIllustration
+          id={component.illustrationId}
+          name={component.name}
+          size={40}
+          plate={component.isOwned}
+        />
       </View>
-      <Text style={styles.name}>{component.name}</Text>
-      <Text style={styles.quantity}>×{component.quantity}</Text>
+      <View style={styles.copy}>
+        <Text style={[styles.name, !component.isOwned && styles.nameMissing]}>{component.name}</Text>
+        <Text style={styles.quantityDetail}>Required: {component.requiredQuantity}</Text>
+        <Text style={styles.quantityDetail}>You have: {component.ownedQuantity}</Text>
+        {component.isOwned ? null : (
+          <Text style={styles.quantityDetail}>Missing: {component.missingQuantity}</Text>
+        )}
+      </View>
+      <View style={[styles.badge, component.isOwned ? styles.badgeOwned : styles.badgeMissing]}>
+        <Ionicons
+          name={component.isOwned ? 'checkmark' : 'close'}
+          size={12}
+          color={component.isOwned ? colors.success : colors.warning}
+        />
+        <Text style={[styles.badgeText, component.isOwned ? styles.badgeTextOwned : styles.badgeTextMissing]}>
+          {component.isOwned ? 'Owned' : 'Missing'}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -50,16 +74,50 @@ function createStyles(colors: SolderiPalette) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    name: {
+    iconWrapMissing: {
+      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+      opacity: 0.75,
+    },
+    copy: {
       flex: 1,
+      gap: 4,
+    },
+    name: {
       fontSize: 15,
       fontWeight: '600',
       color: colors.textPrimary,
     },
-    quantity: {
-      fontSize: 13,
-      fontWeight: '700',
+    nameMissing: {
+      color: colors.textSecondary,
+    },
+    quantityDetail: {
+      fontSize: 12,
+      lineHeight: 16,
       color: colors.textMuted,
+    },
+    badge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    badgeOwned: {
+      backgroundColor: colors.successMuted,
+    },
+    badgeMissing: {
+      backgroundColor: colors.accentMuted,
+    },
+    badgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    badgeTextOwned: {
+      color: colors.success,
+    },
+    badgeTextMissing: {
+      color: colors.warning,
     },
   });
 }

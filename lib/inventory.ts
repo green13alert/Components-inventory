@@ -31,7 +31,7 @@ const INVENTORY_CATEGORIES: Exclude<ComponentCategory, 'all'>[] = [
 ];
 
 const INVENTORY_SELECT =
-  'id, quantity, created_at, components!inner ( slug, name, category, description )';
+  'id, component_id, quantity, created_at, components!inner ( slug, name, category, description )';
 
 type CatalogueRow = {
   slug: string;
@@ -42,6 +42,7 @@ type CatalogueRow = {
 
 type InventoryRow = {
   id: string;
+  component_id: string;
   quantity: number;
   created_at: string;
   components: CatalogueRow | CatalogueRow[] | null;
@@ -96,6 +97,7 @@ function mapInventoryRow(row: InventoryRow): InventoryComponent | null {
     category: component.category,
     quantity: row.quantity,
     catalogueId: component.slug,
+    componentId: row.component_id,
     type: local?.type,
     createdAt: row.created_at,
   };
