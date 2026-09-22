@@ -5,9 +5,11 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { SolderiPalette } from '@/constants/colors';
-import { DIFFICULTY_LABELS } from '@/constants/projects-data';
+import { DIFFICULTY_LABELS, getStepCount } from '@/constants/projects-data';
 import { getProjectImage } from '@/constants/projects';
+import { useAtlas } from '@/context/atlas-context';
 import type { Project, ProjectInventoryMatch } from '@/lib/projects';
+import { getUserProjectProgressPercent, getUserProjectStatus } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
 
 type ProjectListCardProps = {
@@ -18,8 +20,14 @@ type ProjectListCardProps = {
 
 export function ProjectListCard({ project, match, inventoryReady }: ProjectListCardProps) {
   const router = useRouter();
+  const { getUserProject, isFavourite, toggleFavourite } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const userProject = getUserProject(project.id);
+  const status = getUserProjectStatus(userProject);
+  const progress = getUserProjectProgressPercent(userProject, getStepCount(project.difficulty));
+  const favourited = isFavourite(project.id);
+  const isInProgress = status === 'in_progress';
   const difficultyColors = {
     beginner: colors.success,
     intermediate: colors.warning,
@@ -71,8 +79,24 @@ export function ProjectListCard({ project, match, inventoryReady }: ProjectListC
               <Ionicons name="cube-outline" size={13} color={colors.textMuted} />
               <Text style={styles.partsText}>{partsLabel}</Text>
             </View>
+            {isInProgress ? <Text style={styles.progressText}>{progress}% done</Text> : null}
           </View>
         </View>
+      </Pressable>
+
+      <Pressable
+        style={styles.saveButton}
+        onPress={() => {
+          void toggleFavourite(project.id);
+        }}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={favourited ? 'Remove from favourites' : 'Add to favourites'}>
+        <Ionicons
+          name={favourited ? 'bookmark' : 'bookmark-outline'}
+          size={20}
+          color={favourited ? colors.accent : colors.textMuted}
+        />
       </Pressable>
     </View>
   );
@@ -93,6 +117,16 @@ function createStyles(colors: SolderiPalette) {
       gap: 14,
       padding: 12,
     },
+    saveButton: {
+      position: 'absolute',
+      top: 10,
+      right: 10,
+      zIndex: 1,
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     image: {
       width: 96,
       height: 96,
@@ -103,6 +137,7 @@ function createStyles(colors: SolderiPalette) {
       flex: 1,
       gap: 6,
       justifyContent: 'center',
+      paddingRight: 24,
     },
     title: {
       fontSize: 16,
@@ -149,6 +184,11 @@ function createStyles(colors: SolderiPalette) {
     partsText: {
       fontSize: 12,
       color: colors.textMuted,
+    },
+    progressText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.accent,
     },
   });
 }

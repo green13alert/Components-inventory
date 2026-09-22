@@ -14,12 +14,15 @@ import {
   CATEGORY_LABELS,
   DIFFICULTY_LABELS,
   getProjectLearningPoints,
+  getStartButtonLabel,
   getStepCount,
 } from '@/constants/projects-data';
 import { getProjectImage } from '@/constants/projects';
 import {
   fetchProjectBySlug,
   fetchProjectComponents,
+  getUserProjectProgressPercent,
+  getUserProjectStatus,
   matchProjectInventory,
   PROJECT_ERRORS,
   type Project,
@@ -37,7 +40,7 @@ export default function ProjectDetailScreen() {
   const slug = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { inventory, inventoryLoading } = useAtlas();
+  const { inventory, inventoryLoading, getUserProject, isFavourite, toggleFavourite, startProject } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [project, setProject] = useState<Project | null>(null);
@@ -126,6 +129,10 @@ export default function ProjectDetailScreen() {
       : getProjectLearningPoints(project);
   const stepCount = getStepCount(project.difficulty);
   const match = matchProjectInventory(components, inventory);
+  const userProject = getUserProject(project.id);
+  const status = getUserProjectStatus(userProject);
+  const progress = getUserProjectProgressPercent(userProject, stepCount);
+  const favourited = isFavourite(project.id);
   const partsValue = inventoryLoading
     ? '…'
     : match.matchPercentage == null
@@ -138,7 +145,12 @@ export default function ProjectDetailScreen() {
       : `${match.ownedCount} / ${match.totalRequired} components available`;
 
   const handleStart = () => {
-    router.push({ pathname: '/project/build/[id]', params: { id: project.slug } });
+    void (async () => {
+      if (status === 'not_started') {
+        await startProject(project.id);
+      }
+      router.push({ pathname: '/project/build/[id]', params: { id: project.slug } });
+    })();
   };
 
   return (
@@ -161,6 +173,19 @@ export default function ProjectDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+            </Pressable>
+            <Pressable
+              style={styles.backButton}
+              onPress={() => {
+                void toggleFavourite(project.id);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={favourited ? 'Remove from favourites' : 'Add to favourites'}>
+              <Ionicons
+                name={favourited ? 'bookmark' : 'bookmark-outline'}
+                size={22}
+                color={favourited ? colors.accent : colors.textPrimary}
+              />
             </Pressable>
           </SafeAreaView>
         </View>
@@ -190,6 +215,18 @@ export default function ProjectDetailScreen() {
             <ProjectDetailStat icon="list-outline" label="Steps" value={`${stepCount}`} />
             <ProjectDetailStat icon="cube-outline" label="Parts" value={partsValue} />
           </View>
+
+          {(status === 'in_progress' || status === 'completed') && progress > 0 ? (
+            <View style={styles.progressCard}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressLabel}>Your Progress</Text>
+                <Text style={styles.progressValue}>{progress}%</Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${progress}%` }]} />
+              </View>
+            </View>
+          ) : null}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Overview</Text>
@@ -262,7 +299,7 @@ export default function ProjectDetailScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Pressable style={styles.startButton} onPress={handleStart} accessibilityRole="button">
           <Ionicons name="play" size={20} color={colors.onAccent} />
-          <Text style={styles.startButtonText}>Get Started</Text>
+          <Text style={styles.startButtonText}>{getStartButtonLabel(status)}</Text>
         </Pressable>
       </View>
     </View>
@@ -321,6 +358,9 @@ function createStyles(colors: SolderiPalette) {
       right: 0,
       paddingHorizontal: 12,
       paddingTop: 4,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     backButton: {
       width: 40,

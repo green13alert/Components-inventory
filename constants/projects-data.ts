@@ -220,7 +220,7 @@ export function getStartButtonLabel(status: ProjectStatus): string {
     case 'completed':
       return 'Review Project';
     default:
-      return 'Get Started';
+      return 'Start Building';
   }
 }
 

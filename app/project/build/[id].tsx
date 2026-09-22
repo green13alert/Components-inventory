@@ -7,28 +7,18 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
 import type { SolderiPalette } from '@/constants/colors';
 import { getProjectSteps } from '@/constants/project-steps';
-import { getProjectImage } from '@/constants/projects';
-import { getStartButtonLabel, type Project as TemplateProject } from '@/constants/projects-data';
+import { getStartButtonLabel } from '@/constants/projects-data';
 import { getProjectSketch } from '@/constants/walkthrough-content';
 import { useAtlas } from '@/context/atlas-context';
-import { fetchProjectBySlug, PROJECT_ERRORS, type Project } from '@/lib/projects';
+import {
+  fetchProjectBySlug,
+  getUserProjectProgressPercent,
+  getUserProjectStatus,
+  PROJECT_ERRORS,
+  toWalkthroughProject,
+  type Project,
+} from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
-
-function toTemplateProject(project: Project): TemplateProject {
-  return {
-    id: project.slug,
-    title: project.title,
-    description: project.description,
-    overview: project.overview ?? undefined,
-    difficulty: project.difficulty,
-    duration: project.durationLabel,
-    category: project.category,
-    image: getProjectImage(project.imageKey),
-    ownedParts: 0,
-    totalParts: project.requiredComponentCount,
-    status: 'not_started',
-  };
-}
 
 export default function ProjectBuildScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,11 +29,11 @@ export default function ProjectBuildScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     getCurrentStepIndex,
+    getUserProject,
     setProjectStep,
     completeProject,
     startProject,
     getProjectStatus,
-    getProjectProgressPercent,
   } = useAtlas();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -86,7 +76,10 @@ export default function ProjectBuildScreen() {
     };
   }, [slug]);
 
-  const templateProject = useMemo(() => (project ? toTemplateProject(project) : null), [project]);
+  const templateProject = useMemo(
+    () => (project ? toWalkthroughProject(project, getProjectStatus(project.id)) : null),
+    [getProjectStatus, project],
+  );
   const steps = useMemo(
     () => (templateProject ? getProjectSteps(templateProject) : []),
     [templateProject],
@@ -117,32 +110,34 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  const projectKey = project.slug;
-  const status = getProjectStatus(projectKey);
-  const currentStepIndex = getCurrentStepIndex(projectKey);
+  const projectKey = project.id;
+  const status = getUserProjectStatus(getUserProject(projectKey));
+  const persistedStep = getCurrentStepIndex(projectKey);
+  const lastStepIndex = Math.max(0, steps.length - 1);
+  const currentStepIndex = Math.min(persistedStep, lastStepIndex);
   const currentStep = steps[currentStepIndex] ?? steps[0];
-  const progressPercent = getProjectProgressPercent(projectKey, project.difficulty);
+  const progressPercent = getUserProjectProgressPercent(getUserProject(projectKey), steps.length);
   const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === steps.length - 1;
+  const isLastStep = currentStepIndex === lastStepIndex;
   const isCompleted = status === 'completed';
 
   const handlePrev = () => {
     if (!isFirstStep) {
-      setProjectStep(projectKey, currentStepIndex - 1);
+      void setProjectStep(projectKey, currentStepIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (isLastStep) {
-      completeProject(projectKey);
+      void completeProject(projectKey, currentStepIndex);
       return;
     }
-    setProjectStep(projectKey, currentStepIndex + 1);
+    void setProjectStep(projectKey, currentStepIndex + 1);
   };
 
   const handleStartOrContinue = () => {
     if (status === 'not_started') {
-      startProject(projectKey);
+      void startProject(projectKey);
     }
   };
 

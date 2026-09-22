@@ -28,10 +28,16 @@ export default function HomeScreen() {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { getProjectsWithStatus, inventory, getCurrentStepIndex } = useAtlas();
+  const { getProjectsWithStatus, inventory, getCurrentStepIndex, getUserProject } = useAtlas();
 
   const projects = getProjectsWithStatus();
-  const continueProjects = projects.filter((p) => p.status === 'in_progress');
+  const continueProjects = projects
+    .filter((p) => p.status === 'in_progress')
+    .sort((a, b) => {
+      const aUpdated = getUserProject(a.id)?.updatedAt ?? '';
+      const bUpdated = getUserProject(b.id)?.updatedAt ?? '';
+      return bUpdated.localeCompare(aUpdated);
+    });
   const recommendedProjects = RECOMMENDED_PROJECT_IDS.map((id) => projects.find((p) => p.id === id)!);
   const recentComponents = [...inventory]
     .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
