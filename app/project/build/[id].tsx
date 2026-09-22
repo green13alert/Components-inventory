@@ -1,19 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
 import type { SolderiPalette } from '@/constants/colors';
 import { getProjectSteps } from '@/constants/project-steps';
-import { getProjectById, getStartButtonLabel } from '@/constants/projects-data';
+import { getProjectImage } from '@/constants/projects';
+import { getStartButtonLabel, type Project as TemplateProject } from '@/constants/projects-data';
 import { getProjectSketch } from '@/constants/walkthrough-content';
 import { useAtlas } from '@/context/atlas-context';
+import { fetchProjectBySlug, PROJECT_ERRORS, type Project } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
+
+function toTemplateProject(project: Project): TemplateProject {
+  return {
+    id: project.slug,
+    title: project.title,
+    description: project.description,
+    overview: project.overview ?? undefined,
+    difficulty: project.difficulty,
+    duration: project.durationLabel,
+    category: project.category,
+    image: getProjectImage(project.imageKey),
+    ownedParts: 0,
+    totalParts: project.requiredComponentCount,
+    status: 'not_started',
+  };
+}
 
 export default function ProjectBuildScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const slug = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useSolderiColors();
@@ -27,15 +46,69 @@ export default function ProjectBuildScreen() {
     getProjectProgressPercent,
   } = useAtlas();
 
-  const project = getProjectById(id ?? '');
-  const steps = useMemo(() => (project ? getProjectSteps(project) : []), [project]);
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!project) {
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!slug) {
+        setProject(null);
+        setError(PROJECT_ERRORS.notFound);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      const result = await fetchProjectBySlug(slug);
+      if (cancelled) {
+        return;
+      }
+
+      if (result.error || !result.data) {
+        setProject(null);
+        setError(result.error ?? PROJECT_ERRORS.notFound);
+        setLoading(false);
+        return;
+      }
+
+      setProject(result.data);
+      setError(null);
+      setLoading(false);
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  const templateProject = useMemo(() => (project ? toTemplateProject(project) : null), [project]);
+  const steps = useMemo(
+    () => (templateProject ? getProjectSteps(templateProject) : []),
+    [templateProject],
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.notFound}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.notFoundTitle}>Loading project…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!project || !templateProject) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.notFound}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.textMuted} />
-          <Text style={styles.notFoundTitle}>Project not found</Text>
+          <Text style={styles.notFoundTitle}>{error ?? PROJECT_ERRORS.notFound}</Text>
           <Pressable style={styles.notFoundButton} onPress={() => router.back()}>
             <Text style={styles.notFoundButtonText}>Go Back</Text>
           </Pressable>
@@ -44,31 +117,32 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  const status = getProjectStatus(project.id);
-  const currentStepIndex = getCurrentStepIndex(project.id);
+  const projectKey = project.slug;
+  const status = getProjectStatus(projectKey);
+  const currentStepIndex = getCurrentStepIndex(projectKey);
   const currentStep = steps[currentStepIndex] ?? steps[0];
-  const progressPercent = getProjectProgressPercent(project.id, project.difficulty);
+  const progressPercent = getProjectProgressPercent(projectKey, project.difficulty);
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === steps.length - 1;
   const isCompleted = status === 'completed';
 
   const handlePrev = () => {
     if (!isFirstStep) {
-      setProjectStep(project.id, currentStepIndex - 1);
+      setProjectStep(projectKey, currentStepIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (isLastStep) {
-      completeProject(project.id);
+      completeProject(projectKey);
       return;
     }
-    setProjectStep(project.id, currentStepIndex + 1);
+    setProjectStep(projectKey, currentStepIndex + 1);
   };
 
   const handleStartOrContinue = () => {
     if (status === 'not_started') {
-      startProject(project.id);
+      startProject(projectKey);
     }
   };
 
@@ -115,9 +189,9 @@ export default function ProjectBuildScreen() {
       <ProjectCompleteView
         title={project.title}
         stepCount={steps.length}
-        onBackToProject={() => router.replace({ pathname: '/project/[id]', params: { id: project.id } })}
+        onBackToProject={() => router.replace({ pathname: '/project/[id]', params: { id: project.slug } })}
         onBrowseProjects={() => router.replace('/projects')}
-        sketch={getProjectSketch(project)}
+        sketch={getProjectSketch(templateProject)}
       />
     );
   }
@@ -142,7 +216,7 @@ export default function ProjectBuildScreen() {
         </View>
         <Pressable
           style={styles.iconButton}
-          onPress={() => router.replace({ pathname: '/project/[id]', params: { id: project.id } })}
+          onPress={() => router.replace({ pathname: '/project/[id]', params: { id: project.slug } })}
           accessibilityRole="button"
           accessibilityLabel="Exit build">
           <Ionicons name="close" size={22} color={colors.textSecondary} />

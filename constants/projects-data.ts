@@ -182,7 +182,7 @@ const LEARNING_POINTS: Record<ProjectCategory, string[]> = {
   ],
 };
 
-export function getProjectLearningPoints(project: Project): string[] {
+export function getProjectLearningPoints(project: { category: ProjectCategory }): string[] {
   return LEARNING_POINTS[project.category];
 }
 

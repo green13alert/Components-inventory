@@ -27,3 +27,11 @@ export const PROJECT_IMAGES = {
   solarTracker: require('../assets/images/projects/project-solar-tracker.jpg'),
   blinkLed: require('../assets/images/projects/project-blink-led.jpg'),
 } as const satisfies Record<string, ProjectImage>;
+
+export function getProjectImage(imageKey: string): ProjectImage {
+  if (Object.prototype.hasOwnProperty.call(PROJECT_IMAGES, imageKey)) {
+    return PROJECT_IMAGES[imageKey as keyof typeof PROJECT_IMAGES];
+  }
+
+  return PROJECT_IMAGES.blinkLed;
+}

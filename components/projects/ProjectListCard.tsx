@@ -5,22 +5,23 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { SolderiPalette } from '@/constants/colors';
-import { DIFFICULTY_LABELS, Project } from '@/constants/projects-data';
-import { useAtlas } from '@/context/atlas-context';
+import { DIFFICULTY_LABELS } from '@/constants/projects-data';
+import { getProjectImage } from '@/constants/projects';
+import type { Project } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
 
 type ProjectListCardProps = {
-  project: Project & { status: Project['status']; progress?: number };
+  project: Project;
 };
 
 export function ProjectListCard({ project }: ProjectListCardProps) {
   const router = useRouter();
-  const { isFavourite, toggleFavourite } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const matchPercent = Math.round((project.ownedParts / project.totalParts) * 100);
-  const favourited = isFavourite(project.id);
-  const isInProgress = project.status === 'in_progress';
+  const requiredLabel =
+    project.requiredComponentCount === 1
+      ? '1 required component'
+      : `${project.requiredComponentCount} required components`;
   const difficultyColors = {
     beginner: colors.success,
     intermediate: colors.warning,
@@ -31,9 +32,14 @@ export function ProjectListCard({ project }: ProjectListCardProps) {
     <View style={styles.container}>
       <Pressable
         style={styles.cardPressable}
-        onPress={() => router.push(`/project/${project.id}`)}
+        onPress={() => router.push({ pathname: '/project/[id]', params: { id: project.slug } })}
         accessibilityRole="button">
-        <Image source={project.image} style={styles.image} contentFit="cover" transition={200} />
+        <Image
+          source={getProjectImage(project.imageKey)}
+          style={styles.image}
+          contentFit="cover"
+          transition={200}
+        />
         <View style={styles.body}>
           <Text style={styles.title} numberOfLines={2}>
             {project.title}
@@ -51,33 +57,15 @@ export function ProjectListCard({ project }: ProjectListCardProps) {
                 {DIFFICULTY_LABELS[project.difficulty]}
               </Text>
             </View>
-            <Text style={styles.duration}>{project.duration}</Text>
+            <Text style={styles.duration}>{project.durationLabel}</Text>
           </View>
           <View style={styles.footer}>
             <View style={styles.partsRow}>
               <Ionicons name="cube-outline" size={13} color={colors.textMuted} />
-              <Text style={styles.partsText}>
-                {project.ownedParts}/{project.totalParts} parts · {matchPercent}% match
-              </Text>
+              <Text style={styles.partsText}>{requiredLabel}</Text>
             </View>
-            {isInProgress && project.progress != null ? (
-              <Text style={styles.progressText}>{project.progress}% done</Text>
-            ) : null}
           </View>
         </View>
-      </Pressable>
-
-      <Pressable
-        style={styles.saveButton}
-        onPress={() => toggleFavourite(project.id)}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel={favourited ? 'Remove from favourites' : 'Add to favourites'}>
-        <Ionicons
-          name={favourited ? 'bookmark' : 'bookmark-outline'}
-          size={20}
-          color={favourited ? colors.accent : colors.textMuted}
-        />
       </Pressable>
     </View>
   );
@@ -98,16 +86,6 @@ function createStyles(colors: SolderiPalette) {
       gap: 14,
       padding: 12,
     },
-    saveButton: {
-      position: 'absolute',
-      top: 10,
-      right: 10,
-      zIndex: 1,
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     image: {
       width: 96,
       height: 96,
@@ -118,7 +96,6 @@ function createStyles(colors: SolderiPalette) {
       flex: 1,
       gap: 6,
       justifyContent: 'center',
-      paddingRight: 24,
     },
     title: {
       fontSize: 16,
@@ -165,11 +142,6 @@ function createStyles(colors: SolderiPalette) {
     partsText: {
       fontSize: 12,
       color: colors.textMuted,
-    },
-    progressText: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: colors.accent,
     },
   });
 }

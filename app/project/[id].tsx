@@ -1,46 +1,113 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
+import { getCatalogueComponent } from '@/constants/component-catalogue';
+import { resolveComponentIllustration } from '@/constants/component-illustrations';
 import type { SolderiPalette } from '@/constants/colors';
 import {
   CATEGORY_LABELS,
   DIFFICULTY_LABELS,
-  getProjectById,
-  getProjectComponents,
-  getProjectOverview,
   getProjectLearningPoints,
-  getStartButtonLabel,
   getStepCount,
 } from '@/constants/projects-data';
-import { useAtlas } from '@/context/atlas-context';
+import { getProjectImage } from '@/constants/projects';
+import {
+  fetchProjectBySlug,
+  fetchProjectComponents,
+  PROJECT_ERRORS,
+  type Project,
+  type ProjectBomComponent,
+} from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
+
+function illustrationForSlug(slug: string) {
+  return getCatalogueComponent(slug)?.image ?? resolveComponentIllustration({ id: slug });
+}
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const slug = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { getProjectStatus, getProjectProgressPercent, startProject } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const project = getProjectById(id ?? '');
+  const [project, setProject] = useState<Project | null>(null);
+  const [components, setComponents] = useState<ProjectBomComponent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const difficultyColors = {
     beginner: colors.success,
     intermediate: colors.warning,
     advanced: colors.error,
   } as const;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!slug) {
+        setProject(null);
+        setComponents([]);
+        setError(PROJECT_ERRORS.notFound);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      const result = await fetchProjectBySlug(slug);
+      if (cancelled) {
+        return;
+      }
+
+      if (result.error || !result.data) {
+        setProject(null);
+        setComponents([]);
+        setError(result.error ?? PROJECT_ERRORS.notFound);
+        setLoading(false);
+        return;
+      }
+
+      const bomResult = await fetchProjectComponents(result.data.id);
+      if (cancelled) {
+        return;
+      }
+
+      setProject(result.data);
+      setComponents(bomResult.data ?? []);
+      setError(bomResult.error);
+      setLoading(false);
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.notFound}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.notFoundTitle}>Loading project…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!project) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.notFound}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.textMuted} />
-          <Text style={styles.notFoundTitle}>Project not found</Text>
+          <Text style={styles.notFoundTitle}>{error ?? PROJECT_ERRORS.notFound}</Text>
           <Pressable style={styles.notFoundButton} onPress={() => router.back()}>
             <Text style={styles.notFoundButtonText}>Go Back</Text>
           </Pressable>
@@ -49,20 +116,18 @@ export default function ProjectDetailScreen() {
     );
   }
 
-  const components = getProjectComponents(project);
-  const matchPercent = Math.round((project.ownedParts / project.totalParts) * 100);
-  const missingCount = project.totalParts - project.ownedParts;
-  const overview = getProjectOverview(project);
-  const learningPoints = getProjectLearningPoints(project);
+  const overview = project.overview?.trim() || project.description;
+  const learningPoints =
+    project.learningObjectives && project.learningObjectives.length > 0
+      ? project.learningObjectives
+      : getProjectLearningPoints(project);
   const stepCount = getStepCount(project.difficulty);
-  const status = getProjectStatus(project.id);
-  const progress = getProjectProgressPercent(project.id, project.difficulty);
+  const requiredCount = components.length;
+  const requiredLabel =
+    requiredCount === 1 ? '1 required component' : `${requiredCount} required components`;
 
   const handleStart = () => {
-    if (status === 'not_started') {
-      startProject(project.id);
-    }
-    router.push({ pathname: '/project/build/[id]', params: { id: project.id } });
+    router.push({ pathname: '/project/build/[id]', params: { id: project.slug } });
   };
 
   return (
@@ -71,7 +136,12 @@ export default function ProjectDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}>
         <View style={styles.hero}>
-          <Image source={project.image} style={styles.heroImage} contentFit="cover" transition={200} />
+          <Image
+            source={getProjectImage(project.imageKey)}
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={200}
+          />
           <View style={styles.heroOverlay} />
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
             <Pressable
@@ -105,22 +175,10 @@ export default function ProjectDetailScreen() {
           </View>
 
           <View style={styles.statsRow}>
-            <ProjectDetailStat icon="time-outline" label="Time" value={project.duration} />
+            <ProjectDetailStat icon="time-outline" label="Time" value={project.durationLabel} />
             <ProjectDetailStat icon="list-outline" label="Steps" value={`${stepCount}`} />
-            <ProjectDetailStat icon="cube-outline" label="Parts" value={`${matchPercent}%`} />
+            <ProjectDetailStat icon="cube-outline" label="Parts" value={`${requiredCount}`} />
           </View>
-
-          {(status === 'in_progress' || status === 'completed') && progress > 0 ? (
-            <View style={styles.progressCard}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Your Progress</Text>
-                <Text style={styles.progressValue}>{progress}%</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
-              </View>
-            </View>
-          ) : null}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Overview</Text>
@@ -141,7 +199,7 @@ export default function ProjectDetailScreen() {
             <View style={styles.detailsCard}>
               <DetailRow icon="layers-outline" label="Category" value={CATEGORY_LABELS[project.category]} />
               <DetailRow icon="bar-chart-outline" label="Difficulty" value={DIFFICULTY_LABELS[project.difficulty]} />
-              <DetailRow icon="time-outline" label="Estimated Time" value={project.duration} />
+              <DetailRow icon="time-outline" label="Estimated Time" value={project.durationLabel} />
               <DetailRow icon="footsteps-outline" label="Total Steps" value={`${stepCount} steps`} />
             </View>
           </View>
@@ -149,26 +207,20 @@ export default function ProjectDetailScreen() {
           <View style={styles.section}>
             <View style={styles.componentsHeader}>
               <Text style={styles.sectionTitle}>Components</Text>
-              <Text style={styles.componentsCount}>
-                {project.ownedParts}/{project.totalParts} owned
-              </Text>
+              <Text style={styles.componentsCount}>{requiredLabel}</Text>
             </View>
-            {missingCount > 0 ? (
-              <View style={styles.missingBanner}>
-                <Ionicons name="warning-outline" size={16} color={colors.warning} />
-                <Text style={styles.missingBannerText}>
-                  {missingCount} part{missingCount !== 1 ? 's' : ''} missing from your inventory
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.readyBanner}>
-                <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
-                <Text style={styles.readyBannerText}>You have all the parts needed!</Text>
-              </View>
-            )}
+            {error ? <Text style={styles.overviewText}>{error}</Text> : null}
             <View style={styles.componentsList}>
               {components.map((component) => (
-                <ProjectComponentRow key={component.id} component={component} />
+                <ProjectComponentRow
+                  key={component.id}
+                  component={{
+                    id: component.componentId,
+                    name: component.name,
+                    quantity: component.quantity,
+                    illustrationId: illustrationForSlug(component.slug),
+                  }}
+                />
               ))}
             </View>
           </View>
@@ -178,7 +230,7 @@ export default function ProjectDetailScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Pressable style={styles.startButton} onPress={handleStart} accessibilityRole="button">
           <Ionicons name="play" size={20} color={colors.onAccent} />
-          <Text style={styles.startButtonText}>{getStartButtonLabel(status)}</Text>
+          <Text style={styles.startButtonText}>Get Started</Text>
         </Pressable>
       </View>
     </View>
