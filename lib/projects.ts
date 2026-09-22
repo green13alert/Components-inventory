@@ -1,6 +1,7 @@
 import type { InventoryComponent } from '@/constants/inventory';
 import { getProjectImage } from '@/constants/projects';
 import type { Project as WalkthroughProject, ProjectStatus } from '@/constants/projects-data';
+import type { StepBlock, StepCodeContent } from '@/constants/walkthrough-content';
 import { supabase } from '@/lib/supabase';
 
 export const PROJECT_ERRORS = {
@@ -8,6 +9,7 @@ export const PROJECT_ERRORS = {
   generic: 'Could not load projects. Please try again.',
   notFound: 'This project is not available.',
   save: 'Could not save project state. Please try again.',
+  stepsUnavailable: 'A full walkthrough is not available for this project yet.',
 } as const;
 
 export type ProjectQueryResult<T> = {
@@ -65,6 +67,23 @@ export type Project = {
   isPublished: boolean;
   requiredComponentCount: number;
   bom: ProjectBomComponent[];
+  authoredSteps: ProjectStepSummary[];
+};
+
+export type ProjectStepSummary = {
+  id: string;
+  sortOrder: number;
+  title: string;
+};
+
+export type ProjectWalkthroughStep = {
+  id: string;
+  projectId: string;
+  sortOrder: number;
+  title: string;
+  description: string;
+  tip: string | null;
+  blocks: StepBlock[];
 };
 
 const PROJECT_CATEGORIES: ProjectCategory[] = [
@@ -78,12 +97,66 @@ const PROJECT_CATEGORIES: ProjectCategory[] = [
 const PROJECT_DIFFICULTIES: ProjectDifficulty[] = ['beginner', 'intermediate', 'advanced'];
 
 const PROJECT_SELECT =
-  'id, slug, title, description, overview, category, difficulty, duration_label, image_key, learning_objectives, sort_order, is_published';
+  'id, slug, title, description, overview, category, difficulty, duration_label, image_key, learning_objectives, sort_order, is_published, project_steps ( id, sort_order, title )';
 
 const PROJECT_LIST_SELECT = `${PROJECT_SELECT}, project_components ( id, project_id, component_id, quantity, sort_order, components!inner ( id, slug, name, description ) )`;
 
 const PROJECT_COMPONENT_SELECT =
   'id, project_id, component_id, quantity, sort_order, components!inner ( id, slug, name, description )';
+
+const PROJECT_WALKTHROUGH_SELECT = 'id, project_id, sort_order, title, description, tip, blocks';
+
+type ProjectStepSummaryRow = {
+  id: string;
+  sort_order: number;
+  title: string;
+};
+
+type ProjectWalkthroughRow = {
+  id: string;
+  project_id: string;
+  sort_order: number;
+  title: string;
+  description: string;
+  tip: string | null;
+  blocks: unknown;
+};
+
+function mapProjectStepSummaryRow(row: ProjectStepSummaryRow): ProjectStepSummary {
+  return {
+    id: row.id,
+    sortOrder: row.sort_order,
+    title: row.title,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseStepBlocks(value: unknown): StepBlock[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((block): block is StepBlock => {
+    if (!isRecord(block) || typeof block.type !== 'string') {
+      return false;
+    }
+    return [
+      'text',
+      'image',
+      'wiring',
+      'connections',
+      'code',
+      'tip',
+      'warning',
+      'expected',
+      'troubleshooting',
+      'components',
+    ].includes(block.type);
+  }) as StepBlock[];
+}
 
 type CatalogueEmbed = {
   id: string;
@@ -115,6 +188,7 @@ type ProjectRow = {
   sort_order: number;
   is_published: boolean;
   project_components?: ProjectComponentRow[] | null;
+  project_steps?: ProjectStepSummaryRow[] | null;
 };
 
 function mapPersistError(message: string | undefined, fallback: string): string {
@@ -166,6 +240,10 @@ function mapProjectRow(row: ProjectRow): Project | null {
     .filter((item): item is ProjectBomComponent => item != null)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  const authoredSteps = (row.project_steps ?? [])
+    .map(mapProjectStepSummaryRow)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
   return {
     id: row.id,
     slug: row.slug,
@@ -181,6 +259,7 @@ function mapProjectRow(row: ProjectRow): Project | null {
     isPublished: row.is_published,
     requiredComponentCount: bom.length,
     bom,
+    authoredSteps,
   };
 }
 
@@ -277,6 +356,56 @@ export async function fetchProjectComponents(
     .filter((item): item is ProjectBomComponent => item != null);
 
   return { data: mapped, error: null };
+}
+
+export async function fetchProjectSteps(
+  projectId: string,
+): Promise<ProjectQueryResult<ProjectWalkthroughStep[]>> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
+    return { data: null, error: PROJECT_ERRORS.unauthenticated };
+  }
+
+  const { data, error } = await supabase
+    .from('project_steps')
+    .select(PROJECT_WALKTHROUGH_SELECT)
+    .eq('project_id', projectId)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    return { data: null, error: mapPersistError(error.message, PROJECT_ERRORS.generic) };
+  }
+
+  const mapped = ((data as ProjectWalkthroughRow[] | null) ?? []).map((row) => ({
+    id: row.id,
+    projectId: row.project_id,
+    sortOrder: row.sort_order,
+    title: row.title,
+    description: row.description,
+    tip: row.tip,
+    blocks: parseStepBlocks(row.blocks),
+  }));
+
+  return { data: mapped, error: null };
+}
+
+export function getWalkthroughSketch(steps: ProjectWalkthroughStep[]): StepCodeContent | null {
+  for (let index = steps.length - 1; index >= 0; index -= 1) {
+    const blocks = steps[index]?.blocks ?? [];
+    for (let blockIndex = blocks.length - 1; blockIndex >= 0; blockIndex -= 1) {
+      const block = blocks[blockIndex];
+      if (block.type === 'code') {
+        return {
+          language: block.language,
+          filename: block.filename ?? 'sketch.ino',
+          libraries: block.libraries ?? [],
+          code: block.code,
+        };
+      }
+    }
+  }
+
+  return null;
 }
 
 export function matchProjectInventory(

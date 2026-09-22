@@ -8,6 +8,7 @@ import { WiringDiagram } from '@/components/projects/walkthrough/WiringDiagram';
 import type { SolderiPalette } from '@/constants/colors';
 import type { ProjectComponent } from '@/constants/projects-data';
 import { Fonts } from '@/constants/theme';
+import { getProjectImage } from '@/constants/projects';
 import type { StepBlock, StepConnection, StepTroubleshootingItem } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 
@@ -38,8 +39,13 @@ function StepBlockView({ block }: { block: StepBlock }) {
   switch (block.type) {
     case 'text':
       return <TextBlock body={block.body} />;
-    case 'image':
-      return <ReferenceImage source={block.source} caption={block.caption} />;
+    case 'image': {
+      const source = block.source ?? (block.imageKey ? getProjectImage(block.imageKey) : undefined);
+      if (!source) {
+        return null;
+      }
+      return <ReferenceImage source={source} caption={block.caption} />;
+    }
     case 'wiring':
       return <WiringDiagram pair={block.pair} connections={block.connections} />;
     case 'connections':

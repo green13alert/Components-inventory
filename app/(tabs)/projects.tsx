@@ -12,11 +12,10 @@ import { ProjectListCard } from '@/components/projects/ProjectListCard';
 import { PageHeader } from '@/components/ui/page-header';
 import type { SolderiPalette } from '@/constants/colors';
 import { tabBarBottomPadding } from '@/constants/layout';
-import { getProjectSteps, getStepSubtitle } from '@/constants/project-steps';
+import { getProjectImage } from '@/constants/projects';
 import {
   PROJECT_DIFFICULTY_FILTERS,
   PROJECT_VIEW_FILTERS,
-  getStepCount,
   type ProjectDifficultyFilter,
   type ProjectViewFilter,
 } from '@/constants/projects-data';
@@ -25,7 +24,6 @@ import {
   getUserProjectProgressPercent,
   getUserProjectStatus,
   matchProjectInventory,
-  toWalkthroughProject,
   type Project,
 } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
@@ -139,14 +137,14 @@ export default function ProjectsScreen() {
               horizontalInset={20}
               keyExtractor={(project: Project) => project.id}
               renderItem={(project: Project, cardWidth: number) => {
-                const walkthrough = toWalkthroughProject(project, 'in_progress');
-                const steps = getProjectSteps(walkthrough);
                 const stepIndex = getUserProject(project.id)?.currentStep ?? 0;
-                const subtitle = getStepSubtitle(walkthrough, stepIndex, steps);
-                const progress = getUserProjectProgressPercent(
-                  getUserProject(project.id),
-                  getStepCount(project.difficulty),
-                );
+                const totalSteps = project.authoredSteps.length;
+                const current = project.authoredSteps[stepIndex] ?? project.authoredSteps[0];
+                const subtitle =
+                  totalSteps > 0
+                    ? `Step ${Math.min(stepIndex, totalSteps - 1) + 1} of ${totalSteps} · ${current?.title ?? ''}`
+                    : 'Walkthrough not yet available';
+                const progress = getUserProjectProgressPercent(getUserProject(project.id), totalSteps);
 
                 return (
                   <ContinueLearningCard
@@ -154,7 +152,7 @@ export default function ProjectsScreen() {
                     title={project.title}
                     subtitle={subtitle}
                     progress={progress}
-                    image={walkthrough.image}
+                    image={getProjectImage(project.imageKey)}
                     width={cardWidth}
                   />
                 );

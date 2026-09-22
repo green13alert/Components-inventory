@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { SolderiPalette } from '@/constants/colors';
-import { DIFFICULTY_LABELS, getStepCount } from '@/constants/projects-data';
+import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { getProjectImage } from '@/constants/projects';
 import { useAtlas } from '@/context/atlas-context';
 import type { Project, ProjectInventoryMatch } from '@/lib/projects';
@@ -25,7 +25,7 @@ export function ProjectListCard({ project, match, inventoryReady }: ProjectListC
   const styles = useMemo(() => createStyles(colors), [colors]);
   const userProject = getUserProject(project.id);
   const status = getUserProjectStatus(userProject);
-  const progress = getUserProjectProgressPercent(userProject, getStepCount(project.difficulty));
+  const progress = getUserProjectProgressPercent(userProject, project.authoredSteps.length);
   const favourited = isFavourite(project.id);
   const isInProgress = status === 'in_progress';
   const difficultyColors = {

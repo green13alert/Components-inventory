@@ -32,7 +32,7 @@ export type WiringPair = {
 
 export type StepBlock =
   | { type: 'text'; body: string }
-  | { type: 'image'; source: ImageSource; caption?: string }
+  | { type: 'image'; source?: ImageSource; imageKey?: string; caption?: string }
   | { type: 'wiring'; pair: WiringPair; connections: StepConnection[] }
   | { type: 'connections'; rows: StepConnection[]; summary?: string }
   | { type: 'code'; language: string; filename?: string; libraries?: string[]; code: string }

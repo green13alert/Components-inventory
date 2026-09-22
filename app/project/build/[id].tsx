@@ -6,18 +6,19 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
 import type { SolderiPalette } from '@/constants/colors';
-import { getProjectSteps } from '@/constants/project-steps';
 import { getStartButtonLabel } from '@/constants/projects-data';
-import { getProjectSketch } from '@/constants/walkthrough-content';
 import { useAtlas } from '@/context/atlas-context';
 import {
   fetchProjectBySlug,
+  fetchProjectSteps,
   getUserProjectProgressPercent,
   getUserProjectStatus,
+  getWalkthroughSketch,
   PROJECT_ERRORS,
-  toWalkthroughProject,
   type Project,
+  type ProjectWalkthroughStep,
 } from '@/lib/projects';
+import type { StepCodeContent } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 
 export default function ProjectBuildScreen() {
@@ -33,10 +34,10 @@ export default function ProjectBuildScreen() {
     setProjectStep,
     completeProject,
     startProject,
-    getProjectStatus,
   } = useAtlas();
 
   const [project, setProject] = useState<Project | null>(null);
+  const [steps, setSteps] = useState<ProjectWalkthroughStep[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +47,7 @@ export default function ProjectBuildScreen() {
     const load = async () => {
       if (!slug) {
         setProject(null);
+        setSteps([]);
         setError(PROJECT_ERRORS.notFound);
         setLoading(false);
         return;
@@ -59,13 +61,20 @@ export default function ProjectBuildScreen() {
 
       if (result.error || !result.data) {
         setProject(null);
+        setSteps([]);
         setError(result.error ?? PROJECT_ERRORS.notFound);
         setLoading(false);
         return;
       }
 
+      const stepsResult = await fetchProjectSteps(result.data.id);
+      if (cancelled) {
+        return;
+      }
+
       setProject(result.data);
-      setError(null);
+      setSteps(stepsResult.data ?? []);
+      setError(stepsResult.error);
       setLoading(false);
     };
 
@@ -75,15 +84,6 @@ export default function ProjectBuildScreen() {
       cancelled = true;
     };
   }, [slug]);
-
-  const templateProject = useMemo(
-    () => (project ? toWalkthroughProject(project, getProjectStatus(project.id)) : null),
-    [getProjectStatus, project],
-  );
-  const steps = useMemo(
-    () => (templateProject ? getProjectSteps(templateProject) : []),
-    [templateProject],
-  );
 
   if (loading) {
     return (
@@ -96,7 +96,7 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  if (!project || !templateProject) {
+  if (!project) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.notFound}>
@@ -116,10 +116,15 @@ export default function ProjectBuildScreen() {
   const lastStepIndex = Math.max(0, steps.length - 1);
   const currentStepIndex = Math.min(persistedStep, lastStepIndex);
   const currentStep = steps[currentStepIndex] ?? steps[0];
+  const stepBlocks =
+    currentStep?.tip && !currentStep.blocks.some((block) => block.type === 'tip' && block.body === currentStep.tip)
+      ? [...currentStep.blocks, { type: 'tip' as const, body: currentStep.tip }]
+      : currentStep?.blocks ?? [];
   const progressPercent = getUserProjectProgressPercent(getUserProject(projectKey), steps.length);
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === lastStepIndex;
   const isCompleted = status === 'completed';
+  const sketch = getWalkthroughSketch(steps);
 
   const handlePrev = () => {
     if (!isFirstStep) {
@@ -140,6 +145,35 @@ export default function ProjectBuildScreen() {
       void startProject(projectKey);
     }
   };
+
+  if (steps.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.topBar}>
+          <Pressable
+            style={styles.iconButton}
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back">
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          </Pressable>
+          <Text style={styles.topBarTitle} numberOfLines={1}>
+            {project.title}
+          </Text>
+          <View style={styles.iconButton} />
+        </View>
+        <View style={styles.readyState}>
+          <View style={styles.readyIcon}>
+            <Ionicons name="book-outline" size={48} color={colors.textSecondary} />
+          </View>
+          <Text style={styles.readyTitle}>Walkthrough coming soon</Text>
+          <Text style={styles.readySubtitle}>
+            {error ?? PROJECT_ERRORS.stepsUnavailable}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (status === 'not_started') {
     return (
@@ -186,7 +220,7 @@ export default function ProjectBuildScreen() {
         stepCount={steps.length}
         onBackToProject={() => router.replace({ pathname: '/project/[id]', params: { id: project.slug } })}
         onBrowseProjects={() => router.replace('/projects')}
-        sketch={getProjectSketch(templateProject)}
+        sketch={sketch}
       />
     );
   }
@@ -237,7 +271,7 @@ export default function ProjectBuildScreen() {
         </View>
         <Text style={styles.stepTitle}>{currentStep.title}</Text>
         <Text style={styles.stepDescription}>{currentStep.description}</Text>
-        <StepContent blocks={currentStep.blocks} />
+        <StepContent blocks={stepBlocks} />
 
         <View style={styles.stepDots}>
           {steps.map((step, index) => (
@@ -282,7 +316,7 @@ function ProjectCompleteView({
   stepCount: number;
   onBackToProject: () => void;
   onBrowseProjects: () => void;
-  sketch: ReturnType<typeof getProjectSketch>;
+  sketch: StepCodeContent | null;
 }) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -318,20 +352,22 @@ function ProjectCompleteView({
           You completed all {stepCount} steps of {title}.
         </Text>
 
-        {showCode ? (
+        {showCode && sketch ? (
           <View style={styles.completeCode}>
             <CodeBlock {...sketch} />
           </View>
         ) : null}
 
         <View style={styles.completeActions}>
-          <Pressable
-            style={styles.secondaryButtonWide}
-            onPress={() => setShowCode((open) => !open)}
-            accessibilityRole="button">
-            <Ionicons name="code-slash-outline" size={18} color={colors.textPrimary} />
-            <Text style={styles.secondaryButtonText}>{showCode ? 'Hide code' : 'View code'}</Text>
-          </Pressable>
+          {sketch ? (
+            <Pressable
+              style={styles.secondaryButtonWide}
+              onPress={() => setShowCode((open) => !open)}
+              accessibilityRole="button">
+              <Ionicons name="code-slash-outline" size={18} color={colors.textPrimary} />
+              <Text style={styles.secondaryButtonText}>{showCode ? 'Hide code' : 'View code'}</Text>
+            </Pressable>
+          ) : null}
           <Pressable style={styles.secondaryButtonWide} onPress={onBrowseProjects} accessibilityRole="button">
             <Ionicons name="albums-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>Start another project</Text>

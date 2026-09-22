@@ -15,7 +15,6 @@ import {
   DIFFICULTY_LABELS,
   getProjectLearningPoints,
   getStartButtonLabel,
-  getStepCount,
 } from '@/constants/projects-data';
 import { getProjectImage } from '@/constants/projects';
 import {
@@ -127,7 +126,7 @@ export default function ProjectDetailScreen() {
     project.learningObjectives && project.learningObjectives.length > 0
       ? project.learningObjectives
       : getProjectLearningPoints(project);
-  const stepCount = getStepCount(project.difficulty);
+  const stepCount = project.authoredSteps.length;
   const match = matchProjectInventory(components, inventory);
   const userProject = getUserProject(project.id);
   const status = getUserProjectStatus(userProject);
@@ -212,7 +211,7 @@ export default function ProjectDetailScreen() {
 
           <View style={styles.statsRow}>
             <ProjectDetailStat icon="time-outline" label="Time" value={project.durationLabel} />
-            <ProjectDetailStat icon="list-outline" label="Steps" value={`${stepCount}`} />
+            <ProjectDetailStat icon="list-outline" label="Steps" value={stepCount > 0 ? `${stepCount}` : '—'} />
             <ProjectDetailStat icon="cube-outline" label="Parts" value={partsValue} />
           </View>
 
@@ -248,7 +247,11 @@ export default function ProjectDetailScreen() {
               <DetailRow icon="layers-outline" label="Category" value={CATEGORY_LABELS[project.category]} />
               <DetailRow icon="bar-chart-outline" label="Difficulty" value={DIFFICULTY_LABELS[project.difficulty]} />
               <DetailRow icon="time-outline" label="Estimated Time" value={project.durationLabel} />
-              <DetailRow icon="footsteps-outline" label="Total Steps" value={`${stepCount} steps`} />
+              <DetailRow
+                icon="footsteps-outline"
+                label="Total Steps"
+                value={stepCount > 0 ? `${stepCount} steps` : 'Not yet defined'}
+              />
             </View>
           </View>
 
