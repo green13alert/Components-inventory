@@ -16,6 +16,8 @@ export type InventoryComponent = {
   catalogueId?: string;
   /** Catalogue subtype, e.g. temperature_humidity. */
   type?: string;
+  /** ISO timestamp from inventory_items.created_at. */
+  createdAt?: string;
 };
 
 export const COMPONENT_FILTERS: { id: ComponentCategory; label: string }[] = [

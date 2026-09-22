@@ -1,9 +1,27 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { Toast } from '@/components/ui/toast';
-import { MOCK_INVENTORY, type InventoryComponent } from '@/constants/inventory';
+import { type InventoryComponent } from '@/constants/inventory';
 import { INITIAL_FAVOURITE_PROJECT_IDS, MOCK_PROJECTS, type Project, type ProjectStatus } from '@/constants/projects-data';
 import { getStepCount } from '@/constants/projects-data';
+import { useAuth } from '@/context/auth-context';
+import {
+  INVENTORY_ERRORS,
+  addInventoryCatalogueItem,
+  deleteInventoryItem,
+  fetchInventory,
+  setInventoryItemQuantity,
+  updateInventoryCatalogueItem,
+} from '@/lib/inventory';
 
 export type ProjectProgress = {
   currentStep: number;
@@ -20,15 +38,22 @@ export type WorkshopActivity = {
   projectId?: string;
 };
 
+type InventoryMutationResult = {
+  error: string | null;
+};
+
 type AtlasContextValue = {
   inventory: InventoryComponent[];
+  inventoryLoading: boolean;
+  inventoryError: string | null;
   favouriteProjectIds: Set<string>;
   projectProgress: Record<string, ProjectProgress>;
   recentActivity: WorkshopActivity[];
-  addInventoryItem: (item: Omit<InventoryComponent, 'id'>) => void;
-  updateInventoryItem: (id: string, item: Omit<InventoryComponent, 'id'>) => void;
-  updateInventoryQuantity: (id: string, quantity: number) => void;
-  removeInventoryItem: (id: string) => void;
+  reloadInventory: (options?: { silent?: boolean }) => Promise<void>;
+  addInventoryItem: (item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
+  updateInventoryItem: (id: string, item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
+  updateInventoryQuantity: (id: string, quantity: number) => Promise<InventoryMutationResult>;
+  removeInventoryItem: (id: string) => Promise<InventoryMutationResult>;
   toggleFavourite: (projectId: string) => void;
   isFavourite: (projectId: string) => boolean;
   getProjectStatus: (projectId: string) => ProjectStatus;
@@ -104,8 +129,29 @@ function prependActivity(prev: WorkshopActivity[], event: WorkshopActivity): Wor
   return [event, ...withoutStale].slice(0, MAX_ACTIVITY);
 }
 
+function upsertInventoryItem(prev: InventoryComponent[], item: InventoryComponent): InventoryComponent[] {
+  const index = prev.findIndex((existing) => existing.id === item.id);
+  if (index >= 0) {
+    const next = [...prev];
+    next[index] = item;
+    return next;
+  }
+
+  const byCatalogue = prev.findIndex((existing) => existing.catalogueId && existing.catalogueId === item.catalogueId);
+  if (byCatalogue >= 0) {
+    const next = [...prev];
+    next[byCatalogue] = item;
+    return next;
+  }
+
+  return [...prev, item];
+}
+
 export function AtlasProvider({ children }: { children: ReactNode }) {
-  const [inventory, setInventory] = useState<InventoryComponent[]>(MOCK_INVENTORY);
+  const { session } = useAuth();
+  const [inventory, setInventory] = useState<InventoryComponent[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(() => Boolean(session));
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [favouriteProjectIds, setFavouriteProjectIds] = useState<Set<string>>(buildInitialFavouriteIds);
   const [projectProgress, setProjectProgress] = useState<Record<string, ProjectProgress>>(
     buildInitialProgress,
@@ -114,41 +160,111 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const hideToast = useCallback(() => setToastMessage(null), []);
+  const userId = session?.user.id;
+  const loadGeneration = useRef(0);
 
-  const addInventoryItem = useCallback((item: Omit<InventoryComponent, 'id'>) => {
+  const reloadInventory = useCallback(async (options?: { silent?: boolean }) => {
+    const generation = ++loadGeneration.current;
+
+    if (!userId) {
+      setInventory([]);
+      setInventoryError(null);
+      setInventoryLoading(false);
+      return;
+    }
+
+    if (!options?.silent) {
+      setInventoryLoading(true);
+      setInventoryError(null);
+    }
+
+    const result = await fetchInventory();
+    if (generation !== loadGeneration.current) {
+      return;
+    }
+
+    if (result.error) {
+      if (!options?.silent) {
+        setInventory([]);
+        setInventoryError(result.error);
+      }
+      setInventoryLoading(false);
+      return;
+    }
+
+    setInventory(result.data ?? []);
+    setInventoryError(null);
+    setInventoryLoading(false);
+  }, [userId]);
+
+  useEffect(() => {
+    void reloadInventory();
+  }, [reloadInventory]);
+
+  const addInventoryItem = useCallback(async (item: Omit<InventoryComponent, 'id'>): Promise<InventoryMutationResult> => {
+    if (!item.catalogueId) {
+      return { error: INVENTORY_ERRORS.customUnavailable };
+    }
+
+    const result = await addInventoryCatalogueItem(item.catalogueId, item.quantity);
+    if (result.error || !result.data) {
+      return { error: result.error ?? INVENTORY_ERRORS.save };
+    }
+
+    setInventory((prev) => upsertInventoryItem(prev, result.data!));
     const createdAt = Date.now();
-    setInventory((prev) => [
-      ...prev,
-      { ...item, id: `inv-${createdAt}-${Math.random().toString(36).slice(2, 7)}` },
-    ]);
     setRecentActivity((prev) =>
       prependActivity(prev, {
         id: `activity-component-${createdAt}`,
         kind: 'component_added',
-        title: item.name,
+        title: result.data!.name,
         createdAt,
       }),
     );
+    return { error: null };
   }, []);
 
-  const updateInventoryItem = useCallback((id: string, item: Omit<InventoryComponent, 'id'>) => {
-    setInventory((prev) =>
-      prev.map((existing) => (existing.id === id ? { ...item, id } : existing)),
-    );
-  }, []);
-
-  const updateInventoryQuantity = useCallback((id: string, quantity: number) => {
-    if (quantity <= 0) {
-      setInventory((prev) => prev.filter((item) => item.id !== id));
-      return;
+  const updateInventoryItem = useCallback(async (
+    id: string,
+    item: Omit<InventoryComponent, 'id'>,
+  ): Promise<InventoryMutationResult> => {
+    if (!item.catalogueId) {
+      return { error: INVENTORY_ERRORS.customUnavailable };
     }
-    setInventory((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item)),
-    );
+
+    const result = await updateInventoryCatalogueItem(id, item.catalogueId, item.quantity);
+    if (result.error || !result.data) {
+      return { error: result.error ?? INVENTORY_ERRORS.save };
+    }
+
+    setInventory((prev) => {
+      const withoutReplaced = prev.filter((existing) => existing.id === result.data!.id || existing.id !== id);
+      return upsertInventoryItem(withoutReplaced, result.data!);
+    });
+    return { error: null };
   }, []);
 
-  const removeInventoryItem = useCallback((id: string) => {
+  const updateInventoryQuantity = useCallback(async (
+    id: string,
+    quantity: number,
+  ): Promise<InventoryMutationResult> => {
+    const result = await setInventoryItemQuantity(id, quantity);
+    if (result.error || !result.data) {
+      return { error: result.error ?? INVENTORY_ERRORS.save };
+    }
+
+    setInventory((prev) => upsertInventoryItem(prev, result.data!));
+    return { error: null };
+  }, []);
+
+  const removeInventoryItem = useCallback(async (id: string): Promise<InventoryMutationResult> => {
+    const result = await deleteInventoryItem(id);
+    if (result.error) {
+      return result;
+    }
+
     setInventory((prev) => prev.filter((item) => item.id !== id));
+    return { error: null };
   }, []);
 
   const toggleFavourite = useCallback((projectId: string) => {
@@ -271,9 +387,12 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       inventory,
+      inventoryLoading,
+      inventoryError,
       favouriteProjectIds,
       projectProgress,
       recentActivity,
+      reloadInventory,
       addInventoryItem,
       updateInventoryItem,
       updateInventoryQuantity,
@@ -290,9 +409,12 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     }),
     [
       inventory,
+      inventoryLoading,
+      inventoryError,
       favouriteProjectIds,
       projectProgress,
       recentActivity,
+      reloadInventory,
       addInventoryItem,
       updateInventoryItem,
       updateInventoryQuantity,

@@ -63,7 +63,7 @@ export function SettingsPanel() {
               return;
             }
 
-            router.replace('/onboarding/login');
+            router.replace('/onboarding');
           })();
         },
       },

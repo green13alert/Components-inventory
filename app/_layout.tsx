@@ -63,7 +63,7 @@ function ThemedRoot() {
     }
 
     const inAuthForm =
-      segments[1] === 'login' || segments[1] === 'sign-up' || segments[1] === 'verify-email';
+      segments[1] === 'login' || segments[1] === 'sign-up' || segments[1] === 'check-email';
     const inAuthCallback = segments[0] === 'auth';
     if (inAuthForm || inAuthCallback) {
       router.replace('/(tabs)');

@@ -20,6 +20,7 @@ type PersistResult = {
 const allowedTopicIds = new Set(INTEREST_OPTIONS.map((option) => option.id));
 
 let pendingSelections: OnboardingSelections | null = null;
+let persistStashOnAuth = true;
 
 export function stashOnboardingSelections(selections: OnboardingSelections) {
   pendingSelections = {
@@ -27,6 +28,23 @@ export function stashOnboardingSelections(selections: OnboardingSelections) {
     componentIds: [...selections.componentIds],
     interestIds: [...selections.interestIds],
   };
+  persistStashOnAuth = true;
+}
+
+/** Clears in-memory onboarding picks that have not been saved. Does not touch Supabase. */
+export function clearStashedOnboardingSelections() {
+  pendingSelections = null;
+  persistStashOnAuth = true;
+}
+
+/** Existing-account login must not write temporary onboarding picks. */
+export function discardStashedOnboardingOnAuth() {
+  persistStashOnAuth = false;
+}
+
+/** New-account sign-up / confirmation should save the temporary onboarding picks. */
+export function keepStashedOnboardingForNewAccount() {
+  persistStashOnAuth = true;
 }
 
 function mapPersistError(message: string | undefined): string {
@@ -187,6 +205,12 @@ export async function persistOnboardingSelections(
 }
 
 export async function persistStashedOnboardingSelections(): Promise<PersistResult> {
+  if (!persistStashOnAuth) {
+    pendingSelections = null;
+    persistStashOnAuth = true;
+    return { error: null };
+  }
+
   if (!pendingSelections) {
     return { error: null };
   }

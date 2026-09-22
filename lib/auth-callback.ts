@@ -1,15 +1,18 @@
 import * as Linking from 'expo-linking';
 import type { EmailOtpType } from '@supabase/supabase-js';
+import * as WebBrowser from 'expo-web-browser';
 
 import { AUTH_ERRORS } from '@/constants/auth';
 import { supabase } from '@/lib/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export type AuthCallbackResult = {
   handled: boolean;
   error: string | null;
 };
 
-const EMAIL_OTP_TYPES: readonly EmailOtpType[] = [
+const EMAIL_LINK_TYPES: readonly EmailOtpType[] = [
   'signup',
   'invite',
   'magiclink',
@@ -28,30 +31,38 @@ function firstString(value: string | string[] | undefined | null): string | unde
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function collectAuthParams(url: string): Record<string, string> {
-  const params: Record<string, string> = {};
-  const parsed = Linking.parse(url);
+function extractRawParams(url: string): string {
+  const queryIndex = url.indexOf('?');
+  const hashIndex = url.indexOf('#');
+  const chunks: string[] = [];
 
-  for (const [key, value] of Object.entries(parsed.queryParams ?? {})) {
-    const text = firstString(value);
-    if (text) {
-      params[key] = text;
-    }
+  if (queryIndex >= 0) {
+    const end = hashIndex > queryIndex ? hashIndex : url.length;
+    chunks.push(url.slice(queryIndex + 1, end));
   }
 
-  const hashIndex = url.indexOf('#');
   if (hashIndex >= 0) {
-    let hash = url.slice(hashIndex + 1);
-    const queryIndex = hash.indexOf('?');
-    if (hash.startsWith('/') && queryIndex >= 0) {
-      hash = hash.slice(queryIndex + 1);
-    }
+    chunks.push(url.slice(hashIndex + 1));
+  }
 
-    new URLSearchParams(hash).forEach((value, key) => {
-      if (value) {
-        params[key] = value;
-      }
-    });
+  return chunks.join('&');
+}
+
+function collectAuthParams(url: string): Record<string, string> {
+  const params: Record<string, string> = {};
+
+  new URLSearchParams(extractRawParams(url)).forEach((value, key) => {
+    if (value) {
+      params[key] = value;
+    }
+  });
+
+  const parsed = Linking.parse(url);
+  for (const [key, value] of Object.entries(parsed.queryParams ?? {})) {
+    const text = firstString(value);
+    if (text && !params[key]) {
+      params[key] = text;
+    }
   }
 
   return params;
@@ -63,7 +74,7 @@ function isAuthCallbackUrl(url: string): boolean {
   }
 
   const params = collectAuthParams(url);
-  return Boolean(params.code || params.access_token || params.token_hash);
+  return Boolean(params.code || params.access_token || params.refresh_token || params.token_hash);
 }
 
 function mapCallbackError(message: string | undefined, code?: string): string {
@@ -93,8 +104,8 @@ function mapCallbackError(message: string | undefined, code?: string): string {
   return AUTH_ERRORS.confirmationInvalid;
 }
 
-function otpTypeFromParam(value: string | undefined): EmailOtpType {
-  if (value && EMAIL_OTP_TYPES.includes(value as EmailOtpType)) {
+function emailLinkTypeFromParam(value: string | undefined): EmailOtpType {
+  if (value && EMAIL_LINK_TYPES.includes(value as EmailOtpType)) {
     return value as EmailOtpType;
   }
 
@@ -146,7 +157,7 @@ async function completeAuthCallback(url: string): Promise<AuthCallbackResult> {
     if (tokenHash) {
       const { error } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: otpTypeFromParam(params.type),
+        type: emailLinkTypeFromParam(params.type),
       });
       if (error) {
         return { handled: true, error: mapCallbackError(error.message, error.code) };
@@ -160,10 +171,6 @@ async function completeAuthCallback(url: string): Promise<AuthCallbackResult> {
   }
 }
 
-/**
- * Idempotent handler for confirmation deep links (cold start and warm start).
- * Skips unrelated URLs so the 6-digit OTP screen is not interrupted.
- */
 function callbackCacheKey(url: string): string {
   const params = collectAuthParams(url);
   if (params.code) {

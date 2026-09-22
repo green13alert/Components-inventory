@@ -68,7 +68,7 @@ export default function SignUpRoute() {
     if (result.needsEmailConfirmation) {
       setSubmitting(false);
       router.push({
-        pathname: '/onboarding/verify-email',
+        pathname: '/onboarding/check-email',
         params: { email: trimmedEmail },
       });
       return;

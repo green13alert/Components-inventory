@@ -22,7 +22,7 @@ import { useSolderiColors } from '@/context/theme-context';
 
 const RECOMMENDED_PROJECT_IDS = ['3', '7', '8'];
 
-const RECENT_COMPONENT_IDS = ['6', '4', '3', '9'];
+const RECENT_COMPONENT_COUNT = 4;
 
 export default function HomeScreen() {
   const colors = useSolderiColors();
@@ -33,9 +33,9 @@ export default function HomeScreen() {
   const projects = getProjectsWithStatus();
   const continueProjects = projects.filter((p) => p.status === 'in_progress');
   const recommendedProjects = RECOMMENDED_PROJECT_IDS.map((id) => projects.find((p) => p.id === id)!);
-  const recentComponents = RECENT_COMPONENT_IDS.map((id) => inventory.find((c) => c.id === id)!).filter(
-    Boolean,
-  );
+  const recentComponents = [...inventory]
+    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+    .slice(0, RECENT_COMPONENT_COUNT);
 
   const inProgressCount = projects.filter((p) => p.status === 'in_progress').length;
   const completedCount = projects.filter((p) => p.status === 'completed').length;

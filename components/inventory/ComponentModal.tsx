@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Keyboard,
   KeyboardAvoidingView,
@@ -15,8 +16,10 @@ import {
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { CategoryPills } from '@/components/inventory/CategoryPills';
+import { ComponentCatalogueBrowse } from '@/components/inventory/ComponentCatalogueBrowse';
 import { ComponentCatalogueSearch } from '@/components/inventory/ComponentCatalogueSearch';
 import type { SolderiPalette } from '@/constants/colors';
+import { useAtlas } from '@/context/atlas-context';
 import {
   matchCatalogueToInventoryItem,
   searchComponentCatalogue,
@@ -39,13 +42,17 @@ const PREVIEW_WELL = 72;
 const PREVIEW_ART = 64;
 const CONTENT_PADDING = 20;
 
+type InventoryMutationResult = {
+  error: string | null;
+};
+
 type ComponentModalProps = {
   visible: boolean;
   editingItem?: InventoryComponent | null;
   onClose: () => void;
-  onAdd: (item: Omit<InventoryComponent, 'id'>) => void;
-  onUpdate: (id: string, item: Omit<InventoryComponent, 'id'>) => void;
-  onDelete: (id: string) => void;
+  onAdd: (item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
+  onUpdate: (id: string, item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
+  onDelete: (id: string) => Promise<InventoryMutationResult>;
 };
 
 export function ComponentModal({
@@ -58,6 +65,7 @@ export function ComponentModal({
 }: ComponentModalProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { inventory } = useAtlas();
   const isEditing = editingItem != null;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<CatalogueComponent | null>(null);
@@ -65,10 +73,19 @@ export function ComponentModal({
   const [customCategory, setCustomCategory] = useState<CatalogueCategory | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
+  const [searchAutoFocus, setSearchAutoFocus] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const previewOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (!visible) return;
+
+    setSaving(false);
+    setFormError(null);
+    setBrowsing(false);
+    setSearchAutoFocus(!editingItem);
 
     if (editingItem) {
       const match = matchCatalogueToInventoryItem(editingItem);
@@ -80,8 +97,8 @@ export function ComponentModal({
       } else {
         setQuery(editingItem.name);
         setSelected(null);
-        setIsCustom(true);
-        setCustomCategory(editingItem.category);
+        setIsCustom(false);
+        setCustomCategory(null);
       }
       setQuantity(editingItem.quantity);
       setDropdownOpen(false);
@@ -97,11 +114,11 @@ export function ComponentModal({
 
   const results = useMemo(() => searchComponentCatalogue(query, 8), [query]);
   const trimmedQuery = query.trim();
-  const showCustomOption = dropdownOpen && trimmedQuery.length > 0 && selected == null;
+  const showCustomOption = false;
 
   const resolvedCategory = selected?.category ?? (isCustom ? customCategory : null);
   const resolvedName = selected?.name ?? trimmedQuery;
-  const canSubmit = resolvedName.length > 0 && resolvedCategory != null && (selected != null || isCustom);
+  const canSubmit = selected != null && resolvedCategory != null && !saving;
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
@@ -117,7 +134,15 @@ export function ComponentModal({
     setIsCustom(false);
     setCustomCategory(null);
     setDropdownOpen(false);
+    setBrowsing(false);
     Keyboard.dismiss();
+  };
+
+  const openBrowse = () => {
+    Keyboard.dismiss();
+    setDropdownOpen(false);
+    setSearchAutoFocus(false);
+    setBrowsing(true);
   };
 
   const handleSelectCustom = () => {
@@ -128,34 +153,46 @@ export function ComponentModal({
     Keyboard.dismiss();
   };
 
-  const handleSave = () => {
-    if (!canSubmit || !resolvedCategory) return;
+  const handleSave = async () => {
+    if (!canSubmit || !selected || !resolvedCategory) return;
 
-    const item: Omit<InventoryComponent, 'id'> = selected
-      ? {
-          name: selected.name,
-          category: selected.category,
-          quantity,
-          catalogueId: selected.id,
-          type: selected.type,
-        }
-      : {
-          name: resolvedName,
-          category: resolvedCategory,
-          quantity,
-        };
+    setSaving(true);
+    setFormError(null);
 
-    if (isEditing && editingItem) {
-      onUpdate(editingItem.id, item);
-    } else {
-      onAdd(item);
+    const item: Omit<InventoryComponent, 'id'> = {
+      name: selected.name,
+      category: selected.category,
+      quantity,
+      catalogueId: selected.id,
+      type: selected.type,
+    };
+
+    const result =
+      isEditing && editingItem ? await onUpdate(editingItem.id, item) : await onAdd(item);
+
+    setSaving(false);
+
+    if (result.error) {
+      setFormError(result.error);
+      return;
     }
+
     onClose();
   };
 
-  const handleDelete = () => {
-    if (!editingItem) return;
-    onDelete(editingItem.id);
+  const handleDelete = async () => {
+    if (!editingItem || saving) return;
+
+    setSaving(true);
+    setFormError(null);
+    const result = await onDelete(editingItem.id);
+    setSaving(false);
+
+    if (result.error) {
+      setFormError(result.error);
+      return;
+    }
+
     onClose();
   };
 
@@ -181,26 +218,55 @@ export function ComponentModal({
   }, [previewKey, previewOpacity]);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={browsing ? () => setBrowsing(false) : onClose}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
-          <Pressable onPress={onClose} style={styles.headerButton} accessibilityRole="button">
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>{isEditing ? 'Edit Component' : 'Add Component'}</Text>
-          <Pressable
-            onPress={handleSave}
-            style={[styles.headerButton, styles.saveButton, canSubmit && styles.saveButtonReady]}
-            disabled={!canSubmit}
-            accessibilityRole="button">
-            <Text style={[styles.saveText, !canSubmit && styles.saveTextDisabled]}>
-              {isEditing ? 'Save' : 'Add'}
-            </Text>
-          </Pressable>
+          {browsing ? (
+            <Pressable
+              onPress={() => setBrowsing(false)}
+              style={styles.headerButton}
+              accessibilityRole="button"
+              accessibilityLabel="Back to add component">
+              <Text style={styles.cancelText}>Back</Text>
+            </Pressable>
+          ) : (
+            <Pressable onPress={onClose} style={styles.headerButton} accessibilityRole="button">
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+          )}
+          <Text style={styles.headerTitle}>
+            {browsing ? 'Browse Components' : isEditing ? 'Edit Component' : 'Add Component'}
+          </Text>
+          {browsing ? (
+            <View style={styles.headerButton} />
+          ) : (
+            <Pressable
+              onPress={() => {
+                void handleSave();
+              }}
+              style={[styles.headerButton, styles.saveButton, canSubmit && styles.saveButtonReady]}
+              disabled={!canSubmit}
+              accessibilityRole="button">
+              {saving ? (
+                <ActivityIndicator color={colors.accent} />
+              ) : (
+                <Text style={[styles.saveText, !canSubmit && styles.saveTextDisabled]}>
+                  {isEditing ? 'Save' : 'Add'}
+                </Text>
+              )}
+            </Pressable>
+          )}
         </View>
 
+        {browsing ? (
+          <ComponentCatalogueBrowse inventory={inventory} onSelect={handleSelect} />
+        ) : (
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
@@ -238,8 +304,17 @@ export function ComponentModal({
             onSelect={handleSelect}
             showCustomOption={showCustomOption}
             onSelectCustom={handleSelectCustom}
-            autoFocus={!isEditing}
+            autoFocus={searchAutoFocus}
           />
+
+          <Pressable
+            style={styles.browseButton}
+            onPress={openBrowse}
+            accessibilityRole="button"
+            accessibilityLabel="Browse components">
+            <Ionicons name="grid-outline" size={20} color={colors.accent} />
+            <Text style={styles.browseButtonText}>Browse Components</Text>
+          </Pressable>
 
           {selected ? (
             <View style={styles.field}>
@@ -274,6 +349,7 @@ export function ComponentModal({
               <Pressable
                 style={styles.quantityButton}
                 onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={saving}
                 accessibilityRole="button"
                 accessibilityLabel="Decrease quantity">
                 <Ionicons name="remove" size={22} color={colors.textPrimary} />
@@ -282,6 +358,7 @@ export function ComponentModal({
               <Pressable
                 style={styles.quantityButton}
                 onPress={() => setQuantity((q) => q + 1)}
+                disabled={saving}
                 accessibilityRole="button"
                 accessibilityLabel="Increase quantity">
                 <Ionicons name="add" size={22} color={colors.textPrimary} />
@@ -289,13 +366,22 @@ export function ComponentModal({
             </View>
           </View>
 
+          {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+
           {isEditing ? (
-            <Pressable style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button">
+            <Pressable
+              style={styles.deleteButton}
+              onPress={() => {
+                void handleDelete();
+              }}
+              disabled={saving}
+              accessibilityRole="button">
               <Ionicons name="trash-outline" size={18} color={colors.error} />
               <Text style={styles.deleteText}>Remove from inventory</Text>
             </Pressable>
           ) : null}
         </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -417,6 +503,22 @@ function createStyles(colors: SolderiPalette) {
       fontSize: 13,
       color: colors.textMuted,
     },
+    browseButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 14,
+    },
+    browseButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.accent,
+    },
     categoryBleed: {
       marginHorizontal: -CONTENT_PADDING,
     },
@@ -458,6 +560,11 @@ function createStyles(colors: SolderiPalette) {
       fontSize: 15,
       fontWeight: '600',
       color: colors.error,
+    },
+    formError: {
+      fontSize: 14,
+      color: colors.error,
+      textAlign: 'center',
     },
   });
 }

@@ -9,10 +9,16 @@ import {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { AUTH_ERRORS } from '@/constants/auth';
 import { processAuthCallbackUrl } from '@/lib/auth-callback';
 import { getEmailRedirectTo } from '@/lib/auth-redirect';
+import {
+  clearStashedOnboardingSelections,
+  discardStashedOnboardingOnAuth,
+  keepStashedOnboardingForNewAccount,
+} from '@/lib/onboarding-persistence';
 import { supabase } from '@/lib/supabase';
 
 type SignUpResult = {
@@ -30,12 +36,13 @@ type AuthContextValue = {
   isReady: boolean;
   signUpWithEmail: (email: string, password: string) => Promise<SignUpResult>;
   signInWithEmail: (email: string, password: string) => Promise<AuthActionResult>;
-  verifyEmailOtp: (email: string, token: string) => Promise<AuthActionResult>;
-  resendEmailOtp: (email: string) => Promise<AuthActionResult>;
+  resendConfirmationEmail: (email: string) => Promise<AuthActionResult>;
   signOut: () => Promise<AuthActionResult>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+let pendingSignup: { email: string; password: string } | null = null;
 
 function mapAuthError(message: string | undefined): string {
   if (!message) {
@@ -60,18 +67,29 @@ function mapAuthError(message: string | undefined): string {
   return message;
 }
 
-function mapOtpError(message: string | undefined): string {
-  if (!message) {
-    return AUTH_ERRORS.otpInvalid;
+async function tryCompletePendingSignup() {
+  if (!pendingSignup) {
+    return;
   }
 
-  const lower = message.toLowerCase();
-
-  if (lower.includes('network') || lower.includes('failed to fetch')) {
-    return AUTH_ERRORS.network;
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    pendingSignup = null;
+    return;
   }
 
-  return AUTH_ERRORS.otpInvalid;
+  const { error } = await supabase.auth.signInWithPassword(pendingSignup);
+  if (!error) {
+    pendingSignup = null;
+  }
+}
+
+async function consumeAuthUrl(url: string | null) {
+  if (url) {
+    await processAuthCallbackUrl(url);
+  }
+
+  await tryCompletePendingSignup();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -86,6 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!cancelled) {
         setSession(nextSession);
+      }
+      if (nextSession) {
+        pendingSignup = null;
       }
     });
 
@@ -102,10 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const initialUrl = await Linking.getInitialURL();
-        if (!cancelled && initialUrl) {
-          await processAuthCallbackUrl(initialUrl);
-        }
+        await consumeAuthUrl(await Linking.getInitialURL());
       } catch {
         // Link handling is best-effort; session hydration should still complete.
       }
@@ -118,17 +136,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void hydrate();
 
     const linking = Linking.addEventListener('url', (event) => {
-      void processAuthCallbackUrl(event.url);
+      void consumeAuthUrl(event.url);
     });
+
+    const onAppStateChange = (state: AppStateStatus) => {
+      if (state !== 'active') {
+        return;
+      }
+
+      void (async () => {
+        try {
+          await consumeAuthUrl(Linking.getLinkingURL());
+        } catch {
+          await tryCompletePendingSignup();
+        }
+      })();
+    };
+
+    const appState = AppState.addEventListener('change', onAppStateChange);
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
       linking.remove();
+      appState.remove();
     };
   }, []);
 
   const signUpWithEmail = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
+    keepStashedOnboardingForNewAccount();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -146,38 +182,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!data.session) {
+      pendingSignup = { email, password };
       return { error: null, needsEmailConfirmation: true };
     }
 
+    pendingSignup = null;
     return { error: null, needsEmailConfirmation: false };
   }, []);
 
   const signInWithEmail = useCallback(async (email: string, password: string): Promise<AuthActionResult> => {
+    discardStashedOnboardingOnAuth();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       return { error: mapAuthError(error.message) };
     }
 
+    pendingSignup = null;
+    clearStashedOnboardingSelections();
     return { error: null };
   }, []);
 
-  // OTP delivery uses the project's Auth mailer (built-in now; custom SMTP later is dashboard config).
-  const verifyEmailOtp = useCallback(async (email: string, token: string): Promise<AuthActionResult> => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
-
-    if (error) {
-      return { error: mapOtpError(error.message) };
-    }
-
-    return { error: null };
-  }, []);
-
-  const resendEmailOtp = useCallback(async (email: string): Promise<AuthActionResult> => {
+  const resendConfirmationEmail = useCallback(async (email: string): Promise<AuthActionResult> => {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
@@ -187,13 +213,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (error) {
-      return { error: mapAuthError(error.message) === AUTH_ERRORS.network ? AUTH_ERRORS.network : AUTH_ERRORS.resendFailed };
+      return {
+        error: mapAuthError(error.message) === AUTH_ERRORS.network ? AUTH_ERRORS.network : AUTH_ERRORS.resendFailed,
+      };
     }
 
     return { error: null };
   }, []);
 
   const signOut = useCallback(async (): Promise<AuthActionResult> => {
+    pendingSignup = null;
+    clearStashedOnboardingSelections();
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -210,11 +240,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isReady,
       signUpWithEmail,
       signInWithEmail,
-      verifyEmailOtp,
-      resendEmailOtp,
+      resendConfirmationEmail,
       signOut,
     }),
-    [session, isReady, signUpWithEmail, signInWithEmail, verifyEmailOtp, resendEmailOtp, signOut],
+    [session, isReady, signUpWithEmail, signInWithEmail, resendConfirmationEmail, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -78,13 +78,13 @@ export default function AuthCallbackRoute() {
         styles.screen,
         { paddingTop: insets.top + Spacing['3xl'], paddingBottom: insets.bottom + Spacing.lg },
       ]}>
-      {error ? (
+      {error && !session ? (
         <>
           <Text style={styles.title}>{AUTH_CALLBACK.errorTitle}</Text>
           <Text style={styles.body}>{error}</Text>
           <OnboardingCta
-            label={AUTH_CALLBACK.useCode}
-            onPress={() => router.replace('/onboarding/verify-email')}
+            label={AUTH_CALLBACK.logIn}
+            onPress={() => router.replace('/onboarding/login')}
           />
         </>
       ) : (

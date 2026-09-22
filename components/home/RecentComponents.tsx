@@ -23,7 +23,7 @@ function RecentComponentChip({ item, onPress }: { item: InventoryComponent; onPr
       accessibilityRole="button"
       accessibilityLabel={item.name}>
       <View style={styles.iconWrap}>
-        <ComponentIllustration id={item.id} name={item.name} size={44} />
+        <ComponentIllustration id={item.catalogueId} name={item.name} size={44} />
       </View>
       <Text style={styles.chipName} numberOfLines={2}>
         {item.name}

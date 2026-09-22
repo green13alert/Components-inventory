@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
@@ -17,13 +18,27 @@ import { useSolderiColors } from '@/context/theme-context';
 
 export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
-  const { inventory, addInventoryItem, updateInventoryItem, removeInventoryItem } = useAtlas();
+  const {
+    inventory,
+    inventoryLoading,
+    inventoryError,
+    reloadInventory,
+    addInventoryItem,
+    updateInventoryItem,
+    removeInventoryItem,
+  } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<ComponentCategory>('all');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryComponent | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadInventory({ silent: true });
+    }, [reloadInventory]),
+  );
 
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -42,6 +57,7 @@ export default function InventoryScreen() {
   const isFiltered =
     searchQuery.trim().length > 0 || selectedFilter !== 'all';
   const isEmptyInventory = inventory.length === 0;
+  const totalItems = filteredItems.reduce((total, item) => total + item.quantity, 0);
 
   const openAddModal = () => {
     setEditingItem(null);
@@ -89,11 +105,27 @@ export default function InventoryScreen() {
 
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>Your Components</Text>
-          <Text style={styles.listCount}>{filteredItems.length} items</Text>
+          <Text style={styles.listCount}>
+            {inventoryLoading || inventoryError ? ' ' : `${totalItems} items`}
+          </Text>
         </View>
 
         <View style={styles.list}>
-          {filteredItems.length > 0 ? (
+          {inventoryLoading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator color={colors.accent} />
+              <Text style={styles.emptyTitle}>Loading inventory</Text>
+            </View>
+          ) : inventoryError ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="alert-circle-outline" size={32} color={colors.textMuted} />
+              <Text style={styles.emptyTitle}>Couldn't load inventory</Text>
+              <Text style={styles.emptySubtitle}>{inventoryError}</Text>
+              <Pressable onPress={() => void reloadInventory()} accessibilityRole="button">
+                <Text style={styles.retryText}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : filteredItems.length > 0 ? (
             filteredItems.map((item) => (
               <InventoryItemCard key={item.id} item={item} onPress={() => openEditModal(item)} />
             ))
@@ -188,6 +220,13 @@ function createStyles(colors: SolderiPalette) {
     emptySubtitle: {
       fontSize: 14,
       color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    retryText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.accent,
+      marginTop: 8,
     },
   });
 }

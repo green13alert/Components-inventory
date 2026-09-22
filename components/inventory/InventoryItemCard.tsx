@@ -22,7 +22,7 @@ export function InventoryItemCard({ item, onPress }: InventoryItemCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Edit ${item.name}`}>
       <View style={styles.iconWrap}>
-        <ComponentIllustration id={item.id} name={item.name} size={52} />
+        <ComponentIllustration id={item.catalogueId} name={item.name} size={52} />
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{item.name}</Text>
