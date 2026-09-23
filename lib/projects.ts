@@ -1,7 +1,7 @@
 import type { InventoryComponent } from '@/constants/inventory';
 import { getProjectImage } from '@/constants/projects';
 import type { Project as WalkthroughProject, ProjectStatus } from '@/constants/projects-data';
-import type { StepBlock, StepCodeContent } from '@/constants/walkthrough-content';
+import { STEP_BLOCK_TYPES, type StepBlock, type StepCodeContent } from '@/constants/walkthrough-content';
 import { supabase } from '@/lib/supabase';
 
 export const PROJECT_ERRORS = {
@@ -80,10 +80,20 @@ export type ProjectWalkthroughStep = {
   id: string;
   projectId: string;
   sortOrder: number;
+  stageSortOrder: number;
+  stageTitle: string | null;
   title: string;
   description: string;
   tip: string | null;
   blocks: StepBlock[];
+};
+
+export type WalkthroughStageContext = {
+  stageTitle: string;
+  stageNumber: number;
+  stageCount: number;
+  stepNumber: number;
+  stepCount: number;
 };
 
 const PROJECT_CATEGORIES: ProjectCategory[] = [
@@ -104,7 +114,8 @@ const PROJECT_LIST_SELECT = `${PROJECT_SELECT}, project_components ( id, project
 const PROJECT_COMPONENT_SELECT =
   'id, project_id, component_id, quantity, sort_order, components!inner ( id, slug, name, description )';
 
-const PROJECT_WALKTHROUGH_SELECT = 'id, project_id, sort_order, title, description, tip, blocks';
+const PROJECT_WALKTHROUGH_SELECT =
+  'id, project_id, sort_order, stage_sort_order, stage_title, title, description, tip, blocks';
 
 type ProjectStepSummaryRow = {
   id: string;
@@ -116,6 +127,8 @@ type ProjectWalkthroughRow = {
   id: string;
   project_id: string;
   sort_order: number;
+  stage_sort_order: number | null;
+  stage_title: string | null;
   title: string;
   description: string;
   tip: string | null;
@@ -143,18 +156,7 @@ function parseStepBlocks(value: unknown): StepBlock[] {
     if (!isRecord(block) || typeof block.type !== 'string') {
       return false;
     }
-    return [
-      'text',
-      'image',
-      'wiring',
-      'connections',
-      'code',
-      'tip',
-      'warning',
-      'expected',
-      'troubleshooting',
-      'components',
-    ].includes(block.type);
+    return (STEP_BLOCK_TYPES as readonly string[]).includes(block.type);
   }) as StepBlock[];
 }
 
@@ -380,6 +382,8 @@ export async function fetchProjectSteps(
     id: row.id,
     projectId: row.project_id,
     sortOrder: row.sort_order,
+    stageSortOrder: row.stage_sort_order ?? 0,
+    stageTitle: row.stage_title,
     title: row.title,
     description: row.description,
     tip: row.tip,
@@ -387,6 +391,38 @@ export async function fetchProjectSteps(
   }));
 
   return { data: mapped, error: null };
+}
+
+export function getWalkthroughStageContext(
+  steps: ProjectWalkthroughStep[],
+  stepIndex: number,
+): WalkthroughStageContext | null {
+  const current = steps[stepIndex];
+  if (!current?.stageTitle) {
+    return null;
+  }
+
+  const stageKeys: number[] = [];
+  for (const step of steps) {
+    if (!step.stageTitle) {
+      continue;
+    }
+    if (!stageKeys.includes(step.stageSortOrder)) {
+      stageKeys.push(step.stageSortOrder);
+    }
+  }
+  stageKeys.sort((a, b) => a - b);
+  if (stageKeys.length === 0) {
+    return null;
+  }
+
+  return {
+    stageTitle: current.stageTitle,
+    stageNumber: stageKeys.indexOf(current.stageSortOrder) + 1,
+    stageCount: stageKeys.length,
+    stepNumber: stepIndex + 1,
+    stepCount: steps.length,
+  };
 }
 
 export function getWalkthroughSketch(steps: ProjectWalkthroughStep[]): StepCodeContent | null {

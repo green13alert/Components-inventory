@@ -4,55 +4,94 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { HW } from '@/constants/component-illustration-palette';
 import type { SolderiPalette } from '@/constants/colors';
-import type { StepConnection, WiringPair } from '@/constants/walkthrough-content';
+import type { StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 
 const WIRE_COLORS = [HW.wireRed, HW.wireBlack, HW.wireGreen, HW.wireYellow] as const;
 
 type WiringDiagramProps = {
-  pair: WiringPair;
+  heading?: string;
+  pair?: WiringPair;
+  nodes?: WiringNode[];
   connections: StepConnection[];
 };
 
-export function WiringDiagram({ pair, connections }: WiringDiagramProps) {
+function resolveNodes(pair?: WiringPair, nodes?: WiringNode[]): WiringNode[] {
+  if (nodes && nodes.length > 0) {
+    return nodes;
+  }
+  if (!pair) {
+    return [];
+  }
+  return [
+    { id: pair.leftId, name: pair.leftName, illustrationId: pair.leftId },
+    { id: pair.rightId, name: pair.rightName, illustrationId: pair.rightId },
+  ];
+}
+
+function wireColor(connection: StepConnection, index: number) {
+  if (connection.signal === 'power') {
+    return HW.wireRed;
+  }
+  if (connection.signal === 'ground') {
+    return HW.wireBlack;
+  }
+  if (connection.signal === 'signal') {
+    return HW.wireGreen;
+  }
+  return WIRE_COLORS[index % WIRE_COLORS.length];
+}
+
+export function WiringDiagram({ heading, pair, nodes, connections }: WiringDiagramProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const resolvedNodes = resolveNodes(pair, nodes);
 
   return (
     <View style={styles.section}>
-      <Text style={styles.label}>Wiring</Text>
+      <Text style={styles.label}>{heading ?? 'Wiring diagram'}</Text>
       <View style={styles.canvas}>
-        <View style={styles.endpoints}>
-          <View style={styles.endpoint}>
-            <ComponentIllustration id={pair.leftId} name={pair.leftName} size={64} plate />
-            <Text style={styles.endpointName} numberOfLines={2}>
-              {pair.leftName}
-            </Text>
+        {resolvedNodes.length > 0 ? (
+          <View style={styles.endpoints}>
+            {resolvedNodes.map((node) => (
+              <View key={node.id} style={styles.endpoint}>
+                <ComponentIllustration id={node.illustrationId} name={node.name} size={56} plate />
+                <Text style={styles.endpointName} numberOfLines={2}>
+                  {node.name}
+                </Text>
+              </View>
+            ))}
           </View>
-          <View style={styles.endpoint}>
-            <ComponentIllustration id={pair.rightId} name={pair.rightName} size={64} plate />
-            <Text style={styles.endpointName} numberOfLines={2}>
-              {pair.rightName}
-            </Text>
-          </View>
-        </View>
+        ) : null}
 
         <View style={styles.wires}>
           {connections.map((row, index) => {
-            const color = WIRE_COLORS[index % WIRE_COLORS.length];
+            const color = wireColor(row, index);
             return (
-              <View key={`${row.fromPin}-${row.toPin}`} style={styles.wireRow}>
-                <Text style={styles.pinLeft} numberOfLines={1}>
-                  {row.toPin}
-                </Text>
+              <View
+                key={`${row.fromComponent}-${row.fromPin}-${row.toComponent}-${row.toPin}-${index}`}
+                style={styles.wireRow}>
+                <View style={styles.pinColumn}>
+                  <Text style={styles.pinName} numberOfLines={1}>
+                    {row.fromComponent}
+                  </Text>
+                  <Text style={styles.pinId} numberOfLines={1}>
+                    {row.fromPin}
+                  </Text>
+                </View>
                 <View style={styles.lineWrap}>
                   <View style={[styles.dot, { backgroundColor: color }]} />
                   <View style={[styles.line, { backgroundColor: color }]} />
                   <View style={[styles.dot, { backgroundColor: color }]} />
                 </View>
-                <Text style={styles.pinRight} numberOfLines={1}>
-                  {row.fromPin}
-                </Text>
+                <View style={[styles.pinColumn, styles.pinColumnRight]}>
+                  <Text style={styles.pinName} numberOfLines={1}>
+                    {row.toComponent}
+                  </Text>
+                  <Text style={styles.pinId} numberOfLines={1}>
+                    {row.toPin}
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -82,15 +121,15 @@ function createStyles(colors: SolderiPalette) {
       paddingHorizontal: 14,
       paddingVertical: 18,
       gap: 18,
-      minHeight: 240,
     },
     endpoints: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      justifyContent: 'space-around',
       gap: 16,
     },
     endpoint: {
-      flex: 1,
+      width: 88,
       alignItems: 'center',
       gap: 8,
     },
@@ -101,26 +140,28 @@ function createStyles(colors: SolderiPalette) {
       textAlign: 'center',
     },
     wires: {
-      gap: 12,
+      gap: 14,
     },
     wireRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
     },
-    pinLeft: {
-      width: 52,
-      fontSize: 12,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      textAlign: 'right',
+    pinColumn: {
+      width: 92,
+      gap: 2,
     },
-    pinRight: {
-      width: 52,
-      fontSize: 12,
+    pinColumnRight: {
+      alignItems: 'flex-end',
+    },
+    pinName: {
+      fontSize: 11,
+      color: colors.textMuted,
+    },
+    pinId: {
+      fontSize: 13,
       fontWeight: '700',
       color: colors.textPrimary,
-      textAlign: 'left',
     },
     lineWrap: {
       flex: 1,

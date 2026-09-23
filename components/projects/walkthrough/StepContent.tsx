@@ -46,7 +46,7 @@ function StepBlockView({
 }) {
   switch (block.type) {
     case 'text':
-      return <TextBlock body={block.body} />;
+      return <TextBlock heading={block.heading} body={block.body} />;
     case 'image': {
       const source = block.source ?? (block.imageKey ? getProjectImage(block.imageKey) : undefined);
       if (!source) {
@@ -55,9 +55,16 @@ function StepBlockView({
       return <ReferenceImage source={source} caption={block.caption} />;
     }
     case 'wiring':
-      return <WiringDiagram pair={block.pair} connections={block.connections} />;
+      return (
+        <WiringDiagram
+          heading={block.heading}
+          pair={block.pair}
+          nodes={block.nodes}
+          connections={block.connections}
+        />
+      );
     case 'connections':
-      return <ConnectionsBlock rows={block.rows} summary={block.summary} />;
+      return <ConnectionsBlock heading={block.heading} rows={block.rows} summary={block.summary} />;
     case 'code':
       return (
         <CodeBlock
@@ -68,6 +75,10 @@ function StepBlockView({
           explain={explain}
         />
       );
+    case 'code_explanation':
+      return <TextBlock heading={block.heading ?? 'Why this code'} body={block.body} />;
+    case 'test':
+      return <TextBlock heading={block.heading ?? 'Test'} body={block.body} />;
     case 'tip':
       return <Callout tone="tip" body={block.body} />;
     case 'warning':
@@ -77,15 +88,23 @@ function StepBlockView({
     case 'troubleshooting':
       return <TroubleshootingBlock heading={block.heading} items={block.items} />;
     case 'components':
-      return <ComponentsBlock items={block.items} />;
+      return <ComponentsBlock heading={block.heading} items={block.items} />;
     default:
       return null;
   }
 }
 
-function TextBlock({ body }: { body: string }) {
+function TextBlock({ heading, body }: { heading?: string; body: string }) {
   const { styles } = useStepTheme();
-  return <Text style={styles.body}>{body}</Text>;
+  if (!heading) {
+    return <Text style={styles.body}>{body}</Text>;
+  }
+  return (
+    <View style={styles.section}>
+      <SectionLabel>{heading}</SectionLabel>
+      <Text style={styles.body}>{body}</Text>
+    </View>
+  );
 }
 
 function SectionLabel({ children }: { children: string }) {
@@ -103,23 +122,32 @@ function ReferenceImage({ source, caption }: { source: ImageSource; caption?: st
   );
 }
 
-function ConnectionsBlock({ rows, summary }: { rows: StepConnection[]; summary?: string }) {
+function ConnectionsBlock({
+  heading,
+  rows,
+  summary,
+}: {
+  heading?: string;
+  rows: StepConnection[];
+  summary?: string;
+}) {
   const { styles } = useStepTheme();
   return (
     <View style={styles.section}>
-      <SectionLabel>Connections</SectionLabel>
+      <SectionLabel>{heading ?? 'Wiring instructions'}</SectionLabel>
       {summary ? <Text style={styles.summary}>{summary}</Text> : null}
       <View style={styles.connectionList}>
-        {rows.map((row) => (
-          <View key={`${row.fromComponent}-${row.fromPin}-${row.toPin}`} style={styles.connectionRow}>
-            <Text style={styles.connectionPin}>{row.fromPin}</Text>
+        {rows.map((row, index) => (
+          <View
+            key={`${row.fromComponent}-${row.fromPin}-${row.toComponent}-${row.toPin}-${index}`}
+            style={styles.connectionRow}>
+            <Text style={styles.connectionEndpoint}>
+              {row.fromComponent} {row.fromPin}
+            </Text>
             <Text style={styles.connectionArrow}>→</Text>
-            <Text style={styles.connectionPin}>{row.toPin}</Text>
-            {summary ? null : (
-              <Text style={styles.connectionHint} numberOfLines={1}>
-                {row.fromComponent} · {row.toComponent}
-              </Text>
-            )}
+            <Text style={styles.connectionEndpoint}>
+              {row.toComponent} {row.toPin}
+            </Text>
           </View>
         ))}
       </View>
@@ -274,11 +302,11 @@ function TroubleshootingBlock({
   );
 }
 
-function ComponentsBlock({ items }: { items: ProjectComponent[] }) {
+function ComponentsBlock({ heading, items }: { heading?: string; items: ProjectComponent[] }) {
   const { styles } = useStepTheme();
   return (
     <View style={styles.section}>
-      <SectionLabel>Components</SectionLabel>
+      <SectionLabel>{heading ?? 'Components'}</SectionLabel>
       <View style={styles.componentList}>
         {items.map((item) => (
           <View key={item.id} style={styles.componentRow}>
@@ -343,22 +371,16 @@ function createStyles(colors: SolderiPalette) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
-    connectionPin: {
+    connectionEndpoint: {
+      flex: 1,
       fontSize: 14,
       fontWeight: '700',
       color: colors.textPrimary,
-      minWidth: 40,
     },
     connectionArrow: {
       fontSize: 14,
       fontWeight: '700',
       color: colors.accent,
-    },
-    connectionHint: {
-      flex: 1,
-      fontSize: 12,
-      color: colors.textMuted,
-      textAlign: 'right',
     },
     codeShell: {
       backgroundColor: colors.surfaceElevated,

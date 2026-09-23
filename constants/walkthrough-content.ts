@@ -4,11 +4,20 @@ import type { ComponentIllustrationId } from '@/constants/component-illustration
 import type { Project, ProjectCategory, ProjectComponent } from '@/constants/projects-data';
 import { getProjectComponents } from '@/constants/projects-data';
 
+export type WiringSignal = 'power' | 'ground' | 'signal';
+
 export type StepConnection = {
   fromComponent: string;
   fromPin: string;
   toComponent: string;
   toPin: string;
+  signal?: WiringSignal;
+};
+
+export type WiringNode = {
+  id: string;
+  name: string;
+  illustrationId: ComponentIllustrationId;
 };
 
 export type StepTroubleshootingItem = {
@@ -30,17 +39,52 @@ export type WiringPair = {
   rightId: ComponentIllustrationId;
 };
 
+export const STEP_BLOCK_TYPES = [
+  'text',
+  'image',
+  'wiring',
+  'connections',
+  'code',
+  'code_explanation',
+  'test',
+  'tip',
+  'warning',
+  'expected',
+  'troubleshooting',
+  'components',
+] as const;
+
+export type StepBlockType = (typeof STEP_BLOCK_TYPES)[number];
+
 export type StepBlock =
-  | { type: 'text'; body: string }
+  | { type: 'text'; heading?: string; body: string }
   | { type: 'image'; source?: ImageSource; imageKey?: string; caption?: string }
-  | { type: 'wiring'; pair: WiringPair; connections: StepConnection[] }
-  | { type: 'connections'; rows: StepConnection[]; summary?: string }
+  | {
+      type: 'wiring';
+      heading?: string;
+      pair?: WiringPair;
+      nodes?: WiringNode[];
+      connections: StepConnection[];
+    }
+  | { type: 'connections'; heading?: string; rows: StepConnection[]; summary?: string }
   | { type: 'code'; language: string; filename?: string; libraries?: string[]; code: string }
+  | { type: 'code_explanation'; heading?: string; body: string }
+  | { type: 'test'; heading?: string; body: string }
   | { type: 'tip'; body: string }
   | { type: 'warning'; body: string }
   | { type: 'expected'; heading?: string; body: string }
   | { type: 'troubleshooting'; heading?: string; items: StepTroubleshootingItem[] }
-  | { type: 'components'; items: ProjectComponent[] };
+  | { type: 'components'; heading?: string; items: ProjectComponent[] };
+
+export type AuthoredWalkthroughStep = {
+  sortOrder: number;
+  stageSortOrder: number;
+  stageTitle: string;
+  title: string;
+  description: string;
+  tip: string | null;
+  blocks: StepBlock[];
+};
 
 type StepKind = 'intro' | 'wiring' | 'connections' | 'code' | 'caution' | 'test' | 'finish' | 'standard';
 
