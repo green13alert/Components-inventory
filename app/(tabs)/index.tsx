@@ -14,14 +14,13 @@ import { WorkshopStats } from '@/components/home/WorkshopStats';
 import type { SolderiPalette } from '@/constants/colors';
 import { DEV_ONBOARDING_SHORTCUTS } from '@/constants/onboarding-dev';
 import { tabBarBottomPadding } from '@/constants/layout';
+import { getProjectImage } from '@/constants/projects';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
-import { getProjectSteps } from '@/constants/project-steps';
 import { Spacing } from '@/constants/tokens';
 import { useAtlas } from '@/context/atlas-context';
 import { useSolderiColors } from '@/context/theme-context';
 
-const RECOMMENDED_PROJECT_IDS = ['3', '7', '8'];
-
+const RECOMMENDED_PROJECT_LIMIT = 3;
 const RECENT_COMPONENT_COUNT = 4;
 
 export default function HomeScreen() {
@@ -38,7 +37,9 @@ export default function HomeScreen() {
       const bUpdated = getUserProject(b.id)?.updatedAt ?? '';
       return bUpdated.localeCompare(aUpdated);
     });
-  const recommendedProjects = RECOMMENDED_PROJECT_IDS.map((id) => projects.find((p) => p.id === id)!);
+  const recommendedProjects = projects
+    .filter((project) => project.requiredComponentCount > 0 || project.authoredSteps.length > 0)
+    .slice(0, RECOMMENDED_PROJECT_LIMIT);
   const recentComponents = [...inventory]
     .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
     .slice(0, RECENT_COMPONENT_COUNT);
@@ -69,18 +70,22 @@ export default function HomeScreen() {
               items={continueProjects}
               keyExtractor={(project) => project.id}
               renderItem={(project, cardWidth) => {
-                const steps = getProjectSteps(project);
                 const stepIndex = getCurrentStepIndex(project.id);
-                const step = steps[stepIndex];
+                const totalSteps = project.authoredSteps.length;
+                const current = project.authoredSteps[stepIndex] ?? project.authoredSteps[0];
+                const stepLabel =
+                  totalSteps > 0
+                    ? `Step ${Math.min(stepIndex, totalSteps - 1) + 1} of ${totalSteps}`
+                    : 'Walkthrough not yet available';
 
                 return (
                   <ContinueProjectCard
-                    projectId={project.id}
+                    projectId={project.slug}
                     title={project.title}
-                    stepLabel={`Step ${stepIndex + 1} of ${steps.length}`}
-                    stepTitle={step?.title ?? ''}
+                    stepLabel={stepLabel}
+                    stepTitle={current?.title ?? ''}
                     progress={project.progress ?? 0}
-                    image={project.image}
+                    image={getProjectImage(project.imageKey)}
                     width={cardWidth}
                   />
                 );
@@ -100,22 +105,24 @@ export default function HomeScreen() {
 
         <BuildActivitySection />
 
-        <View style={styles.section}>
-          <SectionHeading title="Recommended For You" />
-          <View style={styles.recommendedList}>
-            {recommendedProjects.map((project) => (
-              <HomeRecommendedCard
-                key={project.id}
-                projectId={project.id}
-                title={project.title}
-                difficulty={DIFFICULTY_LABELS[project.difficulty]}
-                duration={project.duration}
-                componentCount={project.totalParts}
-                image={project.image}
-              />
-            ))}
+        {recommendedProjects.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeading title="Recommended For You" />
+            <View style={styles.recommendedList}>
+              {recommendedProjects.map((project) => (
+                <HomeRecommendedCard
+                  key={project.id}
+                  projectId={project.slug}
+                  title={project.title}
+                  difficulty={DIFFICULTY_LABELS[project.difficulty]}
+                  duration={project.durationLabel}
+                  componentCount={project.requiredComponentCount}
+                  image={getProjectImage(project.imageKey)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        ) : null}
 
         <View style={styles.section}>
           <SectionHeading title="Recently Added" />

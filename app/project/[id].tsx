@@ -148,8 +148,25 @@ export default function ProjectDetailScreen() {
       if (status === 'not_started') {
         await startProject(project.id);
       }
-      router.push({ pathname: '/project/build/[id]', params: { id: project.slug } });
+      router.push({
+        pathname: '/project/build/[id]',
+        params: { id: project.slug },
+      });
     })();
+  };
+
+  const handleViewSteps = () => {
+    router.push({
+      pathname: '/project/build/[id]',
+      params: { id: project.slug, review: '1' },
+    });
+  };
+
+  const handleViewCode = () => {
+    router.push({
+      pathname: '/project/build/[id]',
+      params: { id: project.slug, code: '1' },
+    });
   };
 
   return (
@@ -300,10 +317,35 @@ export default function ProjectDetailScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <Pressable style={styles.startButton} onPress={handleStart} accessibilityRole="button">
-          <Ionicons name="play" size={20} color={colors.onAccent} />
-          <Text style={styles.startButtonText}>{getStartButtonLabel(status)}</Text>
-        </Pressable>
+        {status === 'completed' ? (
+          <View style={styles.completedFooterRow}>
+            <Pressable
+              style={[styles.startButton, styles.completedFooterButton]}
+              onPress={handleViewSteps}
+              accessibilityRole="button"
+              accessibilityLabel="View Steps">
+              <Ionicons name="book-outline" size={20} color={colors.onAccent} />
+              <Text style={styles.startButtonText} numberOfLines={1}>
+                View Steps
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.viewCodeButton, styles.completedFooterButton]}
+              onPress={handleViewCode}
+              accessibilityRole="button"
+              accessibilityLabel="View Code">
+              <Ionicons name="code-slash-outline" size={20} color={colors.textPrimary} />
+              <Text style={styles.viewCodeButtonText} numberOfLines={1}>
+                View Code
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable style={styles.startButton} onPress={handleStart} accessibilityRole="button">
+            <Ionicons name="play" size={20} color={colors.onAccent} />
+            <Text style={styles.startButtonText}>{getStartButtonLabel(status)}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -576,6 +618,10 @@ function createStyles(colors: SolderiPalette) {
       borderTopWidth: 1,
       borderTopColor: colors.border,
     },
+    completedFooterRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
     startButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -584,11 +630,33 @@ function createStyles(colors: SolderiPalette) {
       backgroundColor: colors.accent,
       borderRadius: 16,
       paddingVertical: 18,
+      minWidth: 0,
+    },
+    completedFooterButton: {
+      flex: 1,
     },
     startButtonText: {
       fontSize: 17,
       fontWeight: '700',
       color: colors.onAccent,
+    },
+    viewCodeButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      paddingVertical: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minWidth: 0,
+    },
+    viewCodeButtonText: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.textPrimary,
     },
     safeArea: {
       flex: 1,

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
+import { ExplainCodeButton, type ExplainCodeContext } from '@/components/projects/walkthrough/ExplainCodeButton';
 import { WiringDiagram } from '@/components/projects/walkthrough/WiringDiagram';
 import type { SolderiPalette } from '@/constants/colors';
 import type { ProjectComponent } from '@/constants/projects-data';
@@ -14,6 +15,7 @@ import { useSolderiColors } from '@/context/theme-context';
 
 type StepContentProps = {
   blocks: StepBlock[];
+  explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
 };
 
 function useStepTheme() {
@@ -22,20 +24,26 @@ function useStepTheme() {
   return { colors, styles };
 }
 
-export function StepContent({ blocks }: StepContentProps) {
+export function StepContent({ blocks, explain }: StepContentProps) {
   const { styles } = useStepTheme();
   if (blocks.length === 0) return null;
 
   return (
     <View style={styles.stack}>
       {blocks.map((block, index) => (
-        <StepBlockView key={`${block.type}-${index}`} block={block} />
+        <StepBlockView key={`${block.type}-${index}`} block={block} explain={explain} />
       ))}
     </View>
   );
 }
 
-function StepBlockView({ block }: { block: StepBlock }) {
+function StepBlockView({
+  block,
+  explain,
+}: {
+  block: StepBlock;
+  explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
+}) {
   switch (block.type) {
     case 'text':
       return <TextBlock body={block.body} />;
@@ -57,6 +65,7 @@ function StepBlockView({ block }: { block: StepBlock }) {
           filename={block.filename}
           libraries={block.libraries}
           code={block.code}
+          explain={explain}
         />
       );
     case 'tip':
@@ -135,11 +144,15 @@ export function CodeBlock({
   filename,
   libraries,
   code,
+  heading,
+  explain,
 }: {
   language: string;
   filename?: string;
   libraries?: string[];
   code: string;
+  heading?: string;
+  explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
 }) {
   const { colors, styles } = useStepTheme();
   const [copied, setCopied] = useState(false);
@@ -152,7 +165,7 @@ export function CodeBlock({
 
   return (
     <View style={styles.section}>
-      <SectionLabel>Code</SectionLabel>
+      <SectionLabel>{heading ?? 'Code'}</SectionLabel>
       <View style={styles.codeShell}>
         <View style={styles.codeHeader}>
           <View style={styles.codeMeta}>
@@ -186,6 +199,14 @@ export function CodeBlock({
           </Text>
         </ScrollView>
       </View>
+      <ExplainCodeButton
+        context={{
+          code,
+          language,
+          filename,
+          ...explain,
+        }}
+      />
       {libraries && libraries.length > 0 ? (
         <View style={styles.libraries}>
           <Text style={styles.librariesLabel}>Required libraries</Text>

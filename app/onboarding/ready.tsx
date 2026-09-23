@@ -14,8 +14,7 @@ import {
 export default function OnboardingReadyRoute() {
   const router = useRouter();
   const { user } = useAuth();
-  const { experience, selectedComponentIds, selectedInterestIds, summary, recommendedProjects } =
-    useOnboarding();
+  const { experience, selectedComponentIds, selectedInterestIds, summary } = useOnboarding();
   const [saving, setSaving] = useState(false);
 
   const handleFinish = async () => {
@@ -59,7 +58,6 @@ export default function OnboardingReadyRoute() {
       experienceLabel={summary.experienceLabel}
       componentCount={summary.componentCount}
       interestSummary={summary.interestSummary}
-      projects={recommendedProjects}
       onBack={() => router.back()}
       onFinish={() => {
         void handleFinish();

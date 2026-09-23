@@ -52,7 +52,9 @@ export default function ProfileScreen() {
   const visibleCount = activityExpanded ? ACTIVITY_EXPANDED : ACTIVITY_PREVIEW;
   const canShowMore = recentActivity.length > ACTIVITY_PREVIEW;
   const activityItems = recentActivity.slice(0, visibleCount).map((item) => {
-    const project = item.projectId ? projects.find((p) => p.id === item.projectId) : undefined;
+    const project = projects.find(
+      (p) => p.id === item.projectId || (item.projectSlug != null && p.slug === item.projectSlug),
+    );
     return {
       ...item,
       detail: activityDetail(item, project?.progress),
@@ -100,13 +102,13 @@ export default function ProfileScreen() {
                   key={item.id}
                   style={({ pressed }) => [
                     styles.activityRow,
-                    pressed && item.projectId ? styles.activityRowPressed : null,
+                    pressed && item.projectSlug ? styles.activityRowPressed : null,
                   ]}
                   onPress={
-                    item.projectId ? () => router.push(`/project/${item.projectId}`) : undefined
+                    item.projectSlug ? () => router.push(`/project/${item.projectSlug}`) : undefined
                   }
-                  disabled={!item.projectId}
-                  accessibilityRole={item.projectId ? 'button' : 'text'}
+                  disabled={!item.projectSlug}
+                  accessibilityRole={item.projectSlug ? 'button' : 'text'}
                   accessibilityLabel={`${item.title}. ${item.detail}`}>
                   <View style={styles.activityIcon}>
                     <Ionicons name={item.icon} size={20} color={colors.textSecondary} />
@@ -115,7 +117,7 @@ export default function ProfileScreen() {
                     <Text style={styles.activityTitle}>{item.title}</Text>
                     <Text style={styles.activityDetail}>{item.detail}</Text>
                   </View>
-                  {item.projectId ? (
+                  {item.projectSlug ? (
                     <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                   ) : null}
                 </Pressable>

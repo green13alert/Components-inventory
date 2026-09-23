@@ -3,14 +3,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
-import { OnboardingProjectCard } from '@/components/onboarding/OnboardingProjectCard';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import type { SolderiPalette } from '@/constants/colors';
-import {
-  ONBOARDING_READY,
-  ONBOARDING_WELCOME,
-  type MockRecommendedProject,
-} from '@/constants/onboarding';
+import { ONBOARDING_READY, ONBOARDING_WELCOME } from '@/constants/onboarding';
 import { Spacing } from '@/constants/tokens';
 import { useSolderiColors } from '@/context/theme-context';
 
@@ -18,7 +13,6 @@ type ReadyScreenProps = {
   experienceLabel: string | null;
   componentCount: number;
   interestSummary: string;
-  projects: MockRecommendedProject[];
   onBack: () => void;
   onFinish: () => void;
   saving?: boolean;
@@ -28,7 +22,6 @@ export function ReadyScreen({
   experienceLabel,
   componentCount,
   interestSummary,
-  projects,
   onBack,
   onFinish,
   saving = false,
@@ -57,13 +50,7 @@ export function ReadyScreen({
 
       <Animated.View entering={FadeInDown.duration(420).delay(80)} style={styles.section}>
         <Text style={styles.sectionTitle}>{ONBOARDING_READY.sectionTitle}</Text>
-        <View style={styles.projectList}>
-          {projects.map((project, index) => (
-            <Animated.View key={project.id} entering={FadeInDown.duration(420).delay(120 + index * 70)}>
-              <OnboardingProjectCard project={project} />
-            </Animated.View>
-          ))}
-        </View>
+        <Text style={styles.nextStep}>{ONBOARDING_READY.nextStep}</Text>
       </Animated.View>
     </OnboardingShell>
   );
@@ -96,8 +83,11 @@ function createStyles(colors: SolderiPalette) {
       textTransform: 'uppercase',
       color: colors.textMuted,
     },
-    projectList: {
-      gap: Spacing.md,
+    nextStep: {
+      fontSize: 15,
+      fontWeight: '500',
+      lineHeight: 22,
+      color: colors.textSecondary,
     },
   });
 }

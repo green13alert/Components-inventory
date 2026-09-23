@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,12 +18,17 @@ import {
   type Project,
   type ProjectWalkthroughStep,
 } from '@/lib/projects';
-import type { StepCodeContent } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 
 export default function ProjectBuildScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, review: reviewParam, code: codeParam } = useLocalSearchParams<{
+    id: string;
+    review?: string | string[];
+    code?: string | string[];
+  }>();
   const slug = Array.isArray(id) ? id[0] : id;
+  const reviewRequested = (Array.isArray(reviewParam) ? reviewParam[0] : reviewParam) === '1';
+  const codeRequested = (Array.isArray(codeParam) ? codeParam[0] : codeParam) === '1';
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useSolderiColors();
@@ -40,6 +45,10 @@ export default function ProjectBuildScreen() {
   const [steps, setSteps] = useState<ProjectWalkthroughStep[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isReviewing, setIsReviewing] = useState(reviewRequested);
+  const [isReviewingCode, setIsReviewingCode] = useState(codeRequested);
+  const [reviewStepIndex, setReviewStepIndex] = useState(0);
+  const displayedStepRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +94,12 @@ export default function ProjectBuildScreen() {
     };
   }, [slug]);
 
+  useEffect(() => {
+    setIsReviewing(reviewRequested);
+    setIsReviewingCode(codeRequested);
+    setReviewStepIndex(0);
+  }, [codeRequested, reviewRequested, slug]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -114,30 +129,70 @@ export default function ProjectBuildScreen() {
   const status = getUserProjectStatus(getUserProject(projectKey));
   const persistedStep = getCurrentStepIndex(projectKey);
   const lastStepIndex = Math.max(0, steps.length - 1);
-  const currentStepIndex = Math.min(persistedStep, lastStepIndex);
+  const isCompleted = status === 'completed';
+  const reviewMode = isCompleted && isReviewing && !isReviewingCode;
+  const codeReviewMode = isCompleted && isReviewingCode;
+  const currentStepIndex = reviewMode
+    ? Math.min(reviewStepIndex, lastStepIndex)
+    : Math.min(persistedStep, lastStepIndex);
+  if (!reviewMode) {
+    displayedStepRef.current = currentStepIndex;
+  }
   const currentStep = steps[currentStepIndex] ?? steps[0];
   const stepBlocks =
     currentStep?.tip && !currentStep.blocks.some((block) => block.type === 'tip' && block.body === currentStep.tip)
       ? [...currentStep.blocks, { type: 'tip' as const, body: currentStep.tip }]
       : currentStep?.blocks ?? [];
-  const progressPercent = getUserProjectProgressPercent(getUserProject(projectKey), steps.length);
+  const progressPercent = reviewMode
+    ? 100
+    : getUserProjectProgressPercent(getUserProject(projectKey), steps.length);
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === lastStepIndex;
-  const isCompleted = status === 'completed';
   const sketch = getWalkthroughSketch(steps);
 
-  const handlePrev = () => {
-    if (!isFirstStep) {
-      void setProjectStep(projectKey, currentStepIndex - 1);
+  const exitReview = () => {
+    if (reviewRequested || codeRequested) {
+      router.replace({ pathname: '/project/[id]', params: { id: project.slug } });
+      return;
     }
+    setIsReviewing(false);
+    setIsReviewingCode(false);
+  };
+
+  const openCodeReview = () => {
+    setIsReviewing(false);
+    setIsReviewingCode(true);
+  };
+
+  const handlePrev = () => {
+    if (isFirstStep) {
+      return;
+    }
+    if (reviewMode) {
+      setReviewStepIndex((index) => Math.max(index - 1, 0));
+      return;
+    }
+    const previous = Math.max(displayedStepRef.current - 1, 0);
+    displayedStepRef.current = previous;
+    void setProjectStep(projectKey, previous);
   };
 
   const handleNext = () => {
-    if (isLastStep) {
-      void completeProject(projectKey, currentStepIndex);
+    if (reviewMode) {
+      if (isLastStep) {
+        exitReview();
+        return;
+      }
+      setReviewStepIndex((index) => Math.min(index + 1, lastStepIndex));
       return;
     }
-    void setProjectStep(projectKey, currentStepIndex + 1);
+    if (isLastStep) {
+      void completeProject(projectKey, displayedStepRef.current);
+      return;
+    }
+    const next = Math.min(displayedStepRef.current + 1, lastStepIndex);
+    displayedStepRef.current = next;
+    void setProjectStep(projectKey, next);
   };
 
   const handleStartOrContinue = () => {
@@ -213,15 +268,71 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  if (isCompleted) {
+  if (isCompleted && !reviewMode && !codeReviewMode) {
     return (
       <ProjectCompleteView
         title={project.title}
         stepCount={steps.length}
+        hasSketch={sketch != null}
+        onViewSteps={() => {
+          setIsReviewingCode(false);
+          setReviewStepIndex(0);
+          setIsReviewing(true);
+        }}
+        onViewCode={openCodeReview}
         onBackToProject={() => router.replace({ pathname: '/project/[id]', params: { id: project.slug } })}
         onBrowseProjects={() => router.replace('/projects')}
-        sketch={sketch}
       />
+    );
+  }
+
+  if (codeReviewMode) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.topBar}>
+          <Pressable
+            style={styles.iconButton}
+            onPress={exitReview}
+            accessibilityRole="button"
+            accessibilityLabel="Go back">
+            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          </Pressable>
+          <View style={styles.topBarCenter}>
+            <Text style={styles.topBarTitle} numberOfLines={1}>
+              {project.title}
+            </Text>
+            <Text style={styles.topBarSubtitle}>Your Code</Text>
+          </View>
+          <Pressable
+            style={styles.iconButton}
+            onPress={exitReview}
+            accessibilityRole="button"
+            accessibilityLabel="Exit code review">
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+          showsVerticalScrollIndicator={false}>
+          {sketch ? (
+            <CodeBlock
+              heading="Your Code"
+              language={sketch.language}
+              filename={sketch.filename}
+              libraries={sketch.libraries}
+              code={sketch.code}
+              explain={{
+                projectId: project.id,
+                projectSlug: project.slug,
+                projectTitle: project.title,
+              }}
+            />
+          ) : (
+            <Text style={styles.stepDescription}>No authored sketch is available for this project yet.</Text>
+          )}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -230,7 +341,13 @@ export default function ProjectBuildScreen() {
       <View style={styles.topBar}>
         <Pressable
           style={styles.iconButton}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (reviewMode) {
+              exitReview();
+              return;
+            }
+            router.back();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
@@ -240,14 +357,20 @@ export default function ProjectBuildScreen() {
             {project.title}
           </Text>
           <Text style={styles.topBarSubtitle}>
-            Step {currentStepIndex + 1} of {steps.length}
+            {reviewMode ? 'Review · ' : ''}Step {currentStepIndex + 1} of {steps.length}
           </Text>
         </View>
         <Pressable
           style={styles.iconButton}
-          onPress={() => router.replace({ pathname: '/project/[id]', params: { id: project.slug } })}
+          onPress={() => {
+            if (reviewMode) {
+              exitReview();
+              return;
+            }
+            router.replace({ pathname: '/project/[id]', params: { id: project.slug } });
+          }}
           accessibilityRole="button"
-          accessibilityLabel="Exit build">
+          accessibilityLabel={reviewMode ? 'Exit review' : 'Exit build'}>
           <Ionicons name="close" size={22} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -271,7 +394,15 @@ export default function ProjectBuildScreen() {
         </View>
         <Text style={styles.stepTitle}>{currentStep.title}</Text>
         <Text style={styles.stepDescription}>{currentStep.description}</Text>
-        <StepContent blocks={stepBlocks} />
+        <StepContent
+          blocks={stepBlocks}
+          explain={{
+            projectId: project.id,
+            projectSlug: project.slug,
+            projectTitle: project.title,
+            stepIndex: currentStepIndex,
+          }}
+        />
 
         <View style={styles.stepDots}>
           {steps.map((step, index) => (
@@ -297,8 +428,14 @@ export default function ProjectBuildScreen() {
           <Text style={styles.secondaryButtonText}>Previous</Text>
         </Pressable>
         <Pressable style={styles.primaryButton} onPress={handleNext} accessibilityRole="button">
-          <Text style={styles.primaryButtonText}>{isLastStep ? 'Complete' : 'Next Step'}</Text>
-          <Ionicons name={isLastStep ? 'checkmark' : 'chevron-forward'} size={18} color={colors.onAccent} />
+          <Text style={styles.primaryButtonText}>
+            {reviewMode ? (isLastStep ? 'Done' : 'Next Step') : isLastStep ? 'Complete' : 'Next Step'}
+          </Text>
+          <Ionicons
+            name={isLastStep ? 'checkmark' : 'chevron-forward'}
+            size={18}
+            color={colors.onAccent}
+          />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -308,19 +445,22 @@ export default function ProjectBuildScreen() {
 function ProjectCompleteView({
   title,
   stepCount,
+  hasSketch,
+  onViewSteps,
+  onViewCode,
   onBackToProject,
   onBrowseProjects,
-  sketch,
 }: {
   title: string;
   stepCount: number;
+  hasSketch: boolean;
+  onViewSteps: () => void;
+  onViewCode: () => void;
   onBackToProject: () => void;
   onBrowseProjects: () => void;
-  sketch: StepCodeContent | null;
 }) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [showCode, setShowCode] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -352,28 +492,27 @@ function ProjectCompleteView({
           You completed all {stepCount} steps of {title}.
         </Text>
 
-        {showCode && sketch ? (
-          <View style={styles.completeCode}>
-            <CodeBlock {...sketch} />
-          </View>
-        ) : null}
-
         <View style={styles.completeActions}>
-          {sketch ? (
-            <Pressable
-              style={styles.secondaryButtonWide}
-              onPress={() => setShowCode((open) => !open)}
-              accessibilityRole="button">
-              <Ionicons name="code-slash-outline" size={18} color={colors.textPrimary} />
-              <Text style={styles.secondaryButtonText}>{showCode ? 'Hide code' : 'View code'}</Text>
-            </Pressable>
-          ) : null}
+          <Pressable style={styles.primaryButton} onPress={onViewSteps} accessibilityRole="button">
+            <Ionicons name="book-outline" size={18} color={colors.onAccent} />
+            <Text style={styles.primaryButtonText}>View Steps</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.secondaryButtonWide, !hasSketch && styles.buttonDisabled]}
+            onPress={onViewCode}
+            disabled={!hasSketch}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !hasSketch }}
+            accessibilityLabel="View Code">
+            <Ionicons name="code-slash-outline" size={18} color={colors.textPrimary} />
+            <Text style={styles.secondaryButtonText}>View Code</Text>
+          </Pressable>
           <Pressable style={styles.secondaryButtonWide} onPress={onBrowseProjects} accessibilityRole="button">
             <Ionicons name="albums-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>Start another project</Text>
           </Pressable>
-          <Pressable style={styles.primaryButton} onPress={onBackToProject} accessibilityRole="button">
-            <Text style={styles.primaryButtonText}>Back to Project</Text>
+          <Pressable style={styles.secondaryButtonWide} onPress={onBackToProject} accessibilityRole="button">
+            <Text style={styles.secondaryButtonText}>Back to Project</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -591,10 +730,6 @@ function createStyles(colors: SolderiPalette) {
       width: '100%',
       gap: 10,
       marginTop: 8,
-    },
-    completeCode: {
-      width: '100%',
-      alignSelf: 'stretch',
     },
     secondaryButtonWide: {
       flexDirection: 'row',

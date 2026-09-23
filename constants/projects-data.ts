@@ -218,7 +218,7 @@ export function getStartButtonLabel(status: ProjectStatus): string {
     case 'in_progress':
       return 'Continue Building';
     case 'completed':
-      return 'Review Project';
+      return 'View Steps';
     default:
       return 'Start Building';
   }

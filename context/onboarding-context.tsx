@@ -4,11 +4,9 @@ import {
   COMPONENT_CATEGORY_LABELS,
   EXPERIENCE_LABELS,
   INTEREST_OPTIONS,
-  MOCK_RECOMMENDED_PROJECTS,
   ONBOARDING_COMPONENTS,
   type ComponentCategory,
   type ExperienceLevel,
-  type MockRecommendedProject,
 } from '@/constants/onboarding';
 
 type OnboardingContextValue = {
@@ -24,7 +22,6 @@ type OnboardingContextValue = {
     interestLabels: string[];
     interestSummary: string;
   };
-  recommendedProjects: MockRecommendedProject[];
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
@@ -53,14 +50,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
     const componentCount = selectedComponentIds.length;
 
-    const recommendedProjects = MOCK_RECOMMENDED_PROJECTS.map((project, index) => ({
-      ...project,
-      matched: Math.min(
-        project.total,
-        componentCount > 0 ? Math.max(1, componentCount - index) : project.matched,
-      ),
-    }));
-
     return {
       experience,
       setExperience,
@@ -74,7 +63,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         interestLabels,
         interestSummary: interestLabels.slice(0, 3).join(' · '),
       },
-      recommendedProjects,
     };
   }, [experience, selectedComponentIds, selectedInterestIds]);
 

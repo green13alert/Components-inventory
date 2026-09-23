@@ -17,8 +17,10 @@ export const ONBOARDING_CONTINUE = 'Continue →';
 export const ONBOARDING_READY = {
   title: 'Your workshop is ready.',
   description:
-    "We've found projects you can build, complete with tutorials, code and everything you need.",
-  sectionTitle: 'Projects picked for you',
+    'Your skill level, components, and interests will be saved to your workshop so you can start building.',
+  sectionTitle: 'Your workshop',
+  nextStep:
+    'After you continue, you can browse the project catalogue and match published builds to the components you own.',
 } as const;
 
 /** Shown on each recommended project card — every project is a full build guide. */

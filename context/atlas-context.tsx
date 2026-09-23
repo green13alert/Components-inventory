@@ -11,7 +11,7 @@ import {
 
 import { Toast } from '@/components/ui/toast';
 import { type InventoryComponent } from '@/constants/inventory';
-import { MOCK_PROJECTS, getStepCount, type Project, type ProjectStatus } from '@/constants/projects-data';
+import { type ProjectStatus } from '@/constants/projects-data';
 import { useAuth } from '@/context/auth-context';
 import {
   INVENTORY_ERRORS,
@@ -49,6 +49,12 @@ export type WorkshopActivity = {
   title: string;
   createdAt: number;
   projectId?: string;
+  projectSlug?: string;
+};
+
+export type ProjectWithUserState = CatalogueProject & {
+  status: ProjectStatus;
+  progress?: number;
 };
 
 type InventoryMutationResult = {
@@ -79,13 +85,13 @@ type AtlasContextValue = {
   toggleFavourite: (projectId: string) => Promise<ProjectMutationResult>;
   isFavourite: (projectId: string) => boolean;
   getProjectStatus: (projectId: string) => ProjectStatus;
-  getProjectProgressPercent: (projectId: string, difficulty: Project['difficulty']) => number;
+  getProjectProgressPercent: (projectId: string) => number;
   getCurrentStepIndex: (projectId: string) => number;
   startProject: (projectId: string) => Promise<ProjectMutationResult>;
   setProjectStep: (projectId: string, stepIndex: number) => Promise<ProjectMutationResult>;
   completeProject: (projectId: string, currentStep?: number) => Promise<ProjectMutationResult>;
   resetProjectProgress: (projectId: string) => Promise<ProjectMutationResult>;
-  getProjectsWithStatus: () => (Project & { status: ProjectStatus; progress?: number })[];
+  getProjectsWithStatus: () => ProjectWithUserState[];
 };
 
 const AtlasContext = createContext<AtlasContextValue | null>(null);
@@ -143,6 +149,16 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
   const loadGeneration = useRef(0);
   const projectLoadGeneration = useRef(0);
+  const stepWriteGeneration = useRef(new Map<string, number>());
+  const projectPersistChain = useRef(new Map<string, Promise<void>>());
+  const completedProjectIds = useRef(new Set<string>());
+
+  const enqueueProjectPersist = useCallback((projectId: string, task: () => Promise<void>) => {
+    const previous = projectPersistChain.current.get(projectId) ?? Promise.resolve();
+    const next = previous.then(task, task);
+    projectPersistChain.current.set(projectId, next);
+    return next;
+  }, []);
 
   const reloadInventory = useCallback(async (options?: { silent?: boolean }) => {
     const generation = ++loadGeneration.current;
@@ -186,6 +202,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       setUserProjects([]);
       setProjectsError(null);
       setProjectsLoading(false);
+      completedProjectIds.current = new Set();
       return;
     }
 
@@ -197,16 +214,21 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const rows = userResult.data ?? [];
+    completedProjectIds.current = new Set(
+      rows.filter((row) => row.completedAt).map((row) => row.projectId),
+    );
+
     if (projectsResult.error || userResult.error) {
       setPublishedProjects(projectsResult.data ?? []);
-      setUserProjects(userResult.data ?? []);
+      setUserProjects(rows);
       setProjectsError(projectsResult.error ?? userResult.error);
       setProjectsLoading(false);
       return;
     }
 
     setPublishedProjects(projectsResult.data ?? []);
-    setUserProjects(userResult.data ?? []);
+    setUserProjects(rows);
     setProjectsError(null);
     setProjectsLoading(false);
   }, [userId]);
@@ -244,37 +266,39 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     [resolveProjectId, userProjects],
   );
 
-  const getProjectTitle = useCallback(
-    (projectId: string) => {
-      const resolved = resolveProjectId(projectId);
-      const catalogue = publishedProjects.find(
-        (project) => project.id === resolved || project.id === projectId || project.slug === projectId,
+  const getPublishedProject = useCallback(
+    (idOrSlug: string) => {
+      const resolved = resolveProjectId(idOrSlug);
+      return publishedProjects.find(
+        (project) => project.id === resolved || project.id === idOrSlug || project.slug === idOrSlug,
       );
-      if (catalogue) {
-        return catalogue.title;
-      }
-      return MOCK_PROJECTS.find((project) => project.id === projectId)?.title;
     },
     [publishedProjects, resolveProjectId],
   );
 
+  const getAuthoredStepCount = useCallback(
+    (projectId: string) => getPublishedProject(projectId)?.authoredSteps.length ?? 0,
+    [getPublishedProject],
+  );
+
   const recordProjectActivity = useCallback(
     (kind: Exclude<WorkshopActivityKind, 'component_added'>, projectId: string) => {
-      const title = getProjectTitle(projectId);
-      if (!title) {
+      const catalogue = getPublishedProject(projectId);
+      if (!catalogue) {
         return;
       }
       setRecentActivity((prev) =>
         prependActivity(prev, {
-          id: `activity-project-${projectId}-${kind}-${Date.now()}`,
+          id: `activity-project-${catalogue.id}-${kind}-${Date.now()}`,
           kind,
-          title,
+          title: catalogue.title,
           createdAt: Date.now(),
-          projectId,
+          projectId: catalogue.id,
+          projectSlug: catalogue.slug,
         }),
       );
     },
-    [getProjectTitle],
+    [getPublishedProject],
   );
 
   const addInventoryItem = useCallback(async (item: Omit<InventoryComponent, 'id'>): Promise<InventoryMutationResult> => {
@@ -375,10 +399,10 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   );
 
   const getProjectProgressPercent = useCallback(
-    (projectId: string, difficulty: Project['difficulty']) => {
-      return getUserProjectProgressPercent(getUserProject(projectId), getStepCount(difficulty));
+    (projectId: string) => {
+      return getUserProjectProgressPercent(getUserProject(projectId), getAuthoredStepCount(projectId));
     },
-    [getUserProject],
+    [getAuthoredStepCount, getUserProject],
   );
 
   const getCurrentStepIndex = useCallback(
@@ -411,18 +435,52 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       return { error: PROJECT_ERRORS.notFound };
     }
 
-    const before = getUserProject(resolved)?.currentStep;
-    const result = await updateUserProjectStep(resolved, stepIndex);
-    if (result.error || !result.data) {
-      return { error: result.error ?? PROJECT_ERRORS.save };
+    const existing = getUserProject(resolved);
+    if (!existing) {
+      return { error: PROJECT_ERRORS.notFound };
+    }
+    if (existing.completedAt || completedProjectIds.current.has(resolved)) {
+      return { error: null };
     }
 
-    persistUserProject(result.data);
-    if (before !== result.data.currentStep) {
-      recordProjectActivity('continued', resolved);
-    }
+    const step = Math.max(0, Math.floor(stepIndex));
+    const writeId = (stepWriteGeneration.current.get(resolved) ?? 0) + 1;
+    stepWriteGeneration.current.set(resolved, writeId);
+
+    persistUserProject({
+      ...existing,
+      currentStep: step,
+      updatedAt: new Date().toISOString(),
+    });
+
+    await enqueueProjectPersist(resolved, async () => {
+      if (stepWriteGeneration.current.get(resolved) !== writeId) {
+        return;
+      }
+
+      const latest = getUserProject(resolved);
+      if (!latest || latest.completedAt || completedProjectIds.current.has(resolved)) {
+        return;
+      }
+
+      const result = await updateUserProjectStep(resolved, step);
+      if (stepWriteGeneration.current.get(resolved) !== writeId) {
+        return;
+      }
+
+      if (result.error || !result.data) {
+        setToastMessage(result.error ?? PROJECT_ERRORS.save);
+        return;
+      }
+
+      persistUserProject(result.data);
+      if (existing.currentStep !== result.data.currentStep) {
+        recordProjectActivity('continued', resolved);
+      }
+    });
+
     return { error: null };
-  }, [getUserProject, persistUserProject, recordProjectActivity, resolveProjectId]);
+  }, [enqueueProjectPersist, getUserProject, persistUserProject, recordProjectActivity, resolveProjectId]);
 
   const completeProject = useCallback(async (
     projectId: string,
@@ -433,23 +491,52 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       return { error: PROJECT_ERRORS.notFound };
     }
 
-    const catalogue = publishedProjects.find((project) => project.id === resolved);
-    const mock = MOCK_PROJECTS.find((project) => project.id === projectId || project.id === catalogue?.slug);
-    const totalSteps = getStepCount(catalogue?.difficulty ?? mock?.difficulty ?? 'beginner');
+    const existing = getUserProject(resolved);
+    if (!existing) {
+      return { error: PROJECT_ERRORS.notFound };
+    }
+
+    const totalSteps = getAuthoredStepCount(resolved);
     const finalStep = currentStep ?? Math.max(0, totalSteps - 1);
+    const alreadyCompleted = Boolean(existing.completedAt);
+    const writeId = (stepWriteGeneration.current.get(resolved) ?? 0) + 1;
+    stepWriteGeneration.current.set(resolved, writeId);
 
-    const alreadyCompleted = Boolean(getUserProject(resolved)?.completedAt);
-    const result = await completeUserProject(resolved, finalStep);
-    if (result.error || !result.data) {
-      return { error: result.error ?? PROJECT_ERRORS.save };
+    if (!alreadyCompleted) {
+      completedProjectIds.current.add(resolved);
+      persistUserProject({
+        ...existing,
+        currentStep: finalStep,
+        completedAt: existing.completedAt ?? new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
     }
 
-    persistUserProject(result.data);
-    if (!alreadyCompleted && result.data.completedAt) {
-      recordProjectActivity('completed', resolved);
-    }
+    await enqueueProjectPersist(resolved, async () => {
+      const result = await completeUserProject(resolved, finalStep);
+      if (result.error || !result.data) {
+        completedProjectIds.current.delete(resolved);
+        persistUserProject(existing);
+        setToastMessage(result.error ?? PROJECT_ERRORS.save);
+        return;
+      }
+
+      completedProjectIds.current.add(resolved);
+      persistUserProject(result.data);
+      if (!alreadyCompleted && result.data.completedAt) {
+        recordProjectActivity('completed', resolved);
+      }
+    });
+
     return { error: null };
-  }, [getUserProject, persistUserProject, publishedProjects, recordProjectActivity, resolveProjectId]);
+  }, [
+    enqueueProjectPersist,
+    getAuthoredStepCount,
+    getUserProject,
+    persistUserProject,
+    recordProjectActivity,
+    resolveProjectId,
+  ]);
 
   const resetProjectProgress = useCallback(async (projectId: string): Promise<ProjectMutationResult> => {
     const resolved = resolveProjectId(projectId);
@@ -497,16 +584,16 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     return progress;
   }, [publishedProjects, userProjects]);
 
-  const getProjectsWithStatus = useCallback(() => {
-    return MOCK_PROJECTS.map((project) => {
+  const getProjectsWithStatus = useCallback((): ProjectWithUserState[] => {
+    return publishedProjects.map((project) => {
       const status = getProjectStatus(project.id);
       const progress =
         status === 'in_progress' || status === 'completed'
-          ? getProjectProgressPercent(project.id, project.difficulty)
+          ? getProjectProgressPercent(project.id)
           : undefined;
       return { ...project, status, progress };
     });
-  }, [getProjectProgressPercent, getProjectStatus]);
+  }, [getProjectProgressPercent, getProjectStatus, publishedProjects]);
 
   const value = useMemo(
     () => ({
