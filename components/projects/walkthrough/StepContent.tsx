@@ -16,6 +16,9 @@ import { useSolderiColors } from '@/context/theme-context';
 type StepContentProps = {
   blocks: StepBlock[];
   explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
+  projectSlug?: string;
+  priorWiringConnections?: StepConnection[];
+  onWiringPinchActiveChange?: (active: boolean) => void;
 };
 
 function useStepTheme() {
@@ -24,14 +27,27 @@ function useStepTheme() {
   return { colors, styles };
 }
 
-export function StepContent({ blocks, explain }: StepContentProps) {
+export function StepContent({
+  blocks,
+  explain,
+  projectSlug,
+  priorWiringConnections,
+  onWiringPinchActiveChange,
+}: StepContentProps) {
   const { styles } = useStepTheme();
   if (blocks.length === 0) return null;
 
   return (
     <View style={styles.stack}>
       {blocks.map((block, index) => (
-        <StepBlockView key={`${block.type}-${index}`} block={block} explain={explain} />
+        <StepBlockView
+          key={`${block.type}-${index}`}
+          block={block}
+          explain={explain}
+          projectSlug={projectSlug}
+          priorWiringConnections={priorWiringConnections}
+          onWiringPinchActiveChange={onWiringPinchActiveChange}
+        />
       ))}
     </View>
   );
@@ -40,9 +56,15 @@ export function StepContent({ blocks, explain }: StepContentProps) {
 function StepBlockView({
   block,
   explain,
+  projectSlug,
+  priorWiringConnections,
+  onWiringPinchActiveChange,
 }: {
   block: StepBlock;
   explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
+  projectSlug?: string;
+  priorWiringConnections?: StepConnection[];
+  onWiringPinchActiveChange?: (active: boolean) => void;
 }) {
   switch (block.type) {
     case 'text':
@@ -61,6 +83,9 @@ function StepBlockView({
           pair={block.pair}
           nodes={block.nodes}
           connections={block.connections}
+          priorConnections={priorWiringConnections}
+          projectSlug={projectSlug}
+          onPinchActiveChange={onWiringPinchActiveChange}
         />
       );
     case 'connections':

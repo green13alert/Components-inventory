@@ -28,6 +28,7 @@ import {
   type Project,
   type ProjectWalkthroughStep,
 } from '@/lib/projects';
+import { collectPriorWiringConnections } from '@/lib/wiring-diagram';
 import { useSolderiColors } from '@/context/theme-context';
 
 const STEP_SCROLL_END_TOLERANCE = 16;
@@ -89,6 +90,7 @@ export default function ProjectBuildScreen() {
   const unlockedByScrollRef = useRef(false);
   const reachedBottomStepKeyRef = useRef<string | null>(null);
   const [reachedBottomStepKey, setReachedBottomStepKey] = useState<string | null>(null);
+  const [wiringPinchActive, setWiringPinchActive] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +155,10 @@ export default function ProjectBuildScreen() {
   const currentStep = steps[currentStepIndex] ?? steps[0];
   const stepNavigationKey = currentStep?.id ?? String(currentStepIndex);
   const nextLocked = !reviewMode && reachedBottomStepKey !== stepNavigationKey;
+
+  useEffect(() => {
+    setWiringPinchActive(false);
+  }, [stepNavigationKey]);
 
   const markReachedBottom = () => {
     if (reviewMode || reachedBottomStepKeyRef.current === stepNavigationKey) {
@@ -250,6 +256,7 @@ export default function ProjectBuildScreen() {
     currentStep?.tip && !currentStep.blocks.some((block) => block.type === 'tip' && block.body === currentStep.tip)
       ? [...currentStep.blocks, { type: 'tip' as const, body: currentStep.tip }]
       : currentStep?.blocks ?? [];
+  const priorWiringConnections = collectPriorWiringConnections(steps, currentStepIndex);
   const progressPercent = reviewMode
     ? 100
     : getUserProjectProgressPercent(getUserProject(projectKey), steps.length);
@@ -505,6 +512,8 @@ export default function ProjectBuildScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
+        nestedScrollEnabled
+        scrollEnabled={!wiringPinchActive}
         onLayout={(event) => {
           updateReachedBottom({ viewportHeight: event.nativeEvent.layout.height });
         }}
@@ -541,6 +550,9 @@ export default function ProjectBuildScreen() {
           <Text style={styles.stepDescription}>{currentStep.description}</Text>
           <StepContent
             blocks={stepBlocks}
+            projectSlug={project.slug}
+            priorWiringConnections={priorWiringConnections}
+            onWiringPinchActiveChange={setWiringPinchActive}
             explain={{
               projectId: project.id,
               projectSlug: project.slug,
