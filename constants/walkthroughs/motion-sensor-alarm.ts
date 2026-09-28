@@ -16,7 +16,7 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'pir-sensor', name: 'PIR motion sensor', illustrationId: 'pir-sensor', owned: false, quantity: 1 },
   { id: 'buzzer', name: 'Buzzer', illustrationId: 'generic-module', owned: false, quantity: 1 },
   { id: 'led', name: 'LED', illustrationId: 'led', owned: false, quantity: 1 },
-  { id: 'resistor', name: 'Resistor', illustrationId: 'resistor', owned: false, quantity: 1 },
+  { id: 'resistor-220', name: '220 Ω resistor', illustrationId: 'resistor', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
   { id: 'jumper-wires', name: 'Jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 1 },
 ];
@@ -24,7 +24,7 @@ const COMPONENTS: ProjectComponent[] = [
 const NODE_ARDUINO: WiringNode = { id: 'arduino', name: 'Arduino Uno', illustrationId: 'arduino-uno' };
 const NODE_PIR: WiringNode = { id: 'pir', name: 'PIR', illustrationId: 'pir-sensor' };
 const NODE_LED: WiringNode = { id: 'led', name: 'LED', illustrationId: 'led' };
-const NODE_RESISTOR: WiringNode = { id: 'resistor', name: 'Resistor', illustrationId: 'resistor' };
+const NODE_RESISTOR: WiringNode = { id: 'resistor', name: '220 Ω resistor', illustrationId: 'resistor' };
 const NODE_BUZZER: WiringNode = { id: 'buzzer', name: 'Buzzer', illustrationId: 'generic-module' };
 
 const PIR_CONNECTIONS: StepConnection[] = [
@@ -34,8 +34,8 @@ const PIR_CONNECTIONS: StepConnection[] = [
 ];
 
 const LED_CONNECTIONS: StepConnection[] = [
-  { fromComponent: 'Arduino Uno', fromPin: 'D8', toComponent: 'Resistor', toPin: 'leg 1', signal: 'signal' },
-  { fromComponent: 'Resistor', fromPin: 'leg 2', toComponent: 'LED', toPin: 'anode', signal: 'signal' },
+  { fromComponent: 'Arduino Uno', fromPin: 'D8', toComponent: '220 Ω resistor', toPin: 'leg 1', signal: 'signal' },
+  { fromComponent: '220 Ω resistor', fromPin: 'leg 2', toComponent: 'LED', toPin: 'anode', signal: 'signal' },
   { fromComponent: 'LED', fromPin: 'cathode', toComponent: 'Arduino Uno', toPin: 'GND', signal: 'ground' },
 ];
 
@@ -253,7 +253,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What each part does',
-        body: 'The Uno is the controller. The PIR is the input. The LED is a silent visual alarm. The resistor limits LED current so D8 is not shorted to ground through the diode. The catalogue buzzer is an active buzzer: a HIGH on its signal pin makes it sound. The breadboard and jumpers are the wiring.',
+        body: 'The Uno is the controller. The PIR is the input. The LED is a silent visual alarm. The 220 Ω resistor limits LED current so D8 is not shorted to ground through the diode. The catalogue buzzer is an active buzzer: a HIGH on its signal pin makes it sound. The breadboard and jumpers are the wiring.',
       },
       { type: 'components', items: COMPONENTS },
       {
@@ -273,8 +273,13 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     blocks: [
       {
         type: 'text',
+        heading: 'Find the breadboard power rails',
+        body: 'Along each long edge of the breadboard there is a + rail (often marked red) and a − rail (often marked blue or black). Every hole in one + rail is electrically connected to the others in that same + rail. The same is true for one − rail. + is not connected to −.',
+      },
+      {
+        type: 'text',
         heading: 'What to set up',
-        body: 'Place the Uno and breadboard on the desk. Run a jumper from Uno 5V to a breadboard + rail, and from Uno GND to a breadboard − rail. Later parts will tap those rails instead of crowding the Uno headers.',
+        body: 'Place the Uno and breadboard on the desk. Plug one jumper from the Uno 5V pin into any hole on a + rail. Plug another jumper from an Uno GND pin into any hole on a − rail on the same side of the board. The PIR and buzzer will later take 5V and GND from these rails. Leave D2, D8, and D9 empty for now.',
       },
       {
         type: 'text',
@@ -283,12 +288,12 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'test',
-        body: 'Plug in USB. Confirm the Uno power LED is on. Leave D2, D8, and D9 unwired until the next steps.',
+        body: 'Plug in USB. Confirm the Uno power LED is on. Check that D2, D8, and D9 still have no wires in them.',
       },
       {
         type: 'expected',
         heading: 'Expected result',
-        body: 'The board is powered, 5V and GND rails are continuous, and no output is connected yet. Nothing should get hot.',
+        body: 'The board is powered, the + rail is 5V, the − rail is GND, and no sensor or output is connected yet. Nothing should get hot.',
       },
     ],
   },
@@ -327,13 +332,13 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 1,
     stageTitle: STAGE_CIRCUIT,
     title: 'Connect the LED',
-    description: 'The LED is the silent alarm. It needs the BOM resistor in series on D8 so the pin is not shorted to ground.',
+    description: 'The LED is the silent alarm. It needs the 220 Ω resistor in series on D8 so the pin is not shorted to ground.',
     tip: null,
     blocks: [
       {
         type: 'text',
         heading: 'Polarity and current limit',
-        body: 'The longer LED lead is the anode (toward D8 through the resistor). The shorter lead, or the flat side of the plastic, is the cathode to GND. The resistor drops the extra voltage so LED current stays in a safe range for an Uno pin.',
+        body: 'The longer LED lead is the anode (toward D8 through the 220 Ω resistor). The shorter lead, or the flat side of the plastic, is the cathode to GND. The 220 Ω resistor drops the extra voltage so LED current stays in a safe range for an Uno pin. Use this one resistor only — do not add a second.',
       },
       {
         type: 'wiring',
@@ -342,12 +347,12 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'connections',
-        summary: 'LED on D8 through the BOM resistor',
+        summary: 'LED on D8 through the 220 Ω resistor',
         rows: LED_CONNECTIONS,
       },
       {
         type: 'warning',
-        body: 'Do not wire the LED from D8 straight to GND. Without the resistor the pin can source more current than it should.',
+        body: 'Do not wire the LED from D8 straight to GND. Without the 220 Ω resistor the pin can source more current than it should.',
       },
     ],
   },
@@ -408,7 +413,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Check',
-        body: 'You can trace Arduino 5V to PIR VCC and buzzer VCC, Arduino GND to PIR, LED cathode, and buzzer GND, D2 to PIR OUT, D8 through the resistor to the LED anode, and D9 to the buzzer signal pin.',
+        body: 'You can trace Arduino 5V to PIR VCC and buzzer VCC, Arduino GND to PIR, LED cathode, and buzzer GND, D2 to PIR OUT, D8 through the 220 Ω resistor to the LED anode, and D9 to the buzzer signal pin.',
       },
     ],
   },
@@ -530,7 +535,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Expected result',
-        body: 'The LED turns on with “Motion detected” and turns off with “No motion.” If it never lights, check anode → resistor → D8 and cathode → GND.',
+        body: 'The LED turns on with “Motion detected” and turns off with “No motion.” If it never lights, check anode → 220 Ω resistor → D8 and cathode → GND.',
       },
     ],
   },
@@ -596,8 +601,13 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     blocks: [
       {
         type: 'text',
+        heading: 'Before you upload',
+        body: 'Install the Arduino IDE if you do not already have it. Connect the Uno with a data-capable USB cable. In the IDE, set Tools → Board to Arduino Uno and Tools → Port to the COM/serial port that appeared when you plugged the board in.',
+      },
+      {
+        type: 'text',
         heading: 'How to upload',
-        body: 'Paste the combined sketch from the previous step. Select Arduino Uno and the correct COM/serial port. Upload, then open Serial Monitor at 9600 baud. Do not walk in front of the PIR until setup() finishes.',
+        body: 'Paste the combined sketch from the previous step. Click Upload, then open Serial Monitor at 9600 baud. Do not walk in front of the PIR until setup() finishes.',
       },
       {
         type: 'test',
@@ -684,7 +694,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
           },
           {
             problem: 'Serial detects motion but outputs stay off',
-            solution: 'The condition is working. Check D8 through the resistor to the LED anode, and D9 to the buzzer signal pin.',
+            solution: 'The condition is working. Check D8 through the 220 Ω resistor to the LED anode, and D9 to the buzzer signal pin.',
           },
         ],
       },
@@ -709,7 +719,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         items: [
           {
             problem: 'LED never lights',
-            solution: 'Confirm anode → resistor → D8 and cathode → GND. Swap the LED if you still see nothing — polarity may be reversed.',
+            solution: 'Confirm anode → 220 Ω resistor → D8 and cathode → GND. Swap the LED if you still see nothing — polarity may be reversed.',
           },
           {
             problem: 'Buzzer silent',
