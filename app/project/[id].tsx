@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { substituteNameFromInventory } from '@/components/projects/component-row-state';
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
 import { getCatalogueComponent } from '@/constants/component-catalogue';
@@ -20,12 +21,14 @@ import { getProjectImage } from '@/constants/projects';
 import {
   fetchProjectBySlug,
   fetchProjectComponents,
+  fetchProjectCompatibility,
   getUserProjectProgressPercent,
   getUserProjectStatus,
   matchProjectInventory,
   PROJECT_ERRORS,
   type Project,
   type ProjectBomComponent,
+  type ProjectCompatibilityData,
 } from '@/lib/projects';
 import { useAtlas } from '@/context/atlas-context';
 import { useSolderiColors } from '@/context/theme-context';
@@ -46,6 +49,12 @@ export default function ProjectDetailScreen() {
   const [components, setComponents] = useState<ProjectBomComponent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [compatibility, setCompatibility] = useState<ProjectCompatibilityData | null>(null);
+  const [compatibilityError, setCompatibilityError] = useState<string | null>(null);
+  const inventoryComponentIds = useMemo(
+    () => [...new Set(inventory.flatMap((item) => (item.componentId ? [item.componentId] : [])))].sort(),
+    [inventory],
+  );
   const difficultyColors = {
     beginner: colors.success,
     intermediate: colors.warning,
@@ -65,6 +74,8 @@ export default function ProjectDetailScreen() {
       }
 
       setLoading(true);
+      setCompatibility(null);
+      setCompatibilityError(null);
       const result = await fetchProjectBySlug(slug);
       if (cancelled) {
         return;
@@ -95,6 +106,30 @@ export default function ProjectDetailScreen() {
       cancelled = true;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!project) {
+      return;
+    }
+
+    let cancelled = false;
+    void fetchProjectCompatibility([project.id], inventoryComponentIds).then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (result.error || !result.data) {
+        setCompatibility(null);
+        setCompatibilityError(result.error ?? PROJECT_ERRORS.generic);
+        return;
+      }
+      setCompatibility(result.data);
+      setCompatibilityError(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [inventoryComponentIds, project]);
 
   if (loading) {
     return (
@@ -127,7 +162,7 @@ export default function ProjectDetailScreen() {
       ? project.learningObjectives
       : getProjectLearningPoints(project);
   const stepCount = project.authoredSteps.length;
-  const match = matchProjectInventory(components, inventory);
+  const match = matchProjectInventory(components, inventory, compatibilityError ? null : compatibility);
   const userProject = getUserProject(project.id);
   const status = getUserProjectStatus(userProject);
   const progress = getUserProjectProgressPercent(userProject, stepCount);
@@ -277,7 +312,9 @@ export default function ProjectDetailScreen() {
               <Text style={styles.sectionTitle}>Components</Text>
               <Text style={styles.componentsCount}>{componentsCountLabel}</Text>
             </View>
-            {error ? <Text style={styles.overviewText}>{error}</Text> : null}
+            {error || compatibilityError ? (
+              <Text style={styles.overviewText}>{error ?? compatibilityError}</Text>
+            ) : null}
             {!inventoryLoading && match.matchPercentage != null && match.missingCount > 0 ? (
               <View style={styles.missingBanner}>
                 <Ionicons name="warning-outline" size={16} color={colors.warning} />
@@ -307,6 +344,15 @@ export default function ProjectDetailScreen() {
                       ownedQuantity: component.ownedQuantity,
                       missingQuantity: component.missingQuantity,
                       isOwned: component.isOwned,
+                      coverage: component.coverage,
+                      substituteName:
+                        component.coverage === 'direct_substitute'
+                          ? substituteNameFromInventory(
+                              component.satisfiedByComponentId,
+                              inventory,
+                              (catalogueId) => getCatalogueComponent(catalogueId)?.name,
+                            )
+                          : null,
                     }}
                   />
                 ))

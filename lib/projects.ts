@@ -1,4 +1,14 @@
-import type { InventoryComponent } from '@/constants/inventory';
+import {
+  emptyProjectCompatibility,
+  type CompatibilityChangeKind,
+  type CompatibilityRequirement,
+  type ProjectCompatibilityData,
+  type RequirementConstraint,
+  type RequirementPinRole,
+  type ReviewAssessment,
+  type SubstitutionChange,
+  type SubstitutionReview,
+} from '@/lib/compatibility';
 import { getProjectImage } from '@/constants/projects';
 import type { Project as WalkthroughProject, ProjectStatus } from '@/constants/projects-data';
 import { STEP_BLOCK_TYPES, type StepBlock, type StepCodeContent } from '@/constants/walkthrough-content';
@@ -31,26 +41,14 @@ export type ProjectBomComponent = {
   sortOrder: number;
 };
 
-export type MatchedBomComponent = {
-  componentId: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  requiredQuantity: number;
-  ownedQuantity: number;
-  missingQuantity: number;
-  isOwned: boolean;
-};
+export type {
+  MatchedBomComponent,
+  ProjectCompatibilityData,
+  ProjectInventoryMatch,
+  RequirementCoverage,
+} from '@/lib/compatibility';
 
-export type ProjectInventoryMatch = {
-  lines: MatchedBomComponent[];
-  totalRequired: number;
-  totalOwned: number;
-  totalMissing: number;
-  ownedCount: number;
-  missingCount: number;
-  matchPercentage: number | null;
-};
+export { emptyProjectCompatibility, matchProjectInventory } from '@/lib/compatibility';
 
 export type Project = {
   id: string;
@@ -444,57 +442,258 @@ export function getWalkthroughSketch(steps: ProjectWalkthroughStep[]): StepCodeC
   return null;
 }
 
-export function matchProjectInventory(
-  bom: ProjectBomComponent[],
-  inventory: InventoryComponent[],
-): ProjectInventoryMatch {
-  if (bom.length === 0) {
-    return {
-      lines: [],
-      totalRequired: 0,
-      totalOwned: 0,
-      totalMissing: 0,
-      ownedCount: 0,
-      missingCount: 0,
-      matchPercentage: null,
-    };
+const REQUIREMENT_SELECT =
+  'id, project_component_id, substitution_policy, project_components!inner ( component_id ), project_requirement_constraints ( capability, value ), project_requirement_pin_roles ( role_key, pin_function, canonical_label )';
+
+const REVIEW_SELECT =
+  'requirement_id, component_id, assessed_result, substitution_review_changes ( change_kind, summary, step_sort_order, payload )';
+
+const CAPABILITY_SELECT = 'component_id, capability, value';
+
+const PIN_PROFILE_SELECT = 'component_id, pin_profile_pins ( label, pin_function )';
+
+const REVIEW_ASSESSMENTS: readonly ReviewAssessment[] = ['direct', 'conditional', 'incompatible'];
+
+const CHANGE_KINDS: readonly CompatibilityChangeKind[] = [
+  'board_package',
+  'pin_map',
+  'code',
+  'wiring',
+  'diagram',
+  'supply',
+  'troubleshooting',
+  'visual',
+  'mechanical',
+];
+
+function asRows<T>(value: T | T[] | null | undefined): T[] {
+  if (value == null) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+function isPolicy(value: unknown): value is CompatibilityRequirement['policy'] {
+  return value === 'exact' || value === 'direct' || value === 'conditional';
+}
+
+function isReviewAssessment(value: unknown): value is ReviewAssessment {
+  return typeof value === 'string' && REVIEW_ASSESSMENTS.includes(value as ReviewAssessment);
+}
+
+function isChangeKind(value: unknown): value is CompatibilityChangeKind {
+  return typeof value === 'string' && CHANGE_KINDS.includes(value as CompatibilityChangeKind);
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+/**
+ * Loads requirement, capability, pin, and review rows for the given projects
+ * and candidate components. A query failure returns no compatibility data.
+ * Callers must then keep exact matching and must not invent a substitute.
+ */
+export async function fetchProjectCompatibility(
+  projectIds: readonly string[],
+  candidateComponentIds: readonly string[],
+): Promise<ProjectQueryResult<ProjectCompatibilityData>> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
+    return { data: null, error: PROJECT_ERRORS.unauthenticated };
   }
 
-  const ownedByComponentId = new Map<string, number>();
-  for (const item of inventory) {
-    if (!item.componentId) {
+  const ids = [...new Set(projectIds.filter((id) => id.length > 0))];
+  if (ids.length === 0) {
+    return { data: emptyProjectCompatibility(), error: null };
+  }
+
+  const { data, error } = await supabase.from('project_requirements').select(REQUIREMENT_SELECT).in('project_id', ids);
+
+  if (error) {
+    return { data: null, error: mapPersistError(error.message, PROJECT_ERRORS.generic) };
+  }
+
+  const requirementsByBomLineId = new Map<string, CompatibilityRequirement>();
+  const canonicalIds: string[] = [];
+
+  for (const row of (data as unknown[] | null) ?? []) {
+    if (!isRecord(row)) {
       continue;
     }
-    ownedByComponentId.set(item.componentId, (ownedByComponentId.get(item.componentId) ?? 0) + item.quantity);
+    const requirementId = readString(row.id);
+    const bomLineId = readString(row.project_component_id);
+    const policy = row.substitution_policy;
+    const bomEmbed = asRows(row.project_components).find(isRecord);
+    const canonicalComponentId = bomEmbed ? readString(bomEmbed.component_id) : null;
+    if (!requirementId || !bomLineId || !canonicalComponentId || !isPolicy(policy)) {
+      continue;
+    }
+
+    const constraints: RequirementConstraint[] = [];
+    for (const constraint of asRows(row.project_requirement_constraints)) {
+      if (!isRecord(constraint)) {
+        continue;
+      }
+      const capability = readString(constraint.capability);
+      const value = readString(constraint.value);
+      if (capability && value) {
+        constraints.push({ capability, value });
+      }
+    }
+
+    const pinRoles: RequirementPinRole[] = [];
+    for (const pinRole of asRows(row.project_requirement_pin_roles)) {
+      if (!isRecord(pinRole)) {
+        continue;
+      }
+      const roleKey = readString(pinRole.role_key);
+      const pinFunction = readString(pinRole.pin_function);
+      const canonicalLabel = readString(pinRole.canonical_label);
+      if (roleKey && pinFunction && canonicalLabel) {
+        pinRoles.push({ roleKey, pinFunction, canonicalLabel });
+      }
+    }
+
+    canonicalIds.push(canonicalComponentId);
+    requirementsByBomLineId.set(bomLineId, {
+      id: requirementId,
+      policy,
+      canonicalComponentId,
+      constraints,
+      pinRoles,
+    });
   }
 
-  const lines = bom.map((line) => {
-    const ownedQuantity = ownedByComponentId.get(line.componentId) ?? 0;
-    const missingQuantity = Math.max(line.quantity - ownedQuantity, 0);
+  const requirementIds = [...new Set([...requirementsByBomLineId.values()].map((requirement) => requirement.id))];
+  const reviews: SubstitutionReview[] = [];
 
-    return {
-      componentId: line.componentId,
-      slug: line.slug,
-      name: line.name,
-      description: line.description,
-      requiredQuantity: line.quantity,
-      ownedQuantity,
-      missingQuantity,
-      isOwned: ownedQuantity >= line.quantity,
-    };
-  });
+  if (requirementIds.length > 0) {
+    const reviewResult = await supabase
+      .from('requirement_substitution_reviews')
+      .select(REVIEW_SELECT)
+      .in('requirement_id', requirementIds);
 
-  const ownedCount = lines.filter((line) => line.isOwned).length;
-  const missingCount = lines.length - ownedCount;
+    if (reviewResult.error) {
+      return { data: null, error: mapPersistError(reviewResult.error.message, PROJECT_ERRORS.generic) };
+    }
+
+    for (const row of (reviewResult.data as unknown[] | null) ?? []) {
+      if (!isRecord(row)) {
+        continue;
+      }
+      const requirementId = readString(row.requirement_id);
+      const componentId = readString(row.component_id);
+      if (!requirementId || !componentId || !isReviewAssessment(row.assessed_result)) {
+        continue;
+      }
+
+      const rawChanges = asRows(row.substitution_review_changes);
+      const changes: SubstitutionChange[] = [];
+      let changesAreReadable = true;
+      for (const change of rawChanges) {
+        if (!isRecord(change) || !isChangeKind(change.change_kind)) {
+          changesAreReadable = false;
+          break;
+        }
+        const summary = readString(change.summary);
+        if (!summary) {
+          changesAreReadable = false;
+          break;
+        }
+        const stepSortOrder =
+          typeof change.step_sort_order === 'number' && Number.isFinite(change.step_sort_order)
+            ? change.step_sort_order
+            : null;
+        const payload = isRecord(change.payload) ? change.payload : undefined;
+        changes.push({
+          changeKind: change.change_kind,
+          summary,
+          stepSortOrder,
+          payload,
+        });
+      }
+      if (!changesAreReadable) {
+        continue;
+      }
+
+      reviews.push({
+        requirementId,
+        componentId,
+        assessedResult: row.assessed_result,
+        changes,
+      });
+    }
+  }
+
+  const componentIds = [
+    ...new Set(
+      [...canonicalIds, ...candidateComponentIds, ...reviews.map((review) => review.componentId)].filter(
+        (id) => id.length > 0,
+      ),
+    ),
+  ];
+  const componentsById = new Map<string, { componentId: string; capabilities: { capability: string; value: string }[]; pins: { label: string; pinFunction: string }[] }>();
+  for (const componentId of componentIds) {
+    componentsById.set(componentId, { componentId, capabilities: [], pins: [] });
+  }
+
+  if (componentIds.length > 0) {
+    const [capabilityResult, pinResult] = await Promise.all([
+      supabase.from('component_capabilities').select(CAPABILITY_SELECT).in('component_id', componentIds),
+      supabase.from('pin_profiles').select(PIN_PROFILE_SELECT).in('component_id', componentIds),
+    ]);
+
+    if (capabilityResult.error) {
+      return { data: null, error: mapPersistError(capabilityResult.error.message, PROJECT_ERRORS.generic) };
+    }
+    if (pinResult.error) {
+      return { data: null, error: mapPersistError(pinResult.error.message, PROJECT_ERRORS.generic) };
+    }
+
+    for (const row of (capabilityResult.data as unknown[] | null) ?? []) {
+      if (!isRecord(row)) {
+        continue;
+      }
+      const componentId = readString(row.component_id);
+      const capability = readString(row.capability);
+      const value = readString(row.value);
+      const component = componentId ? componentsById.get(componentId) : undefined;
+      if (!component || !capability || !value) {
+        continue;
+      }
+      component.capabilities.push({ capability, value });
+    }
+
+    for (const row of (pinResult.data as unknown[] | null) ?? []) {
+      if (!isRecord(row)) {
+        continue;
+      }
+      const componentId = readString(row.component_id);
+      const component = componentId ? componentsById.get(componentId) : undefined;
+      if (!component) {
+        continue;
+      }
+      for (const pin of asRows(row.pin_profile_pins)) {
+        if (!isRecord(pin)) {
+          continue;
+        }
+        const label = readString(pin.label);
+        const pinFunction = readString(pin.pin_function);
+        if (label && pinFunction) {
+          component.pins.push({ label, pinFunction });
+        }
+      }
+    }
+  }
 
   return {
-    lines,
-    totalRequired: lines.length,
-    totalOwned: lines.reduce((sum, line) => sum + line.ownedQuantity, 0),
-    totalMissing: lines.reduce((sum, line) => sum + line.missingQuantity, 0),
-    ownedCount,
-    missingCount,
-    matchPercentage: (ownedCount / lines.length) * 100,
+    data: {
+      requirementsByBomLineId,
+      componentsById,
+      reviews,
+    },
+    error: null,
   };
 }
 

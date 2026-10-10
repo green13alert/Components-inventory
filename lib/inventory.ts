@@ -1,5 +1,9 @@
 import { getCatalogueComponent } from '@/constants/component-catalogue';
-import type { ComponentCategory, InventoryComponent } from '@/constants/inventory';
+import {
+  INVENTORY_CATEGORY_IDS,
+  type ComponentCategory,
+  type InventoryComponent,
+} from '@/constants/inventory';
 import { supabase } from '@/lib/supabase';
 
 export const INVENTORY_ERRORS = {
@@ -20,15 +24,6 @@ export type InventoryQueryResult<T> = {
 type InventoryMutationResult = {
   error: string | null;
 };
-
-const INVENTORY_CATEGORIES: Exclude<ComponentCategory, 'all'>[] = [
-  'microcontrollers',
-  'sensors',
-  'actuators',
-  'displays',
-  'power',
-  'modules',
-];
 
 const INVENTORY_SELECT =
   'id, component_id, quantity, created_at, components!inner ( slug, name, category, description )';
@@ -70,7 +65,7 @@ async function getAuthenticatedUserId(): Promise<string | null> {
 }
 
 function isInventoryCategory(value: string): value is Exclude<ComponentCategory, 'all'> {
-  return INVENTORY_CATEGORIES.includes(value as Exclude<ComponentCategory, 'all'>);
+  return INVENTORY_CATEGORY_IDS.includes(value as Exclude<ComponentCategory, 'all'>);
 }
 
 function unwrapComponent(value: InventoryRow['components']): CatalogueRow | null {

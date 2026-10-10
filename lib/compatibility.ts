@@ -1,7 +1,7 @@
 /**
  * Pure compatibility evaluation for one project requirement and one inventory component.
  *
- * This module does not query Supabase and is not used by matchProjectInventory().
+ * This module does not query Supabase.
  * Authored capability rows, pin rows, and substitution reviews are inputs.
  * Missing rows stay unknown. They are never filled in from names or categories.
  */
@@ -573,4 +573,213 @@ export function evaluateComponentCompatibility(
       changes,
     }),
   )
+}
+
+export type RequirementCoverage = 'exact' | 'direct_substitute' | 'none'
+
+export type MatchableBomLine = {
+  id: string
+  componentId: string
+  slug: string
+  name: string
+  description: string | null
+  quantity: number
+  sortOrder: number
+}
+
+export type MatchedBomComponent = {
+  componentId: string
+  slug: string
+  name: string
+  description: string | null
+  requiredQuantity: number
+  /** Owned quantity of the canonical component, not of a substitute. */
+  ownedQuantity: number
+  missingQuantity: number
+  isOwned: boolean
+  coverage: RequirementCoverage
+  /** Canonical id, approved substitute id, or null when the line is uncovered. */
+  satisfiedByComponentId: string | null
+}
+
+export type ProjectInventoryMatch = {
+  lines: MatchedBomComponent[]
+  totalRequired: number
+  totalOwned: number
+  totalMissing: number
+  ownedCount: number
+  missingCount: number
+  matchPercentage: number | null
+}
+
+export type ProjectCompatibilityData = {
+  requirementsByBomLineId: ReadonlyMap<string, CompatibilityRequirement>
+  componentsById: ReadonlyMap<string, CompatibilityComponent>
+  reviews: readonly SubstitutionReview[]
+}
+
+type InventoryStock = {
+  componentId?: string
+  quantity: number
+}
+
+export function emptyProjectCompatibility(): ProjectCompatibilityData {
+  return {
+    requirementsByBomLineId: new Map(),
+    componentsById: new Map(),
+    reviews: [],
+  }
+}
+
+function ownedTotals(inventory: readonly InventoryStock[]): Map<string, number> {
+  const totals = new Map<string, number>()
+  for (const item of inventory) {
+    if (!item.componentId || !Number.isFinite(item.quantity) || item.quantity <= 0) {
+      continue
+    }
+    totals.set(item.componentId, (totals.get(item.componentId) ?? 0) + item.quantity)
+  }
+  return totals
+}
+
+function componentFacts(
+  componentId: string,
+  componentsById: ReadonlyMap<string, CompatibilityComponent>,
+  quantity: number | undefined,
+): CompatibilityComponent {
+  const known = componentsById.get(componentId)
+  return {
+    componentId,
+    capabilities: known?.capabilities ?? [],
+    pins: known?.pins ?? [],
+    quantity,
+  }
+}
+
+function reviewFor(
+  reviews: readonly SubstitutionReview[],
+  requirementId: string,
+  componentId: string,
+): SubstitutionReview | null {
+  return (
+    reviews.find((review) => review.requirementId === requirementId && review.componentId === componentId) ??
+    null
+  )
+}
+
+/**
+ * Exact catalogue ids are allocated first. A different owned part can cover a
+ * line only when the evaluator's direct-substitute result explicitly allows it.
+ * One owned unit is never allocated to two lines. Missing compatibility data
+ * does not create a substitute.
+ */
+export function matchProjectInventory(
+  bom: readonly MatchableBomLine[],
+  inventory: readonly InventoryStock[],
+  compatibility?: ProjectCompatibilityData | null,
+): ProjectInventoryMatch {
+  if (bom.length === 0) {
+    return {
+      lines: [],
+      totalRequired: 0,
+      totalOwned: 0,
+      totalMissing: 0,
+      ownedCount: 0,
+      missingCount: 0,
+      matchPercentage: null,
+    }
+  }
+
+  const totals = ownedTotals(inventory)
+  const remaining = new Map(totals)
+  const coverageByLineId = new Map<string, { coverage: RequirementCoverage; satisfiedByComponentId: string }>()
+  const ordered = bom
+    .map((line, index) => ({ line, index }))
+    .sort((a, b) => a.line.sortOrder - b.line.sortOrder || a.index - b.index)
+
+  for (const { line } of ordered) {
+    const available = remaining.get(line.componentId) ?? 0
+    if (available < line.quantity) {
+      continue
+    }
+    remaining.set(line.componentId, available - line.quantity)
+    coverageByLineId.set(line.id, {
+      coverage: 'exact',
+      satisfiedByComponentId: line.componentId,
+    })
+  }
+
+  if (compatibility) {
+    const candidateIds = [...remaining.keys()].sort()
+    for (const { line } of ordered) {
+      if (coverageByLineId.has(line.id)) {
+        continue
+      }
+      const stored = compatibility.requirementsByBomLineId.get(line.id)
+      if (!stored || stored.canonicalComponentId !== line.componentId) {
+        continue
+      }
+      const requirement: CompatibilityRequirement = {
+        ...stored,
+        quantity: line.quantity,
+      }
+      const canonical = componentFacts(line.componentId, compatibility.componentsById, undefined)
+
+      for (const candidateId of candidateIds) {
+        if (candidateId === line.componentId) {
+          continue
+        }
+        const available = remaining.get(candidateId) ?? 0
+        if (available < line.quantity) {
+          continue
+        }
+        const result = evaluateComponentCompatibility({
+          requirement,
+          canonical,
+          candidate: componentFacts(candidateId, compatibility.componentsById, available),
+          review: reviewFor(compatibility.reviews, requirement.id, candidateId),
+        })
+        if (!result.safeToPresentAsSubstitute) {
+          continue
+        }
+        remaining.set(candidateId, available - line.quantity)
+        coverageByLineId.set(line.id, {
+          coverage: 'direct_substitute',
+          satisfiedByComponentId: candidateId,
+        })
+        break
+      }
+    }
+  }
+
+  const lines = bom.map((line) => {
+    const ownedQuantity = totals.get(line.componentId) ?? 0
+    const satisfied = coverageByLineId.get(line.id)
+    const isOwned = satisfied != null
+    return {
+      componentId: line.componentId,
+      slug: line.slug,
+      name: line.name,
+      description: line.description,
+      requiredQuantity: line.quantity,
+      ownedQuantity,
+      missingQuantity: isOwned ? 0 : Math.max(line.quantity - ownedQuantity, 0),
+      isOwned,
+      coverage: satisfied?.coverage ?? 'none',
+      satisfiedByComponentId: satisfied?.satisfiedByComponentId ?? null,
+    }
+  })
+
+  const ownedCount = lines.filter((line) => line.isOwned).length
+  const missingCount = lines.length - ownedCount
+
+  return {
+    lines,
+    totalRequired: lines.length,
+    totalOwned: lines.reduce((sum, line) => sum + line.ownedQuantity, 0),
+    totalMissing: lines.reduce((sum, line) => sum + line.missingQuantity, 0),
+    ownedCount,
+    missingCount,
+    matchPercentage: (ownedCount / lines.length) * 100,
+  }
 }

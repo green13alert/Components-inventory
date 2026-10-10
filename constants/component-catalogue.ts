@@ -57,8 +57,8 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'esp8266',
     name: 'ESP8266',
-    aliases: ['esp-01', 'nodemcu', 'esp 8266', 'esp-8266'],
-    description: 'Wi-Fi microcontroller module',
+    aliases: ['esp 8266', 'esp-8266'],
+    description: 'Wi-Fi microcontroller',
     category: 'microcontrollers',
     type: 'development_board',
     image: 'generic-board',
@@ -66,7 +66,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'raspberry-pi-pico',
     name: 'Raspberry Pi Pico',
-    aliases: ['pico', 'rp2040', 'pi pico'],
+    aliases: ['pico', 'pi pico', 'rp2040'],
     description: 'RP2040 microcontroller board',
     category: 'microcontrollers',
     type: 'development_board',
@@ -138,7 +138,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'bmp280',
     name: 'BMP280',
-    aliases: ['bme280', 'barometer', 'pressure sensor'],
+    aliases: ['barometer', 'pressure sensor'],
     description: 'Pressure & temperature sensor',
     category: 'sensors',
     type: 'pressure',
@@ -227,9 +227,9 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   },
   {
     id: 'buzzer',
-    name: 'Piezo Buzzer',
-    aliases: ['buzzer', 'piezo', 'active buzzer'],
-    description: 'Audio indicator module',
+    name: 'Active buzzer',
+    aliases: ['buzzer', 'active buzzer', 'piezo buzzer'],
+    description: 'Active buzzer. A HIGH on the signal pin makes it sound.',
     category: 'actuators',
     type: 'buzzer',
     image: 'generic-module',
@@ -363,7 +363,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'resistor',
     name: 'Resistor',
-    aliases: ['resistors', '10k resistor'],
+    aliases: ['resistors'],
     description: 'Through-hole resistor',
     category: 'modules',
     type: 'passive',
@@ -396,6 +396,168 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     type: 'prototyping',
     image: 'jumper-wires',
   },
+  {
+    id: 'resistor-100',
+    name: '100 Ω resistor',
+    aliases: ['100 ohm', '100ohm', '100 resistor'],
+    description: '100 Ω through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-330',
+    name: '330 Ω resistor',
+    aliases: ['330 ohm', '330ohm', '330 resistor'],
+    description: '330 Ω through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-470',
+    name: '470 Ω resistor',
+    aliases: ['470 ohm', '470ohm', '470 resistor'],
+    description: '470 Ω through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-1k',
+    name: '1 kΩ resistor',
+    aliases: ['1k', '1k ohm', '1 kohm', '1k resistor'],
+    description: '1 kΩ through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-2k2',
+    name: '2.2 kΩ resistor',
+    aliases: ['2.2k', '2.2 kohm', '2k2', '2.2k resistor'],
+    description: '2.2 kΩ through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-4k7',
+    name: '4.7 kΩ resistor',
+    aliases: ['4.7k', '4.7 kohm', '4k7', '4.7k resistor'],
+    description: '4.7 kΩ through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-10k',
+    name: '10 kΩ resistor',
+    aliases: ['10k', '10k ohm', '10 kohm', '10k resistor'],
+    description: '10 kΩ through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-47k',
+    name: '47 kΩ resistor',
+    aliases: ['47k', '47k ohm', '47 kohm', '47k resistor'],
+    description: '47 kΩ through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'resistor-100k',
+    name: '100 kΩ resistor',
+    aliases: ['100k', '100k ohm', '100 kohm', '100k resistor'],
+    description: '100 kΩ through-hole resistor',
+    category: 'modules',
+    type: 'passive',
+    image: 'resistor',
+  },
+  {
+    id: 'capacitor-100nf',
+    name: '100 nF ceramic capacitor',
+    aliases: ['100nf', '100 nf', '0.1uf ceramic', 'ceramic capacitor'],
+    description: '100 nF ceramic capacitor',
+    category: 'modules',
+    type: 'passive',
+    image: 'generic-module',
+  },
+  {
+    id: 'capacitor-10uf',
+    name: '10 µF electrolytic capacitor',
+    aliases: ['10uf', '10 uf electrolytic', '10 microfarad'],
+    description: '10 µF polarised electrolytic capacitor',
+    category: 'modules',
+    type: 'passive',
+    image: 'generic-module',
+  },
+  {
+    id: 'capacitor-100uf',
+    name: '100 µF electrolytic capacitor',
+    aliases: ['100uf', '100 uf electrolytic', '100 microfarad'],
+    description: '100 µF polarised electrolytic capacitor',
+    category: 'modules',
+    type: 'passive',
+    image: 'generic-module',
+  },
+  {
+    id: 'button-tactile',
+    name: 'Tactile push button',
+    aliases: ['tactile button', 'push button', 'momentary button'],
+    description: 'Momentary push button',
+    category: 'modules',
+    type: 'button',
+    image: 'generic-module',
+  },
+  {
+    id: 'potentiometer-10k',
+    name: '10 kΩ potentiometer',
+    aliases: ['10k potentiometer', '10k pot', 'potentiometer'],
+    description: '10 kΩ potentiometer, distinct from a fixed 10 kΩ part',
+    category: 'modules',
+    type: 'potentiometer',
+    image: 'generic-module',
+  },
+  {
+    id: 'esp32-cam',
+    name: 'AI-Thinker ESP32-CAM',
+    aliases: ['esp32-cam', 'esp32 cam', 'esp32cam'],
+    description: 'Camera development board, not an ESP32 DevKit',
+    category: 'microcontrollers',
+    type: 'development_board',
+    image: 'generic-board',
+  },
+  {
+    id: 'raspberry-pi-pico-w',
+    name: 'Raspberry Pi Pico W',
+    aliases: ['pico w', 'pico-w', 'picow'],
+    description: 'RP2040 microcontroller board with wireless',
+    category: 'microcontrollers',
+    type: 'development_board',
+    image: 'generic-board',
+  },
+  {
+    id: 'raspberry-pi-4',
+    name: 'Raspberry Pi 4 Model B',
+    aliases: ['raspberry pi 4', 'pi 4', 'pi 4 model b'],
+    description: 'Linux single-board computer, RAM size not specified',
+    category: 'computers',
+    type: 'single_board_computer',
+    image: 'generic-board',
+  },
+  {
+    id: 'raspberry-pi-5',
+    name: 'Raspberry Pi 5',
+    aliases: ['raspberry pi 5', 'pi 5'],
+    description: 'Linux single-board computer, not interchangeable with another Pi model',
+    category: 'computers',
+    type: 'single_board_computer',
+    image: 'generic-board',
+  },
 ];
 
 const FEATURED_IDS = [
@@ -410,11 +572,18 @@ const FEATURED_IDS = [
 ] as const;
 
 function compact(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  return value.toLowerCase().replace(/[^a-z0-9.]+/g, '');
 }
 
 function normalize(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function containsToken(haystack: string, token: string): boolean {
+  if (token.length < 2) {
+    return haystack.split(' ').includes(token);
+  }
+  return haystack.includes(token);
 }
 
 function searchableText(entry: CatalogueComponent): string {
@@ -448,7 +617,7 @@ function scoreEntry(entry: CatalogueComponent, query: string): number {
   if (qCompact.length < 3) return 0;
 
   if (qCompact.startsWith(nameCompact) && nameCompact.length >= 4) return 74;
-  if (tokens.every((token) => haystack.includes(token))) return 70;
+  if (tokens.every((token) => containsToken(haystack, token))) return 70;
   if (haystackCompact.includes(qCompact)) return 62;
   if (haystack.includes(qNorm)) return 55;
   return 0;

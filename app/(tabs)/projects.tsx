@@ -21,10 +21,13 @@ import {
 } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
 import {
+  fetchProjectCompatibility,
   getUserProjectProgressPercent,
   getUserProjectStatus,
   matchProjectInventory,
+  PROJECT_ERRORS,
   type Project,
+  type ProjectCompatibilityData,
 } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
 
@@ -44,6 +47,14 @@ export default function ProjectsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewFilter, setViewFilter] = useState<ProjectViewFilter>('all');
   const [difficultyFilter, setDifficultyFilter] = useState<ProjectDifficultyFilter>('all');
+  const [compatibility, setCompatibility] = useState<ProjectCompatibilityData | null>(null);
+  const [compatibilityError, setCompatibilityError] = useState<string | null>(null);
+
+  const projectIds = useMemo(() => publishedProjects.map((project) => project.id), [publishedProjects]);
+  const inventoryComponentIds = useMemo(
+    () => [...new Set(inventory.flatMap((item) => (item.componentId ? [item.componentId] : [])))].sort(),
+    [inventory],
+  );
 
   useEffect(() => {
     if (filter === 'favourites') {
@@ -51,11 +62,39 @@ export default function ProjectsScreen() {
     }
   }, [filter]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (projectIds.length === 0) {
+      setCompatibility(null);
+      setCompatibilityError(null);
+      return;
+    }
+
+    void fetchProjectCompatibility(projectIds, inventoryComponentIds).then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (result.error || !result.data) {
+        setCompatibility(null);
+        setCompatibilityError(result.error ?? PROJECT_ERRORS.generic);
+        return;
+      }
+      setCompatibility(result.data);
+      setCompatibilityError(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [inventoryComponentIds, projectIds]);
+
   const matchesByProjectId = useMemo(() => {
+    const loaded = compatibilityError ? null : compatibility;
     return new Map(
-      publishedProjects.map((project) => [project.id, matchProjectInventory(project.bom, inventory)] as const),
+      publishedProjects.map((project) => [project.id, matchProjectInventory(project.bom, inventory, loaded)] as const),
     );
-  }, [publishedProjects, inventory]);
+  }, [compatibility, compatibilityError, inventory, publishedProjects]);
 
   const inProgressProjects = useMemo(() => {
     return publishedProjects
@@ -167,6 +206,7 @@ export default function ProjectsScreen() {
           </Text>
           <Text style={styles.listCount}>{filteredProjects.length} projects</Text>
         </View>
+        {compatibilityError ? <Text style={styles.emptySubtitle}>{compatibilityError}</Text> : null}
 
         {projectsLoading ? (
           <View style={styles.emptyState}>

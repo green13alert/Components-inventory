@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test:compatibility": "node --experimental-strip-types --test lib/compatibility.test.ts"
+    "test:compatibility": "node --experimental-strip-types --test lib/compatibility.test.ts components/projects/component-row-state.test.ts constants/component-catalogue.test.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

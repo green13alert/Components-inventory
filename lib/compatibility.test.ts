@@ -2,11 +2,15 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import {
+  emptyProjectCompatibility,
   evaluateComponentCompatibility,
+  matchProjectInventory,
   type CapabilityFact,
   type CompatibilityComponent,
   type CompatibilityRequirement,
+  type MatchableBomLine,
   type PinFact,
+  type ProjectCompatibilityData,
 } from './compatibility.ts'
 
 /**
@@ -351,4 +355,386 @@ test('a 330 ohm resistor fixture is incompatible with the blink resistor require
       actualValues: ['330'],
     },
   ])
+})
+
+const resistorLine: MatchableBomLine = {
+  id: 'bom-resistor',
+  componentId: 'resistor',
+  slug: 'resistor',
+  name: 'Resistor',
+  description: null,
+  quantity: 1,
+  sortOrder: 3,
+}
+
+const ledLine: MatchableBomLine = {
+  id: 'bom-led',
+  componentId: 'led',
+  slug: 'led',
+  name: 'LED',
+  description: null,
+  quantity: 1,
+  sortOrder: 2,
+}
+
+const fixedResistorCapabilities: CapabilityFact[] = [
+  { capability: 'function', value: 'fixed_resistor' },
+  { capability: 'resistance_ohms', value: '220' },
+]
+
+function blinkBuildability(options?: {
+  reviews?: ProjectCompatibilityData['reviews']
+  extraComponents?: CompatibilityComponent[]
+  secondRequirement?: CompatibilityRequirement
+  secondLineId?: string
+}): ProjectCompatibilityData {
+  const componentsById = new Map<string, CompatibilityComponent>([
+    ['resistor', { componentId: 'resistor', capabilities: [] }],
+    ['resistor-220', { componentId: 'resistor-220', capabilities: fixedResistorCapabilities }],
+    ['resistor-220-unreviewed', { componentId: 'resistor-220-unreviewed', capabilities: fixedResistorCapabilities }],
+    [
+      'resistor-330-fixture',
+      {
+        componentId: 'resistor-330-fixture',
+        capabilities: [
+          { capability: 'function', value: 'fixed_resistor' },
+          { capability: 'resistance_ohms', value: '330' },
+        ],
+      },
+    ],
+  ])
+  for (const component of options?.extraComponents ?? []) {
+    componentsById.set(component.componentId, component)
+  }
+
+  const requirementsByBomLineId = new Map<string, CompatibilityRequirement>([
+    ['bom-resistor', blinkResistorRequirement],
+  ])
+  if (options?.secondRequirement && options.secondLineId) {
+    requirementsByBomLineId.set(options.secondLineId, options.secondRequirement)
+  }
+
+  return {
+    requirementsByBomLineId,
+    componentsById,
+    reviews: options?.reviews ?? [resistor220Review],
+  }
+}
+
+test('exact generic resistor covers the blink resistor line', () => {
+  const match = matchProjectInventory(
+    [resistorLine],
+    [
+      { componentId: 'resistor', quantity: 1 },
+      { componentId: 'resistor-220', quantity: 1 },
+    ],
+    blinkBuildability(),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'exact')
+  assert.equal(match.lines[0]?.isOwned, true)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+  assert.equal(match.lines[0]?.satisfiedByComponentId, 'resistor')
+  assert.equal(match.lines[0]?.ownedQuantity, 1)
+  assert.equal(match.ownedCount, 1)
+})
+
+test('approved resistor-220 covers the blink resistor line as a direct substitute', () => {
+  const match = matchProjectInventory(
+    [resistorLine],
+    [{ componentId: 'resistor-220', quantity: 1 }],
+    blinkBuildability(),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'direct_substitute')
+  assert.equal(match.lines[0]?.isOwned, true)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+  assert.equal(match.lines[0]?.name, 'Resistor')
+  assert.equal(match.lines[0]?.satisfiedByComponentId, 'resistor-220')
+  assert.equal(match.lines[0]?.ownedQuantity, 0)
+  assert.equal(match.lines[0]?.missingQuantity, 0)
+  assert.equal(match.ownedCount, 1)
+  assert.equal(match.matchPercentage, 100)
+})
+
+test('a 220 ohm candidate without an applicable review does not cover the line', () => {
+  const match = matchProjectInventory(
+    [resistorLine],
+    [{ componentId: 'resistor-220-unreviewed', quantity: 1 }],
+    blinkBuildability(),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+  assert.equal(match.lines[0]?.satisfiedByComponentId, null)
+  assert.equal(match.ownedCount, 0)
+})
+
+test('a 330 ohm candidate does not cover the blink resistor line', () => {
+  const match = matchProjectInventory(
+    [resistorLine],
+    [{ componentId: 'resistor-330-fixture', quantity: 1 }],
+    blinkBuildability({
+      reviews: [
+        resistor220Review,
+        {
+          requirementId: blinkResistorRequirement.id,
+          componentId: 'resistor-330-fixture',
+          assessedResult: 'direct',
+          changes: [],
+        },
+      ],
+    }),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+})
+
+test('an approved substitute with too few units does not cover the line', () => {
+  const match = matchProjectInventory(
+    [{ ...resistorLine, quantity: 2 }],
+    [{ componentId: 'resistor-220', quantity: 1 }],
+    blinkBuildability(),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+  assert.equal(match.lines[0]?.missingQuantity, 2)
+})
+
+test('one owned substitute is not allocated to two requirements', () => {
+  const secondLine: MatchableBomLine = {
+    id: 'bom-other-resistor',
+    componentId: 'other-resistor',
+    slug: 'other-resistor',
+    name: 'Other resistor',
+    description: null,
+    quantity: 1,
+    sortOrder: 4,
+  }
+  const secondRequirement: CompatibilityRequirement = {
+    id: 'slug-11-second-resistor',
+    policy: 'direct',
+    canonicalComponentId: 'other-resistor',
+    constraints: blinkResistorRequirement.constraints,
+    pinRoles: [],
+  }
+  const match = matchProjectInventory(
+    [secondLine, resistorLine],
+    [{ componentId: 'resistor-220', quantity: 1 }],
+    blinkBuildability({
+      secondRequirement,
+      secondLineId: secondLine.id,
+      extraComponents: [{ componentId: 'other-resistor', capabilities: [] }],
+      reviews: [
+        resistor220Review,
+        {
+          requirementId: secondRequirement.id,
+          componentId: 'resistor-220',
+          assessedResult: 'direct',
+          changes: [],
+        },
+      ],
+    }),
+  )
+
+  assert.equal(match.lines.find((line) => line.componentId === 'resistor')?.coverage, 'direct_substitute')
+  assert.equal(match.lines.find((line) => line.componentId === 'other-resistor')?.coverage, 'none')
+  assert.equal(match.ownedCount, 1)
+})
+
+test('a conditional substitute is not treated as owned', () => {
+  const match = matchProjectInventory(
+    [resistorLine],
+    [{ componentId: 'resistor-220', quantity: 1 }],
+    blinkBuildability({
+      reviews: [
+        {
+          requirementId: blinkResistorRequirement.id,
+          componentId: 'resistor-220',
+          assessedResult: 'conditional',
+          changes: [{ changeKind: 'wiring', summary: 'Move the resistor lead.' }],
+        },
+      ],
+    }),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+})
+
+test('projects without compatibility requirements keep exact matching', () => {
+  const bom = [ledLine, resistorLine]
+  const inventory = [{ componentId: 'resistor', quantity: 1 }]
+  const exactOnly = matchProjectInventory(bom, inventory)
+  const emptyData = matchProjectInventory(bom, inventory, emptyProjectCompatibility())
+
+  assert.deepEqual(
+    exactOnly.lines.map((line) => line.isOwned),
+    [false, true],
+  )
+  assert.deepEqual(
+    emptyData.lines.map((line) => [line.componentId, line.coverage, line.isOwned]),
+    exactOnly.lines.map((line) => [line.componentId, line.coverage, line.isOwned]),
+  )
+  assert.equal(exactOnly.lines[1]?.coverage, 'exact')
+  assert.equal(exactOnly.matchPercentage, 50)
+})
+
+/**
+ * Fixtures for the slug 12 series-resistor requirement.
+ * The slug 11 review is a different requirement and must not cover this line.
+ */
+
+const trafficResistorRequirement: CompatibilityRequirement = {
+  id: 'slug-12-series-resistor',
+  policy: 'direct',
+  canonicalComponentId: 'resistor',
+  constraints: blinkResistorRequirement.constraints,
+  pinRoles: [],
+  quantity: 3,
+}
+
+const trafficResistorLine: MatchableBomLine = {
+  id: 'bom-traffic-resistor',
+  componentId: 'resistor',
+  slug: 'resistor',
+  name: 'Resistor',
+  description: null,
+  quantity: 3,
+  sortOrder: 3,
+}
+
+const trafficResistor220Review = {
+  requirementId: trafficResistorRequirement.id,
+  componentId: 'resistor-220',
+  assessedResult: 'direct' as const,
+  changes: [],
+}
+
+function trafficBuildability(
+  reviews: ProjectCompatibilityData['reviews'] = [trafficResistor220Review],
+): ProjectCompatibilityData {
+  return {
+    requirementsByBomLineId: new Map([[trafficResistorLine.id, trafficResistorRequirement]]),
+    componentsById: new Map([
+      ['resistor', { componentId: 'resistor', capabilities: [] }],
+      ['resistor-220', { componentId: 'resistor-220', capabilities: fixedResistorCapabilities }],
+    ]),
+    reviews,
+  }
+}
+
+test('three 220 ohm resistors cover the traffic light line as a direct substitute', () => {
+  const match = matchProjectInventory(
+    [trafficResistorLine],
+    [{ componentId: 'resistor-220', quantity: 3 }],
+    trafficBuildability(),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'direct_substitute')
+  assert.equal(match.lines[0]?.isOwned, true)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+  assert.equal(match.lines[0]?.slug, 'resistor')
+  assert.equal(match.lines[0]?.name, 'Resistor')
+  assert.equal(match.lines[0]?.satisfiedByComponentId, 'resistor-220')
+  assert.equal(match.lines[0]?.ownedQuantity, 0)
+  assert.equal(match.lines[0]?.missingQuantity, 0)
+  assert.equal(match.ownedCount, 1)
+})
+
+test('one or two 220 ohm resistors do not cover the traffic light line', () => {
+  for (const quantity of [1, 2]) {
+    const match = matchProjectInventory(
+      [trafficResistorLine],
+      [{ componentId: 'resistor-220', quantity }],
+      trafficBuildability(),
+    )
+
+    assert.equal(match.lines[0]?.coverage, 'none')
+    assert.equal(match.lines[0]?.isOwned, false)
+    assert.equal(match.lines[0]?.componentId, 'resistor')
+    assert.equal(match.lines[0]?.missingQuantity, 3)
+  }
+})
+
+test('the blink review does not cover the traffic light resistor line', () => {
+  const match = matchProjectInventory(
+    [trafficResistorLine],
+    [{ componentId: 'resistor-220', quantity: 3 }],
+    trafficBuildability([resistor220Review]),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+  assert.equal(match.lines[0]?.satisfiedByComponentId, null)
+})
+
+test('unreviewed 220 ohm stock does not cover the traffic light line', () => {
+  const match = matchProjectInventory(
+    [trafficResistorLine],
+    [{ componentId: 'resistor-220', quantity: 3 }],
+    trafficBuildability([]),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+})
+
+test('a conditional traffic light review is not direct coverage', () => {
+  const match = matchProjectInventory(
+    [trafficResistorLine],
+    [{ componentId: 'resistor-220', quantity: 3 }],
+    trafficBuildability([
+      {
+        requirementId: trafficResistorRequirement.id,
+        componentId: 'resistor-220',
+        assessedResult: 'conditional',
+        changes: [{ changeKind: 'wiring', summary: 'Use a different series position.' }],
+      },
+    ]),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+})
+
+test('a new resistor value is not a substitute for the blink resistor requirement', () => {
+  const match = matchProjectInventory(
+    [resistorLine],
+    [{ componentId: 'resistor-10k', quantity: 1 }],
+    blinkBuildability({
+      extraComponents: [
+        {
+          componentId: 'resistor-10k',
+          capabilities: [
+            { capability: 'function', value: 'fixed_resistor' },
+            { capability: 'resistance_ohms', value: '10000' },
+          ],
+        },
+      ],
+    }),
+  )
+
+  assert.equal(match.lines[0]?.coverage, 'none')
+  assert.equal(match.lines[0]?.isOwned, false)
+  assert.equal(match.lines[0]?.componentId, 'resistor')
+  assert.equal(match.lines[0]?.satisfiedByComponentId, null)
+})
+
+test('missing compatibility data does not accept a substitute', () => {
+  const inventory = [{ componentId: 'resistor-220', quantity: 1 }]
+  const omitted = matchProjectInventory([resistorLine], inventory)
+  const failedLoad = matchProjectInventory([resistorLine], inventory, null)
+
+  assert.equal(omitted.lines[0]?.coverage, 'none')
+  assert.equal(omitted.lines[0]?.isOwned, false)
+  assert.deepEqual(
+    failedLoad.lines.map((line) => [line.coverage, line.isOwned, line.satisfiedByComponentId]),
+    omitted.lines.map((line) => [line.coverage, line.isOwned, line.satisfiedByComponentId]),
+  )
 })

@@ -1,6 +1,7 @@
 export type ComponentCategory =
   | 'all'
   | 'microcontrollers'
+  | 'computers'
   | 'sensors'
   | 'actuators'
   | 'displays'
@@ -25,6 +26,7 @@ export type InventoryComponent = {
 export const COMPONENT_FILTERS: { id: ComponentCategory; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'microcontrollers', label: 'Microcontrollers' },
+  { id: 'computers', label: 'Computers' },
   { id: 'sensors', label: 'Sensors' },
   { id: 'actuators', label: 'Actuators' },
   { id: 'displays', label: 'Displays' },
@@ -49,8 +51,13 @@ export const MOCK_INVENTORY: InventoryComponent[] = [
   { id: '14', name: 'Soil Moisture Sensor', category: 'sensors', quantity: 2 },
 ];
 
+export const INVENTORY_CATEGORY_IDS: Exclude<ComponentCategory, 'all'>[] = COMPONENT_FILTERS.flatMap(
+  (filter) => (filter.id === 'all' ? [] : [filter.id]),
+);
+
 export const CATEGORY_LABELS: Record<Exclude<ComponentCategory, 'all'>, string> = {
   microcontrollers: 'Microcontroller',
+  computers: 'Computer',
   sensors: 'Sensor',
   actuators: 'Actuator',
   displays: 'Display',

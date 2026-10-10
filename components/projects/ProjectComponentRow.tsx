@@ -3,6 +3,10 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
+import {
+  componentRowPresentation,
+  type ComponentRowCoverage,
+} from '@/components/projects/component-row-state';
 import type { SolderiPalette } from '@/constants/colors';
 import type { ComponentIllustrationId } from '@/constants/component-illustrations';
 import { useSolderiColors } from '@/context/theme-context';
@@ -16,38 +20,49 @@ type ProjectComponentRowProps = {
     ownedQuantity: number;
     missingQuantity: number;
     isOwned: boolean;
+    coverage?: ComponentRowCoverage;
+    substituteName?: string | null;
   };
 };
 
 export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const presentation = componentRowPresentation({
+    coverage: component.coverage,
+    isOwned: component.isOwned,
+    substituteName: component.substituteName,
+  });
+  const satisfied = presentation.status !== 'missing';
   return (
     <View style={styles.row}>
-      <View style={[styles.iconWrap, !component.isOwned && styles.iconWrapMissing]}>
+      <View style={[styles.iconWrap, !satisfied && styles.iconWrapMissing]}>
         <ComponentIllustration
           id={component.illustrationId}
           name={component.name}
           size={40}
-          plate={component.isOwned}
+          plate={presentation.status === 'owned'}
         />
       </View>
       <View style={styles.copy}>
-        <Text style={[styles.name, !component.isOwned && styles.nameMissing]}>{component.name}</Text>
+        <Text style={[styles.name, !satisfied && styles.nameMissing]}>{component.name}</Text>
         <Text style={styles.quantityDetail}>Required: {component.requiredQuantity}</Text>
         <Text style={styles.quantityDetail}>You have: {component.ownedQuantity}</Text>
-        {component.isOwned ? null : (
+        {presentation.substituteLine ? (
+          <Text style={styles.quantityDetail}>{presentation.substituteLine}</Text>
+        ) : null}
+        {presentation.status === 'missing' ? (
           <Text style={styles.quantityDetail}>Missing: {component.missingQuantity}</Text>
-        )}
+        ) : null}
       </View>
-      <View style={[styles.badge, component.isOwned ? styles.badgeOwned : styles.badgeMissing]}>
+      <View style={[styles.badge, satisfied ? styles.badgeOwned : styles.badgeMissing]}>
         <Ionicons
-          name={component.isOwned ? 'checkmark' : 'close'}
+          name={satisfied ? 'checkmark' : 'close'}
           size={12}
-          color={component.isOwned ? colors.success : colors.warning}
+          color={satisfied ? colors.success : colors.warning}
         />
-        <Text style={[styles.badgeText, component.isOwned ? styles.badgeTextOwned : styles.badgeTextMissing]}>
-          {component.isOwned ? 'Owned' : 'Missing'}
+        <Text style={[styles.badgeText, satisfied ? styles.badgeTextOwned : styles.badgeTextMissing]}>
+          {presentation.badge}
         </Text>
       </View>
     </View>
