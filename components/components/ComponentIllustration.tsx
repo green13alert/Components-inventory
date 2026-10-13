@@ -89,6 +89,10 @@ function IllustrationArt({
       return <RaspberryPiPico size={size} showGroundShadow={showGroundShadow} />;
     case 'raspberry-pi':
       return <RaspberryPiComputer size={size} showGroundShadow={showGroundShadow} />;
+    case 'bme280':
+      return <Bme280 size={size} showGroundShadow={showGroundShadow} />;
+    case 'usb-cable':
+      return <UsbCable size={size} showGroundShadow={showGroundShadow} />;
     case 'dc-motor':
       return <DcMotor size={size} showGroundShadow={showGroundShadow} />;
     case 'breadboard':
@@ -437,6 +441,30 @@ function RaspberryPiComputer({ size, showGroundShadow = true }: IllustrationProp
       <Rect x={48} y={36} width={8} height={8} rx={1} fill={HW.metalDark} />
       <Rect x={14} y={22} width={12} height={8} rx={1} fill={HW.icBlack} />
       <PinRow x={14} y={36} count={8} spacing={3} />
+    </IllustrationSvg>
+  );
+}
+
+function Bme280({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={16} y={18} width={32} height={28} rx={3} fill={HW.pcbBlue} stroke={HW.pcbBlueLight} strokeWidth={0.7} />
+      <Rect x={26} y={24} width={12} height={10} rx={1} fill={HW.metalLight} />
+      <Circle cx={32} cy={29} r={2} fill={HW.screenMid} />
+      <Line x1={22} y1={46} x2={22} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={28} y1={46} x2={28} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={36} y1={46} x2={36} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={42} y1={46} x2={42} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+    </IllustrationSvg>
+  );
+}
+
+function UsbCable({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={8} y={26} width={16} height={12} rx={2} fill={HW.usbSilver} />
+      <Rect x={40} y={28} width={16} height={8} rx={1} fill={HW.metalDark} />
+      <Path d="M24 32 C30 32 30 44 36 40 C40 38 40 32 40 32" fill="none" stroke={HW.icBlack} strokeWidth={3} strokeLinecap="round" />
     </IllustrationSvg>
   );
 }

@@ -116,16 +116,23 @@ function VisualWiringCanvas({
   const visibleElements = useMemo(
     () =>
       layout.elements.filter(
-        (element) => element.kind === 'arduino-uno' || element.kind === 'breadboard' || used.has(element.id),
+        (element) =>
+          element.kind === 'arduino-uno' ||
+          element.kind === 'esp32-devkit' ||
+          element.kind === 'breadboard' ||
+          used.has(element.id),
       ),
     [layout.elements, used],
   );
   const legendKinds = useMemo(() => {
     const present = new Set(wires.map((wire) => wire.kind));
-    return WIRE_KIND_LABELS.filter((item) => present.has(item.kind));
-  }, [wires]);
+    return WIRE_KIND_LABELS.filter((item) => present.has(item.kind)).map((item) => ({
+      ...item,
+      label: layout.wireLabels?.[item.kind] ?? item.label,
+    }));
+  }, [wires, layout.wireLabels]);
 
-  const drawWidth = Math.max(canvasWidth || 0, 560);
+  const drawWidth = Math.max(canvasWidth || 0, Math.min(560, layout.width));
   const scale = drawWidth / layout.width;
   const drawHeight = layout.height * scale;
   const zoomedWidth = drawWidth * layoutZoom;
@@ -262,6 +269,10 @@ function DiagramSymbol({ element }: { element: WiringElementDef }) {
       return <ServoSymbol element={element} />;
     case 'joystick':
       return <JoystickSymbol element={element} />;
+    case 'esp32-devkit':
+      return <Esp32DevkitSymbol element={element} />;
+    case 'bme280':
+      return <Bme280Symbol element={element} />;
     default:
       return null;
   }
@@ -292,6 +303,101 @@ function ArduinoUnoSymbol({ element }: { element: WiringElementDef }) {
           </SvgText>
         </G>
       ))}
+    </G>
+  );
+}
+
+function Esp32DevkitSymbol({ element }: { element: WiringElementDef }) {
+  const { x, y, width, height } = element;
+  return (
+    <G>
+      <Rect x={x} y={y} width={width} height={height} rx={10} fill={HW.pcbGreen} />
+      <Rect x={x + 12} y={y + 12} width={28} height={16} rx={2} fill={HW.usbSilver} />
+      <Rect x={x + 48} y={y + 16} width={width - 70} height={28} rx={3} fill={HW.metalDark} />
+      <SvgText x={x + 16} y={y + height - 18} fill="#F8FAFC" fontSize={13} fontWeight="700">
+        {element.label}
+      </SvgText>
+      {element.ports.map((port) => (
+        <G key={port.id}>
+          <Rect x={x + width - 54} y={y + port.dy - 8} width={54} height={16} rx={2} fill={HW.pcbGreenMid} />
+          <SvgText x={x + width - 8} y={y + port.dy + 4} fill="#ECFDF5" fontSize={10} fontWeight="700" textAnchor="end">
+            {port.label}
+          </SvgText>
+        </G>
+      ))}
+    </G>
+  );
+}
+
+const CABLE_LEAD_COLORS: Record<string, string> = {
+  vin: '#EF4444',
+  gnd: '#111827',
+  sdi: '#2563EB',
+  sck: '#CA8A04',
+};
+
+function Bme280Symbol({ element }: { element: WiringElementDef }) {
+  const { x, y, width, height } = element;
+  if (!element.cableLabel) {
+    return (
+      <G>
+        <Rect x={x} y={y} width={width} height={height} rx={8} fill={HW.pcbBlue} />
+        <Rect x={x + width - 42} y={y + 14} width={24} height={18} rx={2} fill={HW.metalLight} />
+        <Circle cx={x + width - 30} cy={y + 23} r={4} fill={HW.screenMid} />
+        <SvgText x={x + 44} y={y + 22} fill="#F8FAFC" fontSize={12} fontWeight="700">
+          {element.label}
+        </SvgText>
+        {element.ports.map((port) => (
+          <SvgText key={port.id} x={x + 12} y={y + port.dy + 4} fill="#E2E8F0" fontSize={10} fontWeight="700">
+            {port.label}
+          </SvgText>
+        ))}
+      </G>
+    );
+  }
+
+  const socketX = x;
+  const socketY = y + height / 2 - 12;
+  return (
+    <G>
+      {element.ports.map((port) => {
+        const pinX = x + port.dx;
+        const pinY = y + port.dy;
+        const trunkX = socketX - 8;
+        const color = CABLE_LEAD_COLORS[port.id] ?? HW.pinSilver;
+        return (
+          <G key={`${port.id}-lead`}>
+            <Line x1={pinX} y1={pinY} x2={trunkX} y2={pinY} stroke={color} strokeWidth={3} strokeLinecap="round" />
+            <Line x1={trunkX} y1={pinY} x2={trunkX} y2={socketY + 12} stroke={color} strokeWidth={3} strokeLinecap="round" />
+          </G>
+        );
+      })}
+      <Rect x={x} y={y} width={width} height={height} rx={8} fill={HW.pcbBlue} />
+      <Rect x={x + 14} y={y + height - 36} width={22} height={16} rx={2} fill={HW.metalLight} />
+      <Circle cx={x + 25} cy={y + height - 28} r={3.5} fill={HW.screenMid} />
+      <Rect x={socketX - 8} y={socketY} width={16} height={24} rx={3} fill="#111827" />
+      <SvgText x={x + 12} y={y + 28} fill="#F8FAFC" fontSize={12} fontWeight="700">
+        {element.label}
+      </SvgText>
+      <SvgText x={x + 14} y={y + 46} fill="#DBEAFE" fontSize={10} fontWeight="700">
+        {element.cableLabel}
+      </SvgText>
+      <SvgText x={x + 12} y={y + 62} fill="#BFDBFE" fontSize={9} fontWeight="700">
+        not in holes
+      </SvgText>
+      {element.ports.map((port) => {
+        const pinX = x + port.dx;
+        const pinY = y + port.dy;
+        const labelY = port.id === 'vin' ? pinY - 23 : port.id === 'gnd' ? pinY + 22 : pinY - 12;
+        return (
+          <G key={port.id}>
+            <Circle cx={pinX} cy={pinY} r={4} fill={CABLE_LEAD_COLORS[port.id] ?? HW.pinSilver} />
+            <SvgText x={pinX} y={labelY} fill="#1F2937" fontSize={11} fontWeight="700" textAnchor="middle">
+              {port.label}
+            </SvgText>
+          </G>
+        );
+      })}
     </G>
   );
 }
@@ -328,12 +434,22 @@ function BreadboardSymbol({ element }: { element: WiringElementDef }) {
           />
         </>
       ) : (
-        <SvgText x={x + 18} y={y + 23} fill="#FFF7ED" fontSize={9} fontWeight="700">
-          + 5V
+        <SvgText
+          x={element.powerRailLabel ? x + 16 : x + 18}
+          y={element.powerRailLabel ? y - 4 : y + 23}
+          fill={element.powerRailLabel ? '#9F1239' : '#FFF7ED'}
+          fontSize={element.powerRailLabel ? 12 : 9}
+          fontWeight="700">
+          {element.powerRailLabel ?? '+ 5V'}
         </SvgText>
       )}
-      <SvgText x={x + 18} y={y + 47} fill="#EFF6FF" fontSize={9} fontWeight="700">
-        − GND
+      <SvgText
+        x={element.powerRailLabel ? x + 40 : x + 18}
+        y={element.powerRailLabel ? y + 70 : y + 47}
+        fill={element.powerRailLabel ? '#1E3A8A' : '#EFF6FF'}
+          fontSize={element.powerRailLabel ? 12 : 9}
+          fontWeight="700">
+        {element.powerRailLabel ? 'GND' : '− GND'}
       </SvgText>
       {Array.from({ length: holeRows }, (_, row) =>
         Array.from({ length: holeCols }, (_, col) => (

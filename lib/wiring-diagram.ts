@@ -1,7 +1,7 @@
 import type { WiringElementDef, WiringLayout, WiringPortDef } from '@/constants/wiring-diagrams';
 import type { StepBlock, StepConnection } from '@/constants/walkthrough-content';
 
-export type WireKind = 'powerLogic' | 'powerServo' | 'ground' | 'digital' | 'analog' | 'pwm';
+export type WireKind = 'powerLogic' | 'powerServo' | 'ground' | 'digital' | 'analog' | 'pwm' | 'i2cData' | 'i2cClock';
 
 export type ResolvedPort = {
   element: WiringElementDef;
@@ -27,6 +27,8 @@ const WIRE_COLORS: Record<WireKind, string> = {
   digital: '#22C55E',
   analog: '#A855F7',
   pwm: '#06B6D4',
+  i2cData: '#2563EB',
+  i2cClock: '#CA8A04',
 };
 
 export const WIRE_KIND_LABELS: { kind: WireKind; label: string }[] = [
@@ -36,6 +38,8 @@ export const WIRE_KIND_LABELS: { kind: WireKind; label: string }[] = [
   { kind: 'digital', label: 'Digital' },
   { kind: 'analog', label: 'Analog' },
   { kind: 'pwm', label: 'PWM' },
+  { kind: 'i2cData', label: 'SDA' },
+  { kind: 'i2cClock', label: 'SCL' },
 ];
 
 export function wireKindColor(kind: WireKind): string {
@@ -172,6 +176,14 @@ export function inferWireKind(
     return 'analog';
   }
 
+  const pinNames = [fromPin, toPin];
+  if (pinNames.some((pin) => pin === 'sdi' || pin === 'sda')) {
+    return 'i2cData';
+  }
+  if (pinNames.some((pin) => pin === 'sck' || pin === 'scl')) {
+    return 'i2cClock';
+  }
+
   const touchesServo = from.element.kind === 'servo' || to.element.kind === 'servo';
   if (touchesServo && /d9|d10|sig/.test(pins)) {
     return 'pwm';
@@ -242,7 +254,11 @@ function elementContains(outer: WiringElementDef, inner: WiringElementDef): bool
   );
 }
 
-function exitSign(port: ResolvedPort): 1 | -1 {
+function exitSign(port: ResolvedPort, other: ResolvedPort): 1 | -1 {
+  const onBodyEdge = port.port.dx === 0 || port.port.dx === port.element.width;
+  if (!onBodyEdge) {
+    return other.x >= port.x ? 1 : -1;
+  }
   return port.port.dx >= port.element.width / 2 ? 1 : -1;
 }
 
@@ -282,9 +298,11 @@ function strictlyInsideElement(point: Point, element: WiringElementDef): boolean
 }
 
 function cutsEndpointBody(points: Point[], from: ResolvedPort, to: ResolvedPort): boolean {
-  return points
-    .slice(1, -1)
-    .some((point) => strictlyInsideElement(point, from.element) || strictlyInsideElement(point, to.element));
+  return points.slice(1, -1).some((point) => {
+    const insideFrom = strictlyInsideElement(point, from.element) && from.element.kind !== 'breadboard';
+    const insideTo = strictlyInsideElement(point, to.element) && to.element.kind !== 'breadboard';
+    return insideFrom || insideTo;
+  });
 }
 
 function pathLength(points: Point[]): number {
@@ -363,8 +381,8 @@ function horizontalGutters(obstacles: Box[], layout: WiringLayout): number[] {
 }
 
 function candidatePaths(from: ResolvedPort, to: ResolvedPort, obstacles: Box[], layout: WiringLayout): Point[][] {
-  const fromDir = exitSign(from);
-  const toDir = exitSign(to);
+  const fromDir = exitSign(from, to);
+  const toDir = exitSign(to, from);
   const start = { x: from.x + fromDir * ROUTE_STUB, y: from.y };
   const end = { x: to.x + toDir * ROUTE_STUB, y: to.y };
   const pinStart = { x: from.x, y: from.y };
@@ -410,10 +428,18 @@ function candidatePaths(from: ResolvedPort, to: ResolvedPort, obstacles: Box[], 
   return paths;
 }
 
+function pointInsideBox(point: { x: number; y: number }, box: Box): boolean {
+  return point.x > box.x1 && point.x < box.x2 && point.y > box.y1 && point.y < box.y2;
+}
+
 function routingObstacles(layout: WiringLayout, from: ResolvedPort, to: ResolvedPort): Box[] {
   return layout.elements
     .filter((element) => {
       if (element.id === from.element.id || element.id === to.element.id) {
+        return false;
+      }
+      const box = elementBox(element);
+      if (pointInsideBox(from, box) || pointInsideBox(to, box)) {
         return false;
       }
       return !elementContains(element, from.element) && !elementContains(element, to.element);
@@ -453,7 +479,10 @@ function occupyChannels(
   const allocatedY: number[] = [];
 
   for (const x of verticals) {
-    const chosen = channelOptions(x).find((option) => {
+    const pinned = Math.abs(x - from.x) < 0.5 || Math.abs(x - to.x) < 0.5;
+    const chosen = pinned
+      ? x
+      : channelOptions(x).find((option) => {
       if (usedX.has(option)) {
         return false;
       }
@@ -470,7 +499,10 @@ function occupyChannels(
   }
 
   for (const y of horizontals) {
-    const chosen = channelOptions(y).find((option) => {
+    const pinned = Math.abs(y - from.y) < 0.5 || Math.abs(y - to.y) < 0.5;
+    const chosen = pinned
+      ? y
+      : channelOptions(y).find((option) => {
       if (usedY.has(option)) {
         return false;
       }
@@ -526,8 +558,8 @@ function routeConnection(
     return polylinePath(clear.points);
   }
 
-  const fromDir = exitSign(from);
-  const toDir = exitSign(to);
+  const fromDir = exitSign(from, to);
+  const toDir = exitSign(to, from);
   const startX = from.x + fromDir * ROUTE_STUB;
   const endX = to.x + toDir * ROUTE_STUB;
   const topY = 8;

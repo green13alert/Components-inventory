@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { substituteNameFromInventory } from '@/components/projects/component-row-state';
+import { ProjectCover } from '@/components/projects/ProjectCover';
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
 import { getCatalogueComponent } from '@/constants/component-catalogue';
@@ -17,7 +17,6 @@ import {
   getProjectLearningPoints,
   getStartButtonLabel,
 } from '@/constants/projects-data';
-import { getProjectImage } from '@/constants/projects';
 import {
   fetchProjectBySlug,
   fetchProjectComponents,
@@ -210,12 +209,7 @@ export default function ProjectDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}>
         <View style={styles.hero}>
-          <Image
-            source={getProjectImage(project.imageKey)}
-            style={styles.heroImage}
-            contentFit="cover"
-            transition={200}
-          />
+          <ProjectCover imageKey={project.imageKey} style={styles.heroImage} />
           <View style={styles.heroOverlay} />
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
             <Pressable
@@ -258,6 +252,7 @@ export default function ProjectDetailScreen() {
               </View>
             </View>
             <Text style={styles.title}>{project.title}</Text>
+            {project.isPublished ? null : <Text style={styles.description}>Unpublished draft</Text>}
             <Text style={styles.description}>{project.description}</Text>
           </View>
 

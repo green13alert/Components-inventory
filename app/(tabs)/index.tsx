@@ -14,7 +14,6 @@ import { WorkshopStats } from '@/components/home/WorkshopStats';
 import type { SolderiPalette } from '@/constants/colors';
 import { DEV_ONBOARDING_SHORTCUTS } from '@/constants/onboarding-dev';
 import { tabBarBottomPadding } from '@/constants/layout';
-import { getProjectImage } from '@/constants/projects';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { Spacing } from '@/constants/tokens';
 import { useAtlas } from '@/context/atlas-context';
@@ -85,7 +84,7 @@ export default function HomeScreen() {
                     stepLabel={stepLabel}
                     stepTitle={current?.title ?? ''}
                     progress={project.progress ?? 0}
-                    image={getProjectImage(project.imageKey)}
+                    imageKey={project.imageKey}
                     width={cardWidth}
                   />
                 );
@@ -117,7 +116,7 @@ export default function HomeScreen() {
                   difficulty={DIFFICULTY_LABELS[project.difficulty]}
                   duration={project.durationLabel}
                   componentCount={project.requiredComponentCount}
-                  image={getProjectImage(project.imageKey)}
+                  imageKey={project.imageKey}
                 />
               ))}
             </View>

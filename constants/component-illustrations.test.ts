@@ -15,7 +15,7 @@ function resolved(id: string): ComponentIllustrationId {
 }
 
 test('every catalogue component resolves to a known illustration', () => {
-  assert.equal(COMPONENT_CATALOGUE.length, 60)
+  assert.equal(COMPONENT_CATALOGUE.length, 65)
   for (const entry of COMPONENT_CATALOGUE) {
     assert.equal(KNOWN.has(entry.image), true, entry.id)
     assert.equal(resolved(entry.id), entry.image)

@@ -3,8 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,12 +13,19 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
 import type { SolderiPalette } from '@/constants/colors';
-import { getStartButtonLabel } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
+import {
+  moveWalkthroughStep,
+  resolveBuildDestination,
+  walkthroughButtonFlex,
+  walkthroughFooterControls,
+  walkthroughFooterPadding,
+  walkthroughProgressPercent,
+  WALKTHROUGH_SAVE_FAILED,
+} from '@/lib/project-navigation';
 import {
   fetchProjectBySlug,
   fetchProjectSteps,
-  getUserProjectProgressPercent,
   getUserProjectStatus,
   getWalkthroughSketch,
   getWalkthroughStageContext,
@@ -31,28 +36,8 @@ import {
 import { collectPriorWiringConnections } from '@/lib/wiring-diagram';
 import { useSolderiColors } from '@/context/theme-context';
 
-const STEP_SCROLL_END_TOLERANCE = 16;
-
-function getStepScrollState({
-  offsetY,
-  viewportHeight,
-  instructionalHeight,
-}: {
-  offsetY: number;
-  viewportHeight: number;
-  instructionalHeight: number;
-}) {
-  if (viewportHeight <= 0 || instructionalHeight <= 0) {
-    return { ready: false, canScroll: false, atEnd: false };
-  }
-
-  const canScroll = instructionalHeight > viewportHeight + STEP_SCROLL_END_TOLERANCE;
-  const atEnd =
-    !canScroll ||
-    Math.max(0, offsetY) + viewportHeight >= instructionalHeight - STEP_SCROLL_END_TOLERANCE;
-
-  return { ready: true, canScroll, atEnd };
-}
+const rowButtonFlex = walkthroughButtonFlex('row');
+const standaloneButtonFlex = walkthroughButtonFlex('standalone');
 
 export default function ProjectBuildScreen() {
   const { id, review: reviewParam, code: codeParam } = useLocalSearchParams<{
@@ -82,14 +67,10 @@ export default function ProjectBuildScreen() {
   const [isReviewing, setIsReviewing] = useState(reviewRequested);
   const [isReviewingCode, setIsReviewingCode] = useState(codeRequested);
   const [reviewStepIndex, setReviewStepIndex] = useState(0);
-  const displayedStepRef = useRef(0);
-  const viewportHeightRef = useRef(0);
-  const instructionalHeightRef = useRef(0);
-  const scrollOffsetRef = useRef(0);
-  const measuredStepKeyRef = useRef<string | null>(null);
-  const unlockedByScrollRef = useRef(false);
-  const reachedBottomStepKeyRef = useRef<string | null>(null);
-  const [reachedBottomStepKey, setReachedBottomStepKey] = useState<string | null>(null);
+  const [stepOverride, setStepOverride] = useState<number | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const startAttemptedRef = useRef<string | null>(null);
+  const stepCursorRef = useRef(0);
   const [wiringPinchActive, setWiringPinchActive] = useState(false);
 
   useEffect(() => {
@@ -140,6 +121,8 @@ export default function ProjectBuildScreen() {
     setIsReviewing(reviewRequested);
     setIsReviewingCode(codeRequested);
     setReviewStepIndex(0);
+    setStepOverride(null);
+    setSaveNotice(null);
   }, [codeRequested, reviewRequested, slug]);
 
   const projectKey = project?.id ?? '';
@@ -148,81 +131,38 @@ export default function ProjectBuildScreen() {
   const lastStepIndex = Math.max(0, steps.length - 1);
   const isCompleted = status === 'completed';
   const reviewMode = isCompleted && isReviewing && !isReviewingCode;
-  const codeReviewMode = isCompleted && isReviewingCode;
   const currentStepIndex = reviewMode
     ? Math.min(reviewStepIndex, lastStepIndex)
-    : Math.min(persistedStep, lastStepIndex);
+    : Math.min(stepOverride ?? persistedStep, lastStepIndex);
+  const destination = resolveBuildDestination({
+    stepCount: steps.length,
+    status,
+    reviewingSteps: isReviewing,
+    reviewingCode: isReviewingCode,
+  });
+
+  useEffect(() => {
+    if (!project || destination !== 'walkthrough' || status !== 'not_started') {
+      return;
+    }
+    if (startAttemptedRef.current === project.id) {
+      return;
+    }
+    startAttemptedRef.current = project.id;
+    void startProject(project.id);
+  }, [destination, project, startProject, status]);
+  stepCursorRef.current = currentStepIndex;
   const currentStep = steps[currentStepIndex] ?? steps[0];
   const stepNavigationKey = currentStep?.id ?? String(currentStepIndex);
-  const nextLocked = !reviewMode && reachedBottomStepKey !== stepNavigationKey;
+  const footerControls = walkthroughFooterControls({
+    stepIndex: currentStepIndex,
+    stepCount: steps.length,
+    reviewing: reviewMode,
+  });
 
   useEffect(() => {
     setWiringPinchActive(false);
   }, [stepNavigationKey]);
-
-  const markReachedBottom = () => {
-    if (reviewMode || reachedBottomStepKeyRef.current === stepNavigationKey) {
-      return;
-    }
-    reachedBottomStepKeyRef.current = stepNavigationKey;
-    setReachedBottomStepKey(stepNavigationKey);
-  };
-
-  const clearReachedBottom = () => {
-    if (reachedBottomStepKeyRef.current == null && reachedBottomStepKey == null) {
-      return;
-    }
-    reachedBottomStepKeyRef.current = null;
-    setReachedBottomStepKey(null);
-  };
-
-  const updateReachedBottom = (
-    metrics?: {
-      offsetY?: number;
-      viewportHeight?: number;
-      instructionalHeight?: number;
-    },
-  ) => {
-    if (measuredStepKeyRef.current !== stepNavigationKey) {
-      measuredStepKeyRef.current = stepNavigationKey;
-      unlockedByScrollRef.current = false;
-      instructionalHeightRef.current = 0;
-      scrollOffsetRef.current = 0;
-    }
-
-    if (metrics?.offsetY != null) {
-      scrollOffsetRef.current = metrics.offsetY;
-    }
-    if (metrics?.viewportHeight != null && metrics.viewportHeight > 0) {
-      viewportHeightRef.current = metrics.viewportHeight;
-    }
-    if (metrics?.instructionalHeight != null && metrics.instructionalHeight > 0) {
-      instructionalHeightRef.current = metrics.instructionalHeight;
-    }
-
-    const { ready, canScroll, atEnd } = getStepScrollState({
-      offsetY: scrollOffsetRef.current,
-      viewportHeight: viewportHeightRef.current,
-      instructionalHeight: instructionalHeightRef.current,
-    });
-    if (!ready || reviewMode) {
-      return;
-    }
-
-    if (!canScroll) {
-      markReachedBottom();
-      return;
-    }
-
-    if (!unlockedByScrollRef.current && reachedBottomStepKeyRef.current === stepNavigationKey) {
-      clearReachedBottom();
-    }
-
-    if (atEnd) {
-      unlockedByScrollRef.current = true;
-      markReachedBottom();
-    }
-  };
 
   if (loading) {
     return (
@@ -249,19 +189,14 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  if (!reviewMode) {
-    displayedStepRef.current = currentStepIndex;
-  }
   const stepBlocks =
     currentStep?.tip && !currentStep.blocks.some((block) => block.type === 'tip' && block.body === currentStep.tip)
       ? [...currentStep.blocks, { type: 'tip' as const, body: currentStep.tip }]
       : currentStep?.blocks ?? [];
   const priorWiringConnections = collectPriorWiringConnections(steps, currentStepIndex);
-  const progressPercent = reviewMode
-    ? 100
-    : getUserProjectProgressPercent(getUserProject(projectKey), steps.length);
-  const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === lastStepIndex;
+  const progressPercent = walkthroughProgressPercent(currentStepIndex, steps.length, reviewMode);
+  const isFirstStep = !footerControls.previousEnabled;
+  const isLastStep = footerControls.nextLabel !== 'Next Step';
   const sketch = getWalkthroughSketch(steps);
   const stage = getWalkthroughStageContext(steps, currentStepIndex);
 
@@ -279,6 +214,19 @@ export default function ProjectBuildScreen() {
     setIsReviewingCode(true);
   };
 
+  const persistStep = async (step: number) => {
+    const result = await setProjectStep(project.id, step);
+    if (stepCursorRef.current !== step) {
+      return;
+    }
+    setSaveNotice(result.error ? WALKTHROUGH_SAVE_FAILED : null);
+  };
+
+  const finishProject = async () => {
+    const result = await completeProject(project.id, stepCursorRef.current);
+    setSaveNotice(result.error ? WALKTHROUGH_SAVE_FAILED : null);
+  };
+
   const handlePrev = () => {
     if (isFirstStep) {
       return;
@@ -287,9 +235,13 @@ export default function ProjectBuildScreen() {
       setReviewStepIndex((index) => Math.max(index - 1, 0));
       return;
     }
-    const previous = Math.max(displayedStepRef.current - 1, 0);
-    displayedStepRef.current = previous;
-    void setProjectStep(projectKey, previous);
+    const previous = moveWalkthroughStep(stepCursorRef.current, -1, steps.length);
+    if (previous === stepCursorRef.current) {
+      return;
+    }
+    stepCursorRef.current = previous;
+    setStepOverride(previous);
+    void persistStep(previous);
   };
 
   const handleNext = () => {
@@ -301,25 +253,20 @@ export default function ProjectBuildScreen() {
       setReviewStepIndex((index) => Math.min(index + 1, lastStepIndex));
       return;
     }
-    if (nextLocked) {
-      return;
-    }
     if (isLastStep) {
-      void completeProject(projectKey, displayedStepRef.current);
+      void finishProject();
       return;
     }
-    const next = Math.min(displayedStepRef.current + 1, lastStepIndex);
-    displayedStepRef.current = next;
-    void setProjectStep(projectKey, next);
-  };
-
-  const handleStartOrContinue = () => {
-    if (status === 'not_started') {
-      void startProject(projectKey);
+    const next = moveWalkthroughStep(stepCursorRef.current, 1, steps.length);
+    if (next === stepCursorRef.current) {
+      return;
     }
+    stepCursorRef.current = next;
+    setStepOverride(next);
+    void persistStep(next);
   };
 
-  if (steps.length === 0) {
+  if (destination === 'coming_soon') {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.topBar}>
@@ -348,45 +295,7 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  if (status === 'not_started') {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.topBar}>
-          <Pressable
-            style={styles.iconButton}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-          </Pressable>
-          <Text style={styles.topBarTitle} numberOfLines={1}>
-            {project.title}
-          </Text>
-          <View style={styles.iconButton} />
-        </View>
-        <View style={styles.readyState}>
-          <View style={styles.readyIcon}>
-            <Ionicons name="construct-outline" size={48} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.readyTitle}>Ready to build?</Text>
-          <Text style={styles.readySubtitle}>
-            This project has {steps.length} guided steps. You can pause anytime and pick up where you left off.
-          </Text>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => {
-              handleStartOrContinue();
-            }}
-            accessibilityRole="button">
-            <Ionicons name="play" size={20} color={colors.onAccent} />
-            <Text style={styles.primaryButtonText}>{getStartButtonLabel(status)}</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (isCompleted && !reviewMode && !codeReviewMode) {
+  if (destination === 'complete') {
     return (
       <ProjectCompleteView
         title={project.title}
@@ -404,7 +313,7 @@ export default function ProjectBuildScreen() {
     );
   }
 
-  if (codeReviewMode) {
+  if (destination === 'review_code') {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.topBar}>
@@ -511,31 +420,9 @@ export default function ProjectBuildScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
         nestedScrollEnabled
-        scrollEnabled={!wiringPinchActive}
-        onLayout={(event) => {
-          updateReachedBottom({ viewportHeight: event.nativeEvent.layout.height });
-        }}
-        onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
-          const { contentOffset, layoutMeasurement } = event.nativeEvent;
-          updateReachedBottom({
-            offsetY: contentOffset.y,
-            viewportHeight: layoutMeasurement.height,
-          });
-        }}
-        onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
-          const { contentOffset, layoutMeasurement } = event.nativeEvent;
-          updateReachedBottom({
-            offsetY: contentOffset.y,
-            viewportHeight: layoutMeasurement.height,
-          });
-        }}>
-        <View
-          style={styles.stepBody}
-          onLayout={(event) => {
-            updateReachedBottom({ instructionalHeight: event.nativeEvent.layout.height });
-          }}>
+        scrollEnabled={!wiringPinchActive}>
+        <View style={styles.stepBody}>
           {stage ? (
             <Text style={styles.stageKicker}>
               Stage {stage.stageNumber} of {stage.stageCount} — {stage.stageTitle}
@@ -576,27 +463,26 @@ export default function ProjectBuildScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        {nextLocked ? (
-          <Text style={styles.continueHint}>Scroll to the end to continue</Text>
-        ) : null}
+      <View style={[styles.footer, { paddingBottom: walkthroughFooterPadding(insets.bottom) }]}>
+        {saveNotice ? <Text style={styles.continueHint}>{saveNotice}</Text> : null}
         <View style={styles.footerRow}>
           <Pressable
             style={[styles.secondaryButton, isFirstStep && styles.buttonDisabled]}
             onPress={handlePrev}
             disabled={isFirstStep}
-            accessibilityRole="button">
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isFirstStep }}>
             <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>Previous</Text>
           </Pressable>
           <Pressable
-            style={[styles.primaryButton, nextLocked && styles.buttonDisabled]}
+            style={[styles.primaryButton, styles.footerPrimaryButton]}
             onPress={handleNext}
-            disabled={nextLocked}
+            disabled={!footerControls.nextEnabled}
             accessibilityRole="button"
-            accessibilityState={{ disabled: nextLocked }}>
+            accessibilityState={{ disabled: !footerControls.nextEnabled }}>
             <Text style={styles.primaryButtonText}>
-              {reviewMode ? (isLastStep ? 'Done' : 'Next Step') : isLastStep ? 'Complete' : 'Next Step'}
+              {footerControls.nextLabel}
             </Text>
             <Ionicons
               name={isLastStep ? 'checkmark' : 'chevron-forward'}
@@ -756,6 +642,7 @@ function createStyles(colors: SolderiPalette) {
     },
     scroll: {
       flex: 1,
+      flexShrink: 1,
     },
     scrollContent: {
       paddingHorizontal: 20,
@@ -815,6 +702,7 @@ function createStyles(colors: SolderiPalette) {
       backgroundColor: colors.success,
     },
     footer: {
+      flexShrink: 0,
       gap: 8,
       paddingHorizontal: 20,
       paddingTop: 12,
@@ -830,10 +718,14 @@ function createStyles(colors: SolderiPalette) {
     },
     footerRow: {
       flexDirection: 'row',
+      alignItems: 'center',
       gap: 12,
     },
     primaryButton: {
-      flex: 1,
+      flexGrow: standaloneButtonFlex.flexGrow,
+      flexShrink: standaloneButtonFlex.flexShrink,
+      alignSelf: standaloneButtonFlex.alignSelf,
+      minHeight: standaloneButtonFlex.minHeight,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -842,12 +734,22 @@ function createStyles(colors: SolderiPalette) {
       borderRadius: 16,
       paddingVertical: 16,
     },
+    footerPrimaryButton: {
+      flexGrow: rowButtonFlex.flexGrow,
+      flexShrink: rowButtonFlex.flexShrink,
+      flexBasis: rowButtonFlex.flexBasis,
+      alignSelf: rowButtonFlex.alignSelf,
+      minHeight: rowButtonFlex.minHeight,
+    },
     primaryButtonText: {
       fontSize: 16,
       fontWeight: '700',
       color: colors.onAccent,
     },
     secondaryButton: {
+      flexGrow: 0,
+      flexShrink: 0,
+      minHeight: standaloneButtonFlex.minHeight,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',

@@ -1,0 +1,29 @@
+---
+description: Authoring rules for Solderi projects, walkthroughs, BOMs, wiring, firmware, compatibility, and thumbnails
+globs: constants/walkthroughs/**/*.ts,constants/firmware/**/*.ts,constants/wiring-diagrams/**/*.ts,constants/projects-data.ts,constants/projects.ts,constants/component-catalogue.ts,lib/project-authoring.ts,lib/authored-projects.ts,lib/compatibility.ts,lib/project-navigation.ts,docs/PROJECT_AUTHORING.md,docs/PROJECT_THUMBNAILS.md,assets/images/projects/**,supabase/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Solderi project authoring
+
+When creating or changing a Solderi project, walkthrough, BOM, wiring diagram, firmware, or compatibility requirement:
+
+- Read and follow `docs/PROJECT_AUTHORING.md` before editing.
+- Use the existing walkthrough, catalogue, wiring-layout, and firmware files. A growing-sketch project stays a growing sketch. A single-firmware project stays one program. Do not invent a new project shape.
+- Include every physical part the build needs, with a catalogue id and a quantity, so the hardware list can be built as written.
+- Check the wiring table, diagram pins, instructions, code, and compatibility rows against each other. The same part and the same connection must use the same names.
+- Run `npm run test:compatibility`. `localAuthoredProjects` in `lib/authored-projects.ts` runs `reviewAuthoredProject` on every file in `constants/walkthroughs/`.
+- When the project has one firmware sketch and a matching toolchain is installed, compile that sketch and record the result. If the toolchain is missing, say compilation was not run.
+- Leave a new project unpublished. Publishing is a separate review.
+- Say when behaviour was not run on a bench, and name any missing cover or other asset.
+- When creating a project or changing its thumbnail, read and follow `docs/PROJECT_THUMBNAILS.md`. Match the existing workbench photographs. Show that project’s hardware. Register the JPEG on its own `PROJECT_IMAGES` key. A generated cover is not a bench test and is not the wiring diagram.
+- A passing structural check does not prove the project works physically.
+- Do not approve a component substitution. A substitution needs its own compatibility review id.
+
+```ts
+// Bad: mark a substitute as approved while writing the project
+{ policy: 'direct', approvedReviewIds: [''] }
+
+// Good: keep the requirement exact until a separate review exists
+{ policy: 'exact', approvedReviewIds: [] }
+```

@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ProjectCover } from '@/components/projects/ProjectCover';
 import type { SolderiPalette } from '@/constants/colors';
-import { ProjectImage } from '@/constants/projects';
 import { Radii, Spacing, Typography } from '@/constants/tokens';
 import { useSolderiColors } from '@/context/theme-context';
 
@@ -15,7 +14,7 @@ type HomeRecommendedCardProps = {
   difficulty: string;
   duration: string;
   componentCount: number;
-  image: ProjectImage;
+  imageKey: string;
 };
 
 export function HomeRecommendedCard({
@@ -24,7 +23,7 @@ export function HomeRecommendedCard({
   difficulty,
   duration,
   componentCount,
-  image,
+  imageKey,
 }: HomeRecommendedCardProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -36,7 +35,7 @@ export function HomeRecommendedCard({
       onPress={() => router.push(`/project/${projectId}`)}
       accessibilityRole="button"
       accessibilityLabel={`View project ${title}`}>
-      <Image source={image} style={styles.image} contentFit="cover" transition={200} />
+      <ProjectCover imageKey={imageKey} style={styles.image} />
 
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>

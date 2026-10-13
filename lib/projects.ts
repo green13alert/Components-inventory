@@ -12,6 +12,7 @@ import {
 import { getProjectImage } from '@/constants/projects';
 import type { Project as WalkthroughProject, ProjectStatus } from '@/constants/projects-data';
 import { STEP_BLOCK_TYPES, type StepBlock, type StepCodeContent } from '@/constants/walkthrough-content';
+import { draftProjectsAreRequested } from '@/lib/draft-preview';
 import { supabase } from '@/lib/supabase';
 
 export const PROJECT_ERRORS = {
@@ -304,18 +305,54 @@ export async function fetchProjects(): Promise<ProjectQueryResult<Project[]>> {
   return { data: mapped, error: null };
 }
 
+export async function fetchDraftProjects(): Promise<
+  ProjectQueryResult<{ projects: Project[]; authorized: boolean; userId: string | null }>
+> {
+  if (!draftProjectsAreRequested(__DEV__)) {
+    return { data: { projects: [], authorized: false, userId: null }, error: null };
+  }
+
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
+    return { data: null, error: PROJECT_ERRORS.unauthenticated };
+  }
+
+  const permission = await supabase.rpc('can_preview_unpublished_projects');
+  if (permission.error) {
+    return { data: null, error: mapPersistError(permission.error.message, PROJECT_ERRORS.generic) };
+  }
+
+  if (permission.data !== true) {
+    return { data: { projects: [], authorized: false, userId }, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select(PROJECT_LIST_SELECT)
+    .eq('is_published', false)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    return { data: null, error: mapPersistError(error.message, PROJECT_ERRORS.generic) };
+  }
+
+  const projects = (data as ProjectRow[] | null ?? [])
+    .map(mapProjectRow)
+    .filter((project): project is Project => project != null);
+
+  return { data: { projects, authorized: true, userId }, error: null };
+}
+
 export async function fetchProjectBySlug(slug: string): Promise<ProjectQueryResult<Project>> {
   const userId = await getAuthenticatedUserId();
   if (!userId) {
     return { data: null, error: PROJECT_ERRORS.unauthenticated };
   }
 
-  const { data, error } = await supabase
-    .from('projects')
-    .select(PROJECT_SELECT)
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .maybeSingle();
+  const request = supabase.from('projects').select(PROJECT_SELECT).eq('slug', slug);
+  const { data, error } = await (draftProjectsAreRequested(__DEV__)
+    ? request.maybeSingle()
+    : request.eq('is_published', true).maybeSingle());
 
   if (error) {
     return { data: null, error: mapPersistError(error.message, PROJECT_ERRORS.generic) };

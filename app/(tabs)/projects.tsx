@@ -12,7 +12,6 @@ import { ProjectListCard } from '@/components/projects/ProjectListCard';
 import { PageHeader } from '@/components/ui/page-header';
 import type { SolderiPalette } from '@/constants/colors';
 import { tabBarBottomPadding } from '@/constants/layout';
-import { getProjectImage } from '@/constants/projects';
 import {
   PROJECT_DIFFICULTY_FILTERS,
   PROJECT_VIEW_FILTERS,
@@ -20,7 +19,9 @@ import {
   type ProjectViewFilter,
 } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
+import { draftProjectsAreRequested } from '@/lib/draft-preview';
 import {
+  fetchDraftProjects,
   fetchProjectCompatibility,
   getUserProjectProgressPercent,
   getUserProjectStatus,
@@ -49,8 +50,16 @@ export default function ProjectsScreen() {
   const [difficultyFilter, setDifficultyFilter] = useState<ProjectDifficultyFilter>('all');
   const [compatibility, setCompatibility] = useState<ProjectCompatibilityData | null>(null);
   const [compatibilityError, setCompatibilityError] = useState<string | null>(null);
+  const [draftProjects, setDraftProjects] = useState<Project[]>([]);
+  const [draftAuthorized, setDraftAuthorized] = useState(false);
+  const [draftUserId, setDraftUserId] = useState<string | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const showDrafts = draftProjectsAreRequested(__DEV__);
 
-  const projectIds = useMemo(() => publishedProjects.map((project) => project.id), [publishedProjects]);
+  const projectIds = useMemo(
+    () => [...publishedProjects, ...draftProjects].map((project) => project.id),
+    [draftProjects, publishedProjects],
+  );
   const inventoryComponentIds = useMemo(
     () => [...new Set(inventory.flatMap((item) => (item.componentId ? [item.componentId] : [])))].sort(),
     [inventory],
@@ -61,6 +70,34 @@ export default function ProjectsScreen() {
       setViewFilter('favourites');
     }
   }, [filter]);
+
+  useEffect(() => {
+    if (!showDrafts) {
+      return;
+    }
+
+    let cancelled = false;
+    void fetchDraftProjects().then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (result.error || !result.data) {
+        setDraftProjects([]);
+        setDraftAuthorized(false);
+        setDraftUserId(null);
+        setDraftError(result.error ?? PROJECT_ERRORS.generic);
+        return;
+      }
+      setDraftProjects(result.data.projects);
+      setDraftAuthorized(result.data.authorized);
+      setDraftUserId(result.data.userId);
+      setDraftError(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showDrafts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,9 +129,11 @@ export default function ProjectsScreen() {
   const matchesByProjectId = useMemo(() => {
     const loaded = compatibilityError ? null : compatibility;
     return new Map(
-      publishedProjects.map((project) => [project.id, matchProjectInventory(project.bom, inventory, loaded)] as const),
+      [...publishedProjects, ...draftProjects].map(
+        (project) => [project.id, matchProjectInventory(project.bom, inventory, loaded)] as const,
+      ),
     );
-  }, [compatibility, compatibilityError, inventory, publishedProjects]);
+  }, [compatibility, compatibilityError, draftProjects, inventory, publishedProjects]);
 
   const inProgressProjects = useMemo(() => {
     return publishedProjects
@@ -191,12 +230,44 @@ export default function ProjectsScreen() {
                     title={project.title}
                     subtitle={subtitle}
                     progress={progress}
-                    image={getProjectImage(project.imageKey)}
+                    imageKey={project.imageKey}
                     width={cardWidth}
                   />
                 );
               }}
             />
+          </View>
+        ) : null}
+
+        {showDrafts ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Draft Projects</Text>
+            <Text style={styles.draftNote}>
+              Development only. These projects are unpublished and stay hidden from other accounts.
+            </Text>
+            {draftError ? <Text style={styles.emptySubtitle}>{draftError}</Text> : null}
+            {draftAuthorized ? (
+              draftProjects.length > 0 ? (
+                <View style={styles.list}>
+                  {draftProjects.map((project) => (
+                    <ProjectListCard
+                      key={project.id}
+                      project={project}
+                      match={matchesByProjectId.get(project.id)!}
+                      inventoryReady={!inventoryLoading}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.emptySubtitle}>No unpublished projects.</Text>
+              )
+            ) : (
+              <Text style={styles.emptySubtitle}>
+                This signed-in account cannot read drafts
+                {draftUserId ? ` (${draftUserId})` : ''}. Add that user id to public.draft_previewers in the
+                Supabase SQL editor, then reload this screen.
+              </Text>
+            )}
           </View>
         ) : null}
 
@@ -253,6 +324,11 @@ function createStyles(colors: SolderiPalette) {
     },
     section: {
       gap: 14,
+    },
+    draftNote: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textMuted,
     },
     sectionTitle: {
       fontSize: 18,

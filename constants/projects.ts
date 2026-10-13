@@ -2,7 +2,7 @@ import type { ImageSource } from 'expo-image';
 
 export type ProjectImage = ImageSource;
 
-/** Bundled 16:9 catalogue photos generated for Solderi (reusable in-app assets). */
+/** Bundled 16:9 workbench photographs. Pending covers are listed in lib/project-navigation.ts and must not fall back to another project's photo. */
 export const PROJECT_IMAGES = {
   smartPlantMonitor: require('../assets/images/projects/project-smart-plant-monitor.jpg'),
   ledMatrix: require('../assets/images/projects/project-led-matrix.jpg'),
@@ -26,6 +26,7 @@ export const PROJECT_IMAGES = {
   voiceAssistant: require('../assets/images/projects/project-voice-assistant.jpg'),
   solarTracker: require('../assets/images/projects/project-solar-tracker.jpg'),
   blinkLed: require('../assets/images/projects/project-blink-led.jpg'),
+  esp32WifiWeather: require('../assets/images/projects/project-esp32-wifi-weather.jpg'),
 } as const satisfies Record<string, ProjectImage>;
 
 export function getProjectImage(imageKey: string): ProjectImage {

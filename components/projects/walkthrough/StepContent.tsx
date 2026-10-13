@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
+import { ProjectCover } from '@/components/projects/ProjectCover';
+import { displayProjectCoverCaption, projectCoverIsPending } from '@/lib/project-navigation';
 import { ExplainCodeButton, type ExplainCodeContext } from '@/components/projects/walkthrough/ExplainCodeButton';
 import { WiringDiagram } from '@/components/projects/walkthrough/WiringDiagram';
 import type { SolderiPalette } from '@/constants/colors';
@@ -70,6 +72,9 @@ function StepBlockView({
     case 'text':
       return <TextBlock heading={block.heading} body={block.body} />;
     case 'image': {
+      if (block.imageKey && projectCoverIsPending(block.imageKey) && !block.source) {
+        return <CoverImage imageKey={block.imageKey} caption={displayProjectCoverCaption(block.caption)} />;
+      }
       const source = block.source ?? (block.imageKey ? getProjectImage(block.imageKey) : undefined);
       if (!source) {
         return null;
@@ -135,6 +140,16 @@ function TextBlock({ heading, body }: { heading?: string; body: string }) {
 function SectionLabel({ children }: { children: string }) {
   const { styles } = useStepTheme();
   return <Text style={styles.sectionLabel}>{children}</Text>;
+}
+
+function CoverImage({ imageKey, caption }: { imageKey: string; caption?: string }) {
+  const { styles } = useStepTheme();
+  return (
+    <View style={styles.imageBlock}>
+      <ProjectCover imageKey={imageKey} style={styles.image} />
+      {caption ? <Text style={styles.caption}>{caption}</Text> : null}
+    </View>
+  );
 }
 
 function ReferenceImage({ source, caption }: { source: ImageSource; caption?: string }) {

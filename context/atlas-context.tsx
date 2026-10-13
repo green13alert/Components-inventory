@@ -21,6 +21,7 @@ import {
   setInventoryItemQuantity,
   updateInventoryCatalogueItem,
 } from '@/lib/inventory';
+import { WALKTHROUGH_SAVE_FAILED, resolveCatalogueProjectId } from '@/lib/project-navigation';
 import {
   PROJECT_ERRORS,
   completeUserProject,
@@ -150,6 +151,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const loadGeneration = useRef(0);
   const projectLoadGeneration = useRef(0);
   const stepWriteGeneration = useRef(new Map<string, number>());
+  const confirmedSteps = useRef(new Map<string, number>());
   const projectPersistChain = useRef(new Map<string, Promise<void>>());
   const completedProjectIds = useRef(new Set<string>());
 
@@ -203,6 +205,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       setProjectsError(null);
       setProjectsLoading(false);
       completedProjectIds.current = new Set();
+      confirmedSteps.current = new Map();
       return;
     }
 
@@ -218,6 +221,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     completedProjectIds.current = new Set(
       rows.filter((row) => row.completedAt).map((row) => row.projectId),
     );
+    confirmedSteps.current = new Map(rows.map((row) => [row.projectId, row.currentStep]));
 
     if (projectsResult.error || userResult.error) {
       setPublishedProjects(projectsResult.data ?? []);
@@ -242,16 +246,12 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   }, [reloadProjectState]);
 
   const resolveProjectId = useCallback(
-    (idOrSlug: string): string | null => {
-      if (userProjects.some((row) => row.projectId === idOrSlug)) {
-        return idOrSlug;
-      }
-      const byId = publishedProjects.find((project) => project.id === idOrSlug);
-      if (byId) {
-        return byId.id;
-      }
-      return publishedProjects.find((project) => project.slug === idOrSlug)?.id ?? null;
-    },
+    (idOrSlug: string): string | null =>
+      resolveCatalogueProjectId(
+        idOrSlug,
+        publishedProjects,
+        userProjects.map((row) => row.projectId),
+      ),
     [publishedProjects, userProjects],
   );
 
@@ -444,6 +444,9 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     }
 
     const step = Math.max(0, Math.floor(stepIndex));
+    if (!confirmedSteps.current.has(resolved)) {
+      confirmedSteps.current.set(resolved, existing.currentStep);
+    }
     const writeId = (stepWriteGeneration.current.get(resolved) ?? 0) + 1;
     stepWriteGeneration.current.set(resolved, writeId);
 
@@ -453,6 +456,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     });
 
+    let failure: string | null = null;
     await enqueueProjectPersist(resolved, async () => {
       if (stepWriteGeneration.current.get(resolved) !== writeId) {
         return;
@@ -469,17 +473,27 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       }
 
       if (result.error || !result.data) {
-        setToastMessage(result.error ?? PROJECT_ERRORS.save);
+        failure = WALKTHROUGH_SAVE_FAILED;
+        const confirmed = confirmedSteps.current.get(resolved) ?? existing.currentStep;
+        const current = getUserProject(resolved);
+        if (current && stepWriteGeneration.current.get(resolved) === writeId) {
+          persistUserProject({
+            ...current,
+            currentStep: confirmed,
+          });
+        }
+        setToastMessage(WALKTHROUGH_SAVE_FAILED);
         return;
       }
 
+      confirmedSteps.current.set(resolved, result.data.currentStep);
       persistUserProject(result.data);
       if (existing.currentStep !== result.data.currentStep) {
         recordProjectActivity('continued', resolved);
       }
     });
 
-    return { error: null };
+    return failure ? { error: failure } : { error: null };
   }, [enqueueProjectPersist, getUserProject, persistUserProject, recordProjectActivity, resolveProjectId]);
 
   const completeProject = useCallback(async (
@@ -502,6 +516,10 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     const writeId = (stepWriteGeneration.current.get(resolved) ?? 0) + 1;
     stepWriteGeneration.current.set(resolved, writeId);
 
+    if (!confirmedSteps.current.has(resolved)) {
+      confirmedSteps.current.set(resolved, existing.currentStep);
+    }
+
     if (!alreadyCompleted) {
       completedProjectIds.current.add(resolved);
       persistUserProject({
@@ -512,15 +530,24 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       });
     }
 
+    let failure: string | null = null;
     await enqueueProjectPersist(resolved, async () => {
       const result = await completeUserProject(resolved, finalStep);
       if (result.error || !result.data) {
-        completedProjectIds.current.delete(resolved);
-        persistUserProject(existing);
-        setToastMessage(result.error ?? PROJECT_ERRORS.save);
+        failure = WALKTHROUGH_SAVE_FAILED;
+        if (!alreadyCompleted) {
+          completedProjectIds.current.delete(resolved);
+        }
+        const confirmed = confirmedSteps.current.get(resolved) ?? existing.currentStep;
+        persistUserProject({
+          ...existing,
+          currentStep: confirmed,
+        });
+        setToastMessage(WALKTHROUGH_SAVE_FAILED);
         return;
       }
 
+      confirmedSteps.current.set(resolved, result.data.currentStep);
       completedProjectIds.current.add(resolved);
       persistUserProject(result.data);
       if (!alreadyCompleted && result.data.completedAt) {
@@ -528,7 +555,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return { error: null };
+    return failure ? { error: failure } : { error: null };
   }, [
     enqueueProjectPersist,
     getAuthoredStepCount,
@@ -549,6 +576,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       return { error: result.error ?? PROJECT_ERRORS.save };
     }
 
+    confirmedSteps.current.set(result.data.projectId, result.data.currentStep);
     persistUserProject(result.data);
     return { error: null };
   }, [persistUserProject, resolveProjectId]);

@@ -7,7 +7,9 @@ export type WiringSymbolKind =
   | 'resistor'
   | 'buzzer'
   | 'servo'
-  | 'joystick';
+  | 'joystick'
+  | 'esp32-devkit'
+  | 'bme280';
 
 export type WiringRailDomain = 'logic' | 'servo' | 'ground';
 
@@ -30,6 +32,10 @@ export type WiringElementDef = {
   height: number;
   ports: WiringPortDef[];
   railDomain?: WiringRailDomain;
+  /** Replaces the default “+ 5V” breadboard rail caption. */
+  powerRailLabel?: string;
+  /** Draws a socket and cable so the ports are the cable’s male pins, not a header in the breadboard. */
+  cableLabel?: string;
 };
 
 export type WiringLayout = {
@@ -37,4 +43,8 @@ export type WiringLayout = {
   width: number;
   height: number;
   elements: WiringElementDef[];
+  /** Overrides the shared legend text for this diagram only. */
+  wireLabels?: Partial<
+    Record<'powerLogic' | 'powerServo' | 'ground' | 'digital' | 'analog' | 'pwm' | 'i2cData' | 'i2cClock', string>
+  >;
 };

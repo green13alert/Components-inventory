@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ProjectCover } from '@/components/projects/ProjectCover';
 import type { SolderiPalette } from '@/constants/colors';
-import { ProjectImage } from '@/constants/projects';
 import { useSolderiColors } from '@/context/theme-context';
 
 type ContinueLearningCardProps = {
@@ -12,7 +11,7 @@ type ContinueLearningCardProps = {
   title: string;
   subtitle: string;
   progress: number;
-  image: ProjectImage;
+  imageKey: string;
   width?: number;
 };
 
@@ -21,7 +20,7 @@ export function ContinueLearningCard({
   title,
   subtitle,
   progress,
-  image,
+  imageKey,
   width,
 }: ContinueLearningCardProps) {
   const colors = useSolderiColors();
@@ -36,7 +35,7 @@ export function ContinueLearningCard({
           pressed && styles.pressed,
         ]}
         accessibilityRole="button">
-      <Image source={image} style={styles.image} contentFit="cover" transition={200} />
+      <ProjectCover imageKey={imageKey} style={styles.image} />
       <View style={styles.body}>
         <View style={styles.textWrap}>
           <Text style={styles.title}>{title}</Text>

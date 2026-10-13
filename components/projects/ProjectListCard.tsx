@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { ProjectCover } from '@/components/projects/ProjectCover';
 import type { SolderiPalette } from '@/constants/colors';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
-import { getProjectImage } from '@/constants/projects';
 import { useAtlas } from '@/context/atlas-context';
 import type { Project, ProjectInventoryMatch } from '@/lib/projects';
 import { getUserProjectProgressPercent, getUserProjectStatus } from '@/lib/projects';
@@ -49,15 +48,10 @@ export function ProjectListCard({ project, match, inventoryReady }: ProjectListC
         style={styles.cardPressable}
         onPress={() => router.push({ pathname: '/project/[id]', params: { id: project.slug } })}
         accessibilityRole="button">
-        <Image
-          source={getProjectImage(project.imageKey)}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-        />
+        <ProjectCover imageKey={project.imageKey} style={styles.image} />
         <View style={styles.body}>
           <Text style={styles.title} numberOfLines={2}>
-            {project.title}
+            {project.isPublished ? project.title : `Draft · ${project.title}`}
           </Text>
           <Text style={styles.description} numberOfLines={2}>
             {project.description}

@@ -62,6 +62,9 @@ const COMPLETE_CONNECTIONS: StepConnection[] = [
   ...JOY_CONNECTIONS,
 ];
 
+export const SERVO_PAN_TILT_CAMERA_COMPONENTS = COMPONENTS;
+export const SERVO_PAN_TILT_CAMERA_CONNECTIONS = COMPLETE_CONNECTIONS;
+
 const SKETCH_CREATE = `const int PAN_PIN = 9;
 const int TILT_PIN = 10;
 const int JOY_X_PIN = A0;
@@ -381,8 +384,8 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         heading: 'Pin map',
         summary: 'Pan D9 · tilt D10 · joystick A0/A1/D2',
         rows: [
-          { fromComponent: 'Arduino Uno', fromPin: 'D9', toComponent: 'Pan servo', toPin: 'SIG', signal: 'signal' },
-          { fromComponent: 'Arduino Uno', fromPin: 'D10', toComponent: 'Tilt servo', toPin: 'SIG', signal: 'signal' },
+          { fromComponent: 'Arduino Uno', fromPin: 'D9', toComponent: 'Pan servo', toPin: 'SIG (orange)', signal: 'signal' },
+          { fromComponent: 'Arduino Uno', fromPin: 'D10', toComponent: 'Tilt servo', toPin: 'SIG (orange)', signal: 'signal' },
           { fromComponent: 'Arduino Uno', fromPin: 'A0', toComponent: 'Joystick', toPin: 'VRx', signal: 'signal' },
           { fromComponent: 'Arduino Uno', fromPin: 'A1', toComponent: 'Joystick', toPin: 'VRy', signal: 'signal' },
           { fromComponent: 'Arduino Uno', fromPin: 'D2', toComponent: 'Joystick', toPin: 'SW', signal: 'signal' },
