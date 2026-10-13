@@ -70,7 +70,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'RP2040 microcontroller board',
     category: 'microcontrollers',
     type: 'development_board',
-    image: 'generic-board',
+    image: 'raspberry-pi-pico',
   },
   {
     id: 'dht11',
@@ -484,7 +484,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: '100 nF ceramic capacitor',
     category: 'modules',
     type: 'passive',
-    image: 'generic-module',
+    image: 'ceramic-capacitor',
   },
   {
     id: 'capacitor-10uf',
@@ -493,7 +493,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: '10 µF polarised electrolytic capacitor',
     category: 'modules',
     type: 'passive',
-    image: 'generic-module',
+    image: 'electrolytic-capacitor',
   },
   {
     id: 'capacitor-100uf',
@@ -502,7 +502,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: '100 µF polarised electrolytic capacitor',
     category: 'modules',
     type: 'passive',
-    image: 'generic-module',
+    image: 'electrolytic-capacitor',
   },
   {
     id: 'button-tactile',
@@ -511,7 +511,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Momentary push button',
     category: 'modules',
     type: 'button',
-    image: 'generic-module',
+    image: 'tactile-button',
   },
   {
     id: 'potentiometer-10k',
@@ -520,7 +520,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: '10 kΩ potentiometer, distinct from a fixed 10 kΩ part',
     category: 'modules',
     type: 'potentiometer',
-    image: 'generic-module',
+    image: 'potentiometer',
   },
   {
     id: 'esp32-cam',
@@ -529,7 +529,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Camera development board, not an ESP32 DevKit',
     category: 'microcontrollers',
     type: 'development_board',
-    image: 'generic-board',
+    image: 'esp32-cam',
   },
   {
     id: 'raspberry-pi-pico-w',
@@ -538,7 +538,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'RP2040 microcontroller board with wireless',
     category: 'microcontrollers',
     type: 'development_board',
-    image: 'generic-board',
+    image: 'raspberry-pi-pico',
   },
   {
     id: 'raspberry-pi-4',
@@ -547,7 +547,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Linux single-board computer, RAM size not specified',
     category: 'computers',
     type: 'single_board_computer',
-    image: 'generic-board',
+    image: 'raspberry-pi',
   },
   {
     id: 'raspberry-pi-5',
@@ -556,7 +556,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Linux single-board computer, not interchangeable with another Pi model',
     category: 'computers',
     type: 'single_board_computer',
-    image: 'generic-board',
+    image: 'raspberry-pi',
   },
 ];
 

@@ -2,56 +2,32 @@
  * Global Solderi component illustration identifiers.
  * Add new hardware here — SVG art lives in ComponentIllustration.tsx,
  * colours in component-illustration-palette.ts.
+ *
+ * Resolution order:
+ * 1. Catalogue slug uses that row's shared `image`.
+ * 2. A known illustration id is used directly.
+ * 3. Name rules match a specific shape, then a category fallback.
+ * 4. `generic-module` is the last resort.
  */
 
-export type ComponentIllustrationId =
-  | 'arduino-uno'
-  | 'esp32'
-  | 'servo-sg90'
-  | 'hc-sr04'
-  | 'oled'
-  | 'dht11'
-  | 'led'
-  | 'resistor'
-  | 'dc-motor'
-  | 'breadboard'
-  | 'pir-sensor'
-  | 'lcd-display'
-  | 'relay-module'
-  | 'bluetooth-module'
-  | 'battery'
-  | 'motor-driver'
-  | 'jumper-wires'
-  | 'generic-sensor'
-  | 'generic-board'
-  | 'generic-module'
-  | 'generic-motor'
-  | 'generic-display'
-  | 'electronics-kit';
+import { getCatalogueComponent } from './component-catalogue.ts';
 
-/** Canonical onboarding / catalog ids map 1:1 to illustration ids. */
-export const ONBOARDING_COMPONENT_IDS = [
+export const COMPONENT_ILLUSTRATION_IDS = [
   'arduino-uno',
   'esp32',
+  'esp32-cam',
+  'raspberry-pi-pico',
+  'raspberry-pi',
   'servo-sg90',
   'hc-sr04',
   'oled',
   'dht11',
   'led',
   'resistor',
-  'breadboard',
-  'dc-motor',
-] as const;
-
-const DIRECT_IDS = new Set<string>([
-  'arduino-uno',
-  'esp32',
-  'servo-sg90',
-  'hc-sr04',
-  'oled',
-  'dht11',
-  'led',
-  'resistor',
+  'ceramic-capacitor',
+  'electrolytic-capacitor',
+  'tactile-button',
+  'potentiometer',
   'dc-motor',
   'breadboard',
   'pir-sensor',
@@ -67,7 +43,25 @@ const DIRECT_IDS = new Set<string>([
   'generic-motor',
   'generic-display',
   'electronics-kit',
-]);
+] as const;
+
+export type ComponentIllustrationId = (typeof COMPONENT_ILLUSTRATION_IDS)[number];
+
+/** Canonical onboarding / catalog ids map 1:1 to illustration ids. */
+export const ONBOARDING_COMPONENT_IDS = [
+  'arduino-uno',
+  'esp32',
+  'servo-sg90',
+  'hc-sr04',
+  'oled',
+  'dht11',
+  'led',
+  'resistor',
+  'breadboard',
+  'dc-motor',
+] as const;
+
+const DIRECT_IDS = new Set<string>(COMPONENT_ILLUSTRATION_IDS);
 
 type ResolveInput = {
   id?: string;
@@ -75,6 +69,13 @@ type ResolveInput = {
 };
 
 const NAME_RULES: { pattern: RegExp; id: ComponentIllustrationId }[] = [
+  { pattern: /esp32[-\s]?cam/i, id: 'esp32-cam' },
+  { pattern: /raspberry pi pico|pico w|\bpico\b/i, id: 'raspberry-pi-pico' },
+  { pattern: /raspberry pi/i, id: 'raspberry-pi' },
+  { pattern: /ceramic capacitor|\d+\s*nf\b/i, id: 'ceramic-capacitor' },
+  { pattern: /electrolytic/i, id: 'electrolytic-capacitor' },
+  { pattern: /potentiometer|\bpot\b/i, id: 'potentiometer' },
+  { pattern: /tactile|push button|\bbutton\b/i, id: 'tactile-button' },
   { pattern: /arduino/i, id: 'arduino-uno' },
   { pattern: /esp32|esp-32/i, id: 'esp32' },
   { pattern: /sg90|servo/i, id: 'servo-sg90' },
@@ -95,12 +96,18 @@ const NAME_RULES: { pattern: RegExp; id: ComponentIllustrationId }[] = [
   { pattern: /soil moisture|moisture probe|bmp280|barometer|microphone|ldr|photoresistor|ir sensor|gyro|mpu|pulse sensor|max30102/i, id: 'generic-sensor' },
   { pattern: /display|screen|matrix|max7219/i, id: 'generic-display' },
   { pattern: /motor|propeller|fan module|water pump|chassis/i, id: 'generic-motor' },
-  { pattern: /wifi|rfid|rtc|real-time clock|sd card|terminal|keypad|buzzer|piezo|switch|button|regulator|lm7805|flight controller|wifi module/i, id: 'generic-module' },
+  { pattern: /wifi|rfid|rtc|real-time clock|sd card|terminal|keypad|buzzer|piezo|switch|regulator|lm7805|flight controller|wifi module/i, id: 'generic-module' },
 ];
 
 export function resolveComponentIllustration(input: ResolveInput): ComponentIllustrationId {
-  if (input.id && DIRECT_IDS.has(input.id)) {
-    return input.id as ComponentIllustrationId;
+  if (input.id) {
+    const catalogueImage = getCatalogueComponent(input.id)?.image;
+    if (catalogueImage) {
+      return catalogueImage;
+    }
+    if (DIRECT_IDS.has(input.id)) {
+      return input.id as ComponentIllustrationId;
+    }
   }
 
   const name = input.name?.trim() ?? '';
@@ -127,12 +134,19 @@ export function getComponentDisplayName(id: ComponentIllustrationId): string {
   const labels: Record<ComponentIllustrationId, string> = {
     'arduino-uno': 'Arduino Uno',
     esp32: 'ESP32',
+    'esp32-cam': 'ESP32-CAM',
+    'raspberry-pi-pico': 'Raspberry Pi Pico',
+    'raspberry-pi': 'Raspberry Pi',
     'servo-sg90': 'Servo SG90',
     'hc-sr04': 'HC-SR04',
     oled: 'OLED Display',
     dht11: 'DHT11',
     led: 'LED',
     resistor: 'Resistor',
+    'ceramic-capacitor': 'Ceramic capacitor',
+    'electrolytic-capacitor': 'Electrolytic capacitor',
+    'tactile-button': 'Tactile button',
+    potentiometer: 'Potentiometer',
     'dc-motor': 'DC Motor',
     breadboard: 'Breadboard',
     'pir-sensor': 'PIR Sensor',

@@ -75,6 +75,20 @@ function IllustrationArt({
       return <Led size={size} showGroundShadow={showGroundShadow} />;
     case 'resistor':
       return <Resistor size={size} showGroundShadow={showGroundShadow} />;
+    case 'ceramic-capacitor':
+      return <CeramicCapacitor size={size} showGroundShadow={showGroundShadow} />;
+    case 'electrolytic-capacitor':
+      return <ElectrolyticCapacitor size={size} showGroundShadow={showGroundShadow} />;
+    case 'tactile-button':
+      return <TactileButton size={size} showGroundShadow={showGroundShadow} />;
+    case 'potentiometer':
+      return <Potentiometer size={size} showGroundShadow={showGroundShadow} />;
+    case 'esp32-cam':
+      return <Esp32Cam size={size} showGroundShadow={showGroundShadow} />;
+    case 'raspberry-pi-pico':
+      return <RaspberryPiPico size={size} showGroundShadow={showGroundShadow} />;
+    case 'raspberry-pi':
+      return <RaspberryPiComputer size={size} showGroundShadow={showGroundShadow} />;
     case 'dc-motor':
       return <DcMotor size={size} showGroundShadow={showGroundShadow} />;
     case 'breadboard':
@@ -328,6 +342,101 @@ function Resistor({ size, showGroundShadow = true }: IllustrationProps) {
       <Rect x={28} y={27} width={3.5} height={10} rx={1} fill={HW.bandRed} />
       <Rect x={34} y={27} width={3.5} height={10} rx={1} fill={HW.bandGold} />
       <Rect x={40} y={27} width={3.5} height={10} rx={1} fill={HW.bandGold} />
+    </IllustrationSvg>
+  );
+}
+
+function CeramicCapacitor({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Line x1={18} y1={20} x2={18} y2={30} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={46} y1={20} x2={46} y2={30} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Ellipse cx={32} cy={36} rx={16} ry={14} fill="#E7B15A" stroke="#C4842A" strokeWidth={0.8} />
+      <Ellipse cx={32} cy={32} rx={10} ry={6} fill="#F3D08A" opacity={0.7} />
+      <Line x1={24} y1={36} x2={40} y2={36} stroke="#A16207" strokeWidth={1.2} opacity={0.55} />
+    </IllustrationSvg>
+  );
+}
+
+function ElectrolyticCapacitor({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={22} y={16} width={20} height={28} rx={8} fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.8} />
+      <Rect x={24} y={18} width={16} height={6} rx={3} fill={HW.metal} />
+      <Rect x={22} y={28} width={6} height={16} rx={1} fill={HW.batteryBlack} />
+      <Line x1={25} y1={32} x2={25} y2={40} stroke={HW.highlight} strokeWidth={1} />
+      <Line x1={28} y1={46} x2={28} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={36} y1={46} x2={36} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+    </IllustrationSvg>
+  );
+}
+
+function TactileButton({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={16} y={24} width={32} height={22} rx={3} fill={HW.icBlack} stroke={HW.icPin} strokeWidth={0.7} />
+      <Circle cx={32} cy={34} r={8} fill={HW.metal} stroke={HW.metalDark} strokeWidth={0.6} />
+      <Circle cx={32} cy={33} r={4} fill={HW.metalLight} />
+      <Line x1={18} y1={46} x2={14} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={22} y1={46} x2={22} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={42} y1={46} x2={42} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={46} y1={46} x2={50} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+    </IllustrationSvg>
+  );
+}
+
+function Potentiometer({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={18} y={28} width={28} height={16} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.7} />
+      <Circle cx={32} cy={26} r={10} fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.8} />
+      <Circle cx={32} cy={26} r={3} fill={HW.icBlack} />
+      <Line x1={32} y1={16} x2={32} y2={22} stroke={HW.icBlack} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={22} y1={44} x2={22} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={32} y1={44} x2={32} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={42} y1={44} x2={42} y2={54} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+    </IllustrationSvg>
+  );
+}
+
+function Esp32Cam({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={18} y={14} width={28} height={36} rx={2} fill={HW.pcbGreen} stroke={HW.pcbGreenLight} strokeWidth={0.7} />
+      <Circle cx={32} cy={30} r={9} fill={HW.icBlack} stroke={HW.metalDark} strokeWidth={0.8} />
+      <Circle cx={32} cy={30} r={5} fill={HW.screenMid} />
+      <Circle cx={30} cy={28} r={1.6} fill={HW.highlight} opacity={0.7} />
+      <Circle cx={42} cy={20} r={1.6} fill={HW.ledRed} />
+      <Rect x={24} y={46} width={16} height={3} rx={0.6} fill={HW.pinGold} />
+    </IllustrationSvg>
+  );
+}
+
+function RaspberryPiPico({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={10} y={22} width={44} height={20} rx={3} fill={HW.pcbGreen} stroke={HW.pcbGreenLight} strokeWidth={0.7} />
+      <Rect x={8} y={28} width={6} height={8} rx={1} fill={HW.usbSilver} />
+      <Rect x={22} y={28} width={14} height={8} rx={1} fill={HW.icBlack} />
+      {[14, 20, 26, 32, 38, 44].map((x) => (
+        <Rect key={`t-${x}`} x={x} y={20} width={2} height={2} rx={0.4} fill={HW.pinGold} />
+      ))}
+      {[14, 20, 26, 32, 38, 44].map((x) => (
+        <Rect key={`b-${x}`} x={x} y={42} width={2} height={2} rx={0.4} fill={HW.pinGold} />
+      ))}
+    </IllustrationSvg>
+  );
+}
+
+function RaspberryPiComputer({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={8} y={16} width={40} height={32} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.8} />
+      <Rect x={48} y={20} width={8} height={6} rx={1} fill={HW.usbSilver} />
+      <Rect x={48} y={28} width={8} height={6} rx={1} fill={HW.usbSilver} />
+      <Rect x={48} y={36} width={8} height={8} rx={1} fill={HW.metalDark} />
+      <Rect x={14} y={22} width={12} height={8} rx={1} fill={HW.icBlack} />
+      <PinRow x={14} y={36} count={8} spacing={3} />
     </IllustrationSvg>
   );
 }
