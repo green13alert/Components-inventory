@@ -76,9 +76,12 @@ const BATCH_ONE_IDS = [
 
 test('batch 1 adds 18 components and keeps the original ids', () => {
   const ids = COMPONENT_CATALOGUE.map((entry) => entry.id)
-  assert.equal(ids.length, 65)
-  assert.equal(new Set(ids).size, 65)
+  assert.equal(ids.length, 68)
+  assert.equal(new Set(ids).size, 68)
   assert.equal(ids.includes('stemma-qt-cable'), true)
+  assert.equal(ids.includes('rgb-led-cc'), true)
+  assert.equal(ids.includes('rgb-led-ca'), true)
+  assert.equal(ids.includes('pn2222a'), true)
   assert.equal(ids.includes('jumper-male-female'), true)
   for (const id of PRESERVED_IDS) {
     assert.equal(ids.includes(id), true)

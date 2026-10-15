@@ -6,7 +6,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { ProjectCover } from '@/components/projects/ProjectCover';
 import { displayProjectCoverCaption, projectCoverIsPending } from '@/lib/project-navigation';
-import { ExplainCodeButton, type ExplainCodeContext } from '@/components/projects/walkthrough/ExplainCodeButton';
+import type { ExplainCodeContext } from '@/components/projects/walkthrough/ExplainCodeButton';
 import { WiringDiagram } from '@/components/projects/walkthrough/WiringDiagram';
 import type { SolderiPalette } from '@/constants/colors';
 import type { ProjectComponent } from '@/constants/projects-data';
@@ -213,7 +213,6 @@ export function CodeBlock({
   libraries,
   code,
   heading,
-  explain,
 }: {
   language: string;
   filename?: string;
@@ -267,14 +266,6 @@ export function CodeBlock({
           </Text>
         </ScrollView>
       </View>
-      <ExplainCodeButton
-        context={{
-          code,
-          language,
-          filename,
-          ...explain,
-        }}
-      />
       {libraries && libraries.length > 0 ? (
         <View style={styles.libraries}>
           <Text style={styles.librariesLabel}>Required libraries</Text>

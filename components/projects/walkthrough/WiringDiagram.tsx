@@ -265,6 +265,10 @@ function DiagramSymbol({ element }: { element: WiringElementDef }) {
       return <ResistorSymbol element={element} />;
     case 'led':
       return <LedSymbol element={element} />;
+    case 'rgb-led':
+      return <RgbLedSymbol element={element} />;
+    case 'npn':
+      return <NpnSymbol element={element} />;
     case 'servo':
       return <ServoSymbol element={element} />;
     case 'joystick':
@@ -531,12 +535,102 @@ function ResistorSymbol({ element }: { element: WiringElementDef }) {
     <G>
       <Line x1={x} y1={midY} x2={x + width} y2={midY} stroke={HW.pinSilver} strokeWidth={2} />
       <Rect x={x + 28} y={y + 8} width={width - 56} height={height - 16} rx={6} fill={HW.resistorBody} />
-      <Rect x={x + 40} y={y + 8} width={8} height={height - 16} fill={HW.bandRed} />
-      <Rect x={x + 56} y={y + 8} width={8} height={height - 16} fill={HW.bandRed} />
-      <Rect x={x + width - 52} y={y + 8} width={8} height={height - 16} fill={HW.bandGold} />
+      {element.resistorOhms === 1000 ? (
+        <>
+          <Rect x={x + 34} y={y + 8} width={7} height={height - 16} fill="#7C4A2D" />
+          <Rect x={x + 46} y={y + 8} width={7} height={height - 16} fill="#111827" />
+          <Rect x={x + 58} y={y + 8} width={7} height={height - 16} fill="#DC2626" />
+          <Rect x={x + width - 46} y={y + 8} width={7} height={height - 16} fill={HW.bandGold} />
+        </>
+      ) : element.resistorOhms === 220 ? (
+        <>
+          <Rect x={x + 34} y={y + 8} width={7} height={height - 16} fill={HW.bandRed} />
+          <Rect x={x + 46} y={y + 8} width={7} height={height - 16} fill={HW.bandRed} />
+          <Rect x={x + 58} y={y + 8} width={7} height={height - 16} fill="#7C4A2D" />
+          <Rect x={x + width - 46} y={y + 8} width={7} height={height - 16} fill={HW.bandGold} />
+        </>
+      ) : element.resistorOhms === 100 ? (
+        <>
+          <Rect x={x + 36} y={y + 8} width={8} height={height - 16} fill="#7C4A2D" />
+          <Rect x={x + 50} y={y + 8} width={8} height={height - 16} fill="#111827" />
+          <Rect x={x + 64} y={y + 8} width={8} height={height - 16} fill="#7C4A2D" />
+          <Rect x={x + width - 48} y={y + 8} width={8} height={height - 16} fill={HW.bandGold} />
+        </>
+      ) : (
+        <>
+          <Rect x={x + 40} y={y + 8} width={8} height={height - 16} fill={HW.bandRed} />
+          <Rect x={x + 56} y={y + 8} width={8} height={height - 16} fill={HW.bandRed} />
+          <Rect x={x + width - 52} y={y + 8} width={8} height={height - 16} fill={HW.bandGold} />
+        </>
+      )}
       <SvgText x={x + width / 2} y={y - 4} fill="#334155" fontSize={10} fontWeight="700" textAnchor="middle">
         {element.label}
       </SvgText>
+      {element.note ? (
+        <SvgText x={x + width / 2} y={y - 14} fill="#475569" fontSize={8} fontWeight="600" textAnchor="middle">
+          {element.note}
+        </SvgText>
+      ) : null}
+    </G>
+  );
+}
+
+function NpnSymbol({ element }: { element: WiringElementDef }) {
+  const { x, y, width, height } = element;
+  const baseY = y + height * 0.42;
+  const bodyX = x + width * 0.42;
+  return (
+    <G>
+      <SvgText x={x + width / 2} y={y - 3} fill="#334155" fontSize={10} fontWeight="700" textAnchor="middle">
+        {element.label}
+      </SvgText>
+      {element.note ? (
+        <SvgText x={x + width / 2} y={y - 14} fill="#475569" fontSize={8} fontWeight="600" textAnchor="middle">
+          {element.note}
+        </SvgText>
+      ) : null}
+      <Line x1={x + 2} y1={baseY} x2={bodyX} y2={baseY} stroke="#334155" strokeWidth={2} />
+      <Line x1={bodyX} y1={y + 6} x2={bodyX} y2={y + height - 4} stroke="#334155" strokeWidth={2} />
+      <Line x1={bodyX} y1={baseY - 7} x2={x + width - 2} y2={y + 8} stroke="#334155" strokeWidth={2} />
+      <Line x1={bodyX} y1={baseY + 7} x2={x + width / 2} y2={y + height - 2} stroke="#334155" strokeWidth={2} />
+    </G>
+  );
+}
+
+function RgbLedSymbol({ element }: { element: WiringElementDef }) {
+  const { x, y, width } = element;
+  const cx = x + width / 2;
+  const cy = y + 28;
+  return (
+    <G>
+      <Circle cx={cx} cy={cy} r={20} fill="#F8FAFC" stroke="#334155" strokeWidth={2} />
+      <Circle cx={cx - 7} cy={cy - 2} r={4} fill="#DC2626" />
+      <Circle cx={cx + 1} cy={cy + 6} r={4} fill="#16A34A" />
+      <Circle cx={cx + 8} cy={cy - 2} r={4} fill="#2563EB" />
+      {element.ports.map((port) => (
+        <Line
+          key={`${port.id}-lead`}
+          x1={x + port.dx}
+          y1={y + port.dy}
+          x2={cx}
+          y2={cy + 16}
+          stroke="#64748B"
+          strokeWidth={1.5}
+        />
+      ))}
+      <SvgText x={cx} y={y + 8} fill="#0F172A" fontSize={10} fontWeight="700" textAnchor="middle">
+        RGB
+      </SvgText>
+      {element.note ? (
+        <SvgText x={cx} y={y - 2} fill="#475569" fontSize={8} fontWeight="600" textAnchor="middle">
+          {element.note}
+        </SvgText>
+      ) : null}
+      {element.ports.map((port) => (
+        <SvgText key={port.id} x={x + port.dx + 8} y={y + port.dy + 3} fill="#334155" fontSize={9} fontWeight="700">
+          {port.label}
+        </SvgText>
+      ))}
     </G>
   );
 }

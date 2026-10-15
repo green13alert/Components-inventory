@@ -4,6 +4,8 @@ export type WiringSymbolKind =
   | 'breadboard-psu'
   | 'pir'
   | 'led'
+  | 'rgb-led'
+  | 'npn'
   | 'resistor'
   | 'buzzer'
   | 'servo'
@@ -36,6 +38,10 @@ export type WiringElementDef = {
   powerRailLabel?: string;
   /** Draws a socket and cable so the ports are the cable’s male pins, not a header in the breadboard. */
   cableLabel?: string;
+  /** Selects colour bands on a resistor symbol. Omitted resistors keep the existing band drawing. */
+  resistorOhms?: 100 | 220 | 1000;
+  /** Short placement caption drawn with this symbol. Omitted on other diagrams. */
+  note?: string;
 };
 
 export type WiringLayout = {

@@ -75,6 +75,22 @@ function IllustrationArt({
       return <Led size={size} showGroundShadow={showGroundShadow} />;
     case 'resistor':
       return <Resistor size={size} showGroundShadow={showGroundShadow} />;
+    case 'resistor-band-220':
+      return (
+        <Resistor
+          size={size}
+          showGroundShadow={showGroundShadow}
+          bands={[HW.bandRed, HW.bandRed, HW.bandBrown, HW.bandGold]}
+        />
+      );
+    case 'resistor-band-1k':
+      return (
+        <Resistor
+          size={size}
+          showGroundShadow={showGroundShadow}
+          bands={[HW.bandBrown, '#111827', HW.bandRed, HW.bandGold]}
+        />
+      );
     case 'ceramic-capacitor':
       return <CeramicCapacitor size={size} showGroundShadow={showGroundShadow} />;
     case 'electrolytic-capacitor':
@@ -332,7 +348,11 @@ function Led({ size, showGroundShadow = true }: IllustrationProps) {
   );
 }
 
-function Resistor({ size, showGroundShadow = true }: IllustrationProps) {
+function Resistor({
+  size,
+  showGroundShadow = true,
+  bands = [HW.bandBrown, HW.bandRed, HW.bandGold, HW.bandGold],
+}: IllustrationProps & { bands?: readonly string[] }) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
       {/* Leads */}
@@ -341,11 +361,11 @@ function Resistor({ size, showGroundShadow = true }: IllustrationProps) {
       {/* Beige body */}
       <Rect x={18} y={26} width={28} height={12} rx={6} fill={HW.resistorBody} stroke="#B8A888" strokeWidth={0.7} />
       <TopSheen x={20} y={27} w={16} h={4} rx={2} />
-      {/* Colour bands */}
-      <Rect x={22} y={27} width={3.5} height={10} rx={1} fill={HW.bandBrown} />
-      <Rect x={28} y={27} width={3.5} height={10} rx={1} fill={HW.bandRed} />
-      <Rect x={34} y={27} width={3.5} height={10} rx={1} fill={HW.bandGold} />
-      <Rect x={40} y={27} width={3.5} height={10} rx={1} fill={HW.bandGold} />
+      {/* Colour bands. The default drawing stays the shared generic resistor. */}
+      <Rect x={22} y={27} width={3.5} height={10} rx={1} fill={bands[0]} />
+      <Rect x={28} y={27} width={3.5} height={10} rx={1} fill={bands[1]} />
+      <Rect x={34} y={27} width={3.5} height={10} rx={1} fill={bands[2]} />
+      <Rect x={40} y={27} width={3.5} height={10} rx={1} fill={bands[3]} />
     </IllustrationSvg>
   );
 }

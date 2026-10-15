@@ -1,5 +1,7 @@
 import { COMPONENT_CATALOGUE } from '../constants/component-catalogue.ts'
+import { ESP32_BLE_RGB_FIRMWARE } from '../constants/firmware/esp32-ble-rgb-controller.ts'
 import { ESP32_WIFI_WEATHER_FIRMWARE } from '../constants/firmware/esp32-wifi-weather-station.ts'
+import { ESP32_BLE_RGB_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32-ble-rgb-controller.ts'
 import { ESP32_WIFI_WEATHER_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32-wifi-weather-station.ts'
 import { MOTION_SENSOR_ALARM_LAYOUT } from '../constants/wiring-diagrams/layouts/motion-sensor-alarm.ts'
 import { SERVO_PAN_TILT_CAMERA_LAYOUT } from '../constants/wiring-diagrams/layouts/servo-pan-tilt-camera.ts'
@@ -13,6 +15,12 @@ import {
   SERVO_PAN_TILT_CAMERA_CONNECTIONS,
   SERVO_PAN_TILT_CAMERA_STEPS,
 } from '../constants/walkthroughs/servo-pan-tilt-camera.ts'
+import {
+  ESP32_BLE_RGB_BOM,
+  ESP32_BLE_RGB_CONNECTIONS,
+  ESP32_BLE_RGB_PROJECT,
+  ESP32_BLE_RGB_STEPS,
+} from '../constants/walkthroughs/esp32-ble-rgb-controller.ts'
 import {
   ESP32_WIFI_WEATHER_BOM,
   ESP32_WIFI_WEATHER_CONNECTIONS,
@@ -85,6 +93,26 @@ export function localAuthoredProjects(): AuthoredProjectInput[] {
       })),
       codeStyle: 'single-program',
       compilation: 'not_run',
+      hardwareTested: false,
+    },
+    {
+      slug: ESP32_BLE_RGB_PROJECT.slug,
+      title: ESP32_BLE_RGB_PROJECT.title,
+      isPublished: ESP32_BLE_RGB_PROJECT.isPublished,
+      learningObjectives: ESP32_BLE_RGB_PROJECT.learningObjectives,
+      coverPending: projectCoverIsPending(ESP32_BLE_RGB_PROJECT.imageKey),
+      bom: ESP32_BLE_RGB_BOM.map((item) => ({ slug: item.slug, quantity: item.quantity })),
+      catalogueIds: ids,
+      steps: ESP32_BLE_RGB_STEPS,
+      connections: ESP32_BLE_RGB_CONNECTIONS,
+      layout: ESP32_BLE_RGB_LAYOUT,
+      firmware: ESP32_BLE_RGB_FIRMWARE,
+      requirements: ESP32_BLE_RGB_BOM.map(() => ({
+        policy: 'exact' as const,
+        approvedReviewIds: [],
+      })),
+      codeStyle: 'single-program',
+      compilation: 'passed',
       hardwareTested: false,
     },
   ]

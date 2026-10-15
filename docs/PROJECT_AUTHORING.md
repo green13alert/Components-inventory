@@ -38,13 +38,25 @@ When a toolchain can run here, compile the sketch with the board package and lib
 
 Write for the project’s difficulty. Define GPIO, I2C, SSID, IP address, JSON, and any other term at the first step that needs it. Each step should say what to do next. Partial code must not look like a sketch to upload.
 
+The opening should say what the person is building, what the finished project does, and what they will learn, without repeating that same overview on later steps. Introduce a term when the step needs it.
+
+A breadboard project shows a layout a person can copy: which leads share a row, which rows stay separate, and where the supply rails are. Count every jumper the layout actually uses, including male-to-male links from a terminal strip to a rail. Wire in stages, with a checkpoint after each stage, and keep one complete connection list. Do not paste that full list on every wiring step.
+
+Keep the main explanation short. Put voltage, current, and protocol detail in a separate block for someone who wants it. There is no expandable control in the walkthrough, so a headed text block is the separation.
+
+A code excerpt is a slice of the uploadable program, and the step says so. The complete program stays in one copyable step. Phone or app steps name the taps, the write format, and what should change. Buttons and dialogs in the walkthrough do something useful. Do not leave a control that only announces unfinished work.
+
+These are the bar for a new tutorial. They are not a fixed sequence of stages. A sensor project and a radio project will not share the same outline.
+
 ### 6. Expected behaviour
 
-Describe what the program is written to do, and say whether that result has been seen on hardware. Do not describe a status the code cannot deliver. In particular, a browser that has lost the board cannot show a status that only arrives in the board’s HTTP response.
+Describe what the program is written to do. Say in the authoring record whether that result has been seen on hardware. Do not put repository status, migration notes, or “this has not been tested” into the learner’s steps. A learner-facing warning can still name a real limit, such as a supply that is too weak for a colour.
+
+Do not describe a status the code cannot deliver. In particular, a browser that has lost the board cannot show a status that only arrives in the board’s HTTP response. Software checks and a compile are not a hardware test.
 
 ### 7. Troubleshooting
 
-Include the failures this circuit and this program actually produce: missing serial port and USB-UART driver, wrong I2C address, failed Wi-Fi join, and a local network that isolates clients. Give a check the learner can do, not a generic “see the docs”.
+Include the failures this circuit and this program actually produce: missing serial port and USB-UART driver, wrong I2C address, failed Wi-Fi join, and a local network that isolates clients. Each entry names the symptom, the likely cause, the checks in order, and what the learner should see when the check passes. “Check the wiring” is not an entry. The last checklist is something a person can do one line at a time.
 
 ### 8. Visual quality
 

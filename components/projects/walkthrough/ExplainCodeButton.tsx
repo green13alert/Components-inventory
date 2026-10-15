@@ -1,3 +1,4 @@
+// Not mounted. Code blocks keep Copy and the library list. There is no explanation backend.
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';

@@ -361,6 +361,36 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     image: 'led',
   },
   {
+    id: 'rgb-led-cc',
+    name: 'Common-cathode RGB LED',
+    aliases: ['rgb led', 'common cathode rgb', '5mm rgb led'],
+    description:
+      '5 mm common-cathode RGB LED using the Young Sun YSL-R596CR3G4B5C-C10 lead order. Leads pointing down, left to right: red anode, common cathode (longest), green anode, blue anode. This row is not a common-anode LED and not an addressable pixel.',
+    category: 'modules',
+    type: 'led',
+    image: 'led',
+  },
+  {
+    id: 'rgb-led-ca',
+    name: 'Common-anode RGB LED',
+    aliases: ['common anode rgb', 'rgb common anode', '5mm common anode rgb'],
+    description:
+      'Kingbright WP154A4SEJ3VBDZGW/CA, a white-diffused 5 mm common-anode RGB LED. Datasheet DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, draws pin 1 as the red cathode, pin 2 as the common anode, pin 3 as the blue cathode, and pin 4 as the green cathode. The end view puts the flat of the flange next to pin 1. The package drawing labels the anode lead and shows it 2.5 mm minimum longer than the other leads. At 20 mA the forward voltage is 2.2 V typical and 2.8 V maximum for red, 3.3 V typical and 4.0 V maximum for blue, and 3.3 V typical and 4.1 V maximum for green. Absolute maximum DC forward current is 30 mA for red, 30 mA for blue, and 25 mA for green. This row is not a common-cathode LED and not an addressable pixel.',
+    category: 'modules',
+    type: 'led',
+    image: 'led',
+  },
+  {
+    id: 'pn2222a',
+    name: 'PN2222A transistor',
+    aliases: ['pn2222', '2n2222', 'p2n2222a', 'npn transistor'],
+    description:
+      'onsemi PN2222ABU, the bulk TO-92 formerly listed by Fairchild. Top mark PN2222A. The PN2222A Rev. 1.1.0 package sketch labels the leads E, B, C: flat face toward you and leads down, left to right is emitter, base, collector. A metal-can 2N2222, and some other TO-92 parts with a similar mark, use a different order. Absolute maximum collector current is 1 A. Used as a low-side switch.',
+    category: 'modules',
+    type: 'transistor',
+    image: 'generic-module',
+  },
+  {
     id: 'resistor',
     name: 'Resistor',
     aliases: ['resistors'],

@@ -189,6 +189,15 @@ export function inferWireKind(
     return 'pwm';
   }
 
+  if (
+    connection.signal === 'signal' &&
+    (from.element.kind === 'npn' ||
+      to.element.kind === 'npn' ||
+      pinNames.some((pin) => pin === 'io25' || pin === 'io26' || pin === 'io27' || pin === 'red' || pin === 'green' || pin === 'blue'))
+  ) {
+    return 'pwm';
+  }
+
   const isPower =
     connection.signal === 'power' ||
     fromPin === '5v' ||

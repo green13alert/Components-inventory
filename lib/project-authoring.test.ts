@@ -72,6 +72,7 @@ test('local authoring validation covers every walkthrough project', () => {
       { slug: '8', errors: [] },
       { slug: '18', errors: [] },
       { slug: '23', errors: [] },
+      { slug: '24', errors: [] },
     ],
   )
 })

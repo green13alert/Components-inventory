@@ -15,7 +15,7 @@ function resolved(id: string): ComponentIllustrationId {
 }
 
 test('every catalogue component resolves to a known illustration', () => {
-  assert.equal(COMPONENT_CATALOGUE.length, 65)
+  assert.equal(COMPONENT_CATALOGUE.length, 68)
   for (const entry of COMPONENT_CATALOGUE) {
     assert.equal(KNOWN.has(entry.image), true, entry.id)
     assert.equal(resolved(entry.id), entry.image)
@@ -27,6 +27,8 @@ test('resistor values share the resistor illustration', () => {
   for (const id of ['resistor', 'resistor-220', 'resistor-100', 'resistor-10k', 'resistor-100k']) {
     assert.equal(resolved(id), 'resistor')
   }
+  assert.equal(resolveComponentIllustration({ id: 'resistor-band-220' }), 'resistor-band-220')
+  assert.equal(resolveComponentIllustration({ id: 'resistor-band-1k' }), 'resistor-band-1k')
 })
 
 test('new passives are not drawn as development boards or as a resistor', () => {

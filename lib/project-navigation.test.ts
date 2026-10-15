@@ -191,5 +191,6 @@ test('the weather station cover uses its own photograph', () => {
   assert.equal(projectCoverIsPending('esp32WifiWeather'), false)
   assert.equal(projectCoverIsPending('blinkLed'), false)
   assert.equal(projectCoverIsPending('weatherStation'), false)
-  assert.deepEqual([...PENDING_PROJECT_COVER_KEYS], [])
+  assert.equal(projectCoverIsPending('esp32BleRgb'), true)
+  assert.deepEqual([...PENDING_PROJECT_COVER_KEYS], ['esp32BleRgb'])
 })
