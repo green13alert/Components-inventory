@@ -283,7 +283,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What to do',
-        body: 'Set the DevKitC V4 beside the breadboard. Do not press its two header rows into the breadboard. Insert the cable’s red pin into the red rail and the black pin into the blue rail, on the same unbroken stretch of each rail. Insert the blue pin and the yellow pin into two separate breadboard rows that are not the power rails. Lay the sensor PCB beside the breadboard, not pushed into the holes. Leave the USB cable unplugged until the wiring check later in this guide.',
+        body: 'Set the DevKitC V4 beside the breadboard. Do not press its headers into the holes, and do not push the BME280 board in either. The STEMMA QT cable’s male pins are what enter the breadboard: red in the left + rail at row 6, black in the left − rail at row 6, blue in a10, yellow in a14. Stay above a break in the rail. Leave USB unplugged until the wiring check.',
       },
       {
         type: 'expected',
@@ -303,7 +303,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Connection sequence',
-        body: 'Put the female socket of one jumper on the DevKit 3V3 pin and its male pin in the same red rail as the cable’s red VIN pin. Put a second jumper’s socket on a DevKit GND pin and its male pin in the same blue rail as the cable’s black GND pin. The red and black cable pins are already the Vin and GND connections, so you do not add another wire to the sensor. Do not connect ESP32 5V. Do not connect BME280 3Vo. Do not connect the blue or yellow pins yet. If the coloured line on a rail has a break, both pins on that rail must be on the same side of the break.',
+        body: 'Use two male-to-female jumpers. DevKit 3V3 goes to the left + rail at row 9, on the same unbroken rail as the cable’s red pin at row 6. DevKit GND goes to the left − rail at row 9, with the cable’s black pin at row 6. Do not add another wire to the sensor for power. Do not connect ESP32 5V or BME280 3Vo. Leave the blue and yellow pins for the next step.',
       },
       {
         type: 'wiring',
@@ -332,7 +332,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Connection sequence',
-        body: 'Put a jumper socket on IO21 and its male pin in the same breadboard row as the cable’s blue SDA pin. That blue wire is SDI. Put a jumper socket on IO22 and its male pin in the same row as the cable’s yellow SCL pin. That yellow wire is SCK. Leave SDO open so the address stays 0x77. Leave CS open and leave the ADDR jumper unsoldered. Adafruit’s I2C instructions do not add a separate pull-up resistor for this breakout.',
+        body: 'Put a male-to-female jumper on IO21 and its pin in b10, the same row as the cable’s blue SDI pin in a10. Put another on IO22 and its pin in b14, the same row as the yellow SCK pin in a14. That is four male-to-female jumpers in the whole build, plus the STEMMA QT cable. Leave SDO open so the address stays 0x77. Leave CS open and leave the ADDR jumper unsoldered.',
       },
       {
         type: 'wiring',

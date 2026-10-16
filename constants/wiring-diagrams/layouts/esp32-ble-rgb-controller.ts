@@ -1,10 +1,7 @@
 import type { WiringLayout } from '../types';
+import { RGB_PHYSICAL } from '../physical-layouts.ts';
 
-const channel = (
-  colour: 'red' | 'green' | 'blue',
-  y: number,
-  notes: { base: string; transistor: string; limiter: string },
-) =>
+const channel = (colour: 'red' | 'green' | 'blue', y: number) =>
   [
     {
       id: `base-${colour}`,
@@ -16,7 +13,6 @@ const channel = (
       width: 96,
       height: 26,
       resistorOhms: 1000 as const,
-      note: notes.base,
       ports: [
         { id: 'leg1', label: 'leg 1', dx: 0, dy: 13, aliases: ['leg1'] },
         { id: 'leg2', label: 'leg 2', dx: 96, dy: 13, aliases: ['leg2'] },
@@ -31,7 +27,6 @@ const channel = (
       y: y - 8,
       width: 44,
       height: 46,
-      note: notes.transistor,
       ports: [
         { id: 'base', label: 'Base', dx: 0, dy: 20, aliases: ['b'] },
         { id: 'collector', label: 'Collector', dx: 44, dy: 10, aliases: ['c'] },
@@ -48,7 +43,6 @@ const channel = (
       width: 96,
       height: 26,
       resistorOhms: 220 as const,
-      note: notes.limiter,
       ports: [
         { id: 'leg1', label: 'leg 1', dx: 0, dy: 13, aliases: ['leg1'] },
         { id: 'leg2', label: 'leg 2', dx: 96, dy: 13, aliases: ['leg2'] },
@@ -60,6 +54,7 @@ export const ESP32_BLE_RGB_LAYOUT: WiringLayout = {
   slug: '24',
   width: 360,
   height: 700,
+  physical: RGB_PHYSICAL,
   wireLabels: {
     ground: 'GND',
     pwm: 'PWM',
@@ -97,9 +92,9 @@ export const ESP32_BLE_RGB_LAYOUT: WiringLayout = {
         { id: 'minus', label: 'GND rail', dx: 142, dy: 43, aliases: ['gndrail'] },
       ],
     },
-    ...channel('red', 220, { base: 'rows 1, 3', transistor: 'rows 2–4', limiter: 'rows 4, 10' }),
-    ...channel('green', 470, { base: 'rows 16, 18', transistor: 'rows 15–17', limiter: 'rows 13, 17' }),
-    ...channel('blue', 580, { base: 'rows 21, 23', transistor: 'rows 20–22', limiter: 'rows 12, 22' }),
+    ...channel('red', 220),
+    ...channel('green', 470),
+    ...channel('blue', 580),
     {
       id: 'led',
       kind: 'rgb-led',
@@ -109,7 +104,6 @@ export const ESP32_BLE_RGB_LAYOUT: WiringLayout = {
       y: 310,
       width: 56,
       height: 140,
-      note: 'rows 10–13',
       ports: [
         { id: 'red', label: 'Red', dx: 0, dy: 52, aliases: ['redcathode', 'pin1'] },
         { id: 'anode', label: 'Anode', dx: 0, dy: 74, aliases: ['commonanode', 'pin2'] },

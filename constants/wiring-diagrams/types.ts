@@ -44,6 +44,45 @@ export type WiringElementDef = {
   note?: string;
 };
 
+export type BreadboardColumn = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j';
+
+export type BreadboardHole =
+  | { kind: 'strip'; row: number; column: BreadboardColumn }
+  | { kind: 'rail'; side: 'left' | 'right'; polarity: 'plus' | 'minus'; row: number };
+
+export type PhysicalEndpoint = BreadboardHole | { kind: 'module'; elementId: string; portId: string };
+
+export type PhysicalLead = {
+  elementId: string;
+  portId: string;
+  hole: BreadboardHole;
+};
+
+export type PhysicalJumper = {
+  id: string;
+  gender: 'male-male' | 'male-female';
+  from: PhysicalEndpoint;
+  to: PhysicalEndpoint;
+};
+
+export type PhysicalRailBinding = {
+  elementId: string;
+  portId: string;
+  side: 'left' | 'right';
+  polarity: 'plus' | 'minus';
+  segment: 'upper' | 'lower';
+};
+
+/** A reproducible breadboard arrangement. Schematic symbols stay on WiringLayout.elements. */
+export type PhysicalLayout = {
+  rows: number;
+  /** Last row of the upper rail segment. Null means the rails run the full length. */
+  railSplitAfter: number | null;
+  leads: PhysicalLead[];
+  jumpers: PhysicalJumper[];
+  railBindings: PhysicalRailBinding[];
+};
+
 export type WiringLayout = {
   slug: string;
   width: number;
@@ -53,4 +92,5 @@ export type WiringLayout = {
   wireLabels?: Partial<
     Record<'powerLogic' | 'powerServo' | 'ground' | 'digital' | 'analog' | 'pwm' | 'i2cData' | 'i2cClock', string>
   >;
+  physical?: PhysicalLayout;
 };

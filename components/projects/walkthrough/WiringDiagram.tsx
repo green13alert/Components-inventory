@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Gesture, GestureDetector, ScrollView as GestureScrollView } from 'react-native-gesture-handler';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
+import { DiagramViewer } from '@/components/projects/walkthrough/DiagramViewer';
+import { PhysicalBoard, PhysicalBreadboard } from '@/components/projects/walkthrough/PhysicalBreadboard';
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { HW } from '@/constants/component-illustration-palette';
 import type { SolderiPalette } from '@/constants/colors';
 import { getWiringLayout, type WiringElementDef, type WiringLayout } from '@/constants/wiring-diagrams';
 import type { StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
+import { describePlacements, PHYSICAL_BOARD_WIDTH, physicalBoardHeight } from '@/lib/breadboard-layout';
+import { fitContentSize } from '@/lib/diagram-viewport';
 import {
   routeWiringDiagram,
   usedElementIds,
@@ -29,8 +31,11 @@ type WiringDiagramProps = {
   onPinchActiveChange?: (active: boolean) => void;
 };
 
-const MIN_DIAGRAM_ZOOM = 0.75;
-const MAX_DIAGRAM_ZOOM = 2.5;
+const PREVIEW_MAX_HEIGHT = 320;
+
+function connectionLines(connections: StepConnection[]) {
+  return connections.map((row) => `${row.fromComponent} ${row.fromPin} → ${row.toComponent} ${row.toPin}`);
+}
 
 function resolveNodes(pair?: WiringPair, nodes?: WiringNode[]): WiringNode[] {
   if (nodes && nodes.length > 0) {
@@ -67,51 +72,124 @@ export function WiringDiagram({
   connections,
   priorConnections = [],
   projectSlug,
-  onPinchActiveChange,
 }: WiringDiagramProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const layout = getWiringLayout(projectSlug);
+  const [view, setView] = useState<'physical' | 'schematic'>(layout?.physical ? 'physical' : 'schematic');
+  const [open, setOpen] = useState(false);
+  const showPhysical = Boolean(layout?.physical) && view === 'physical';
+  const wires = useMemo(
+    () => (layout ? routeWiringDiagram(layout, connections, priorConnections) : []),
+    [connections, layout, priorConnections],
+  );
+  const lines = useMemo(() => {
+    if (!layout) {
+      return connectionLines(connections);
+    }
+    if (showPhysical) {
+      const placed = describePlacements(layout, connections);
+      return placed.length > 0 ? placed : connectionLines(connections);
+    }
+    return connectionLines(connections);
+  }, [connections, layout, showPhysical]);
+  const contentWidth = showPhysical && layout?.physical ? PHYSICAL_BOARD_WIDTH : (layout?.width ?? 1);
+  const contentHeight =
+    showPhysical && layout?.physical ? physicalBoardHeight(layout.physical.rows) : (layout?.height ?? 1);
 
   return (
     <View style={styles.section}>
       <Text style={styles.label}>{heading ?? 'Wiring diagram'}</Text>
-      {layout ? (
-        <VisualWiringCanvas
-          layout={layout}
-          connections={connections}
-          priorConnections={priorConnections}
-          onPinchActiveChange={onPinchActiveChange}
-        />
+      {layout?.physical ? (
+        <View style={styles.viewToggle}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setView('physical')}
+            style={[styles.viewOption, view === 'physical' && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, view === 'physical' && styles.viewOptionLabelOn]}>Physical</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setView('schematic')}
+            style={[styles.viewOption, view === 'schematic' && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, view === 'schematic' && styles.viewOptionLabelOn]}>Schematic</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {showPhysical && layout ? (
+        <PhysicalBreadboard layout={layout} connections={connections} priorConnections={priorConnections} />
+      ) : layout ? (
+        <VisualWiringCanvas layout={layout} wires={wires} />
       ) : (
         <FallbackWiringList pair={pair} nodes={nodes} connections={connections} />
       )}
+      {layout ? (
+        <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={styles.enlarge}>
+          <Text style={styles.enlargeLabel}>Enlarge diagram</Text>
+        </Pressable>
+      ) : null}
+      {showPhysical && lines.length > 0 ? (
+        <View style={styles.placementList}>
+          {lines.map((line, index) => (
+            <Text key={`${line}-${index}`} style={styles.placementLine}>
+              {line}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      {layout ? (
+        <DiagramViewer
+          visible={open}
+          onClose={() => setOpen(false)}
+          mode={view}
+          onModeChange={setView}
+          showModeToggle={Boolean(layout.physical)}
+          contentWidth={contentWidth}
+          contentHeight={contentHeight}
+          lines={lines}>
+          {showPhysical ? (
+            <PhysicalBoard layout={layout} connections={connections} priorConnections={priorConnections} />
+          ) : (
+            <SchematicFigure layout={layout} wires={wires} />
+          )}
+        </DiagramViewer>
+      ) : null}
     </View>
   );
 }
 
-function VisualWiringCanvas({
-  layout,
-  connections,
-  priorConnections,
-  onPinchActiveChange,
-}: {
-  layout: WiringLayout;
-  connections: StepConnection[];
-  priorConnections: StepConnection[];
-  onPinchActiveChange?: (active: boolean) => void;
-}) {
+function VisualWiringCanvas({ layout, wires }: { layout: WiringLayout; wires: RoutedWire[] }) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [canvasWidth, setCanvasWidth] = useState(0);
-  const [layoutZoom, setLayoutZoom] = useState(1);
-  const zoom = useSharedValue(1);
-  const pinchStartZoom = useSharedValue(1);
+  const fitted = fitContentSize(canvasWidth, PREVIEW_MAX_HEIGHT, layout.width, layout.height);
+  const legendKinds = useMemo(() => {
+    const present = new Set(wires.map((wire) => wire.kind));
+    return WIRE_KIND_LABELS.filter((item) => present.has(item.kind)).map((item) => ({
+      ...item,
+      label: layout.wireLabels?.[item.kind] ?? item.label,
+    }));
+  }, [wires, layout.wireLabels]);
 
-  const wires = useMemo(
-    () => routeWiringDiagram(layout, connections, priorConnections),
-    [layout, connections, priorConnections],
+  return (
+    <View style={styles.canvas} onLayout={(event) => setCanvasWidth(event.nativeEvent.layout.width)}>
+      <View style={styles.previewFrame}>
+        <View style={{ width: fitted.width, height: fitted.height }}>
+          <SchematicFigure layout={layout} wires={wires} />
+        </View>
+      </View>
+      {legendKinds.length > 0 ? (
+        <View style={styles.legend}>
+          {legendKinds.map((item) => (
+            <LegendKey key={item.kind} kind={item.kind} label={item.label} />
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
+}
+
+function SchematicFigure({ layout, wires }: { layout: WiringLayout; wires: RoutedWire[] }) {
   const used = useMemo(() => usedElementIds(wires), [wires]);
   const visibleElements = useMemo(
     () =>
@@ -124,103 +202,22 @@ function VisualWiringCanvas({
       ),
     [layout.elements, used],
   );
-  const legendKinds = useMemo(() => {
-    const present = new Set(wires.map((wire) => wire.kind));
-    return WIRE_KIND_LABELS.filter((item) => present.has(item.kind)).map((item) => ({
-      ...item,
-      label: layout.wireLabels?.[item.kind] ?? item.label,
-    }));
-  }, [wires, layout.wireLabels]);
-
-  const drawWidth = Math.max(canvasWidth || 0, Math.min(560, layout.width));
-  const scale = drawWidth / layout.width;
-  const drawHeight = layout.height * scale;
-  const zoomedWidth = drawWidth * layoutZoom;
-  const zoomedHeight = drawHeight * layoutZoom;
-  const stepFingerprint = `${layout.slug}:${connections.map((row) => `${row.fromPin}->${row.toPin}`).join('|')}`;
-
-  const onPinchActiveChangeRef = useRef(onPinchActiveChange);
-  onPinchActiveChangeRef.current = onPinchActiveChange;
-
-  const setPinchActive = useCallback((active: boolean) => {
-    onPinchActiveChangeRef.current?.(active);
-  }, []);
-
-  const applyZoom = useCallback((next: number) => {
-    setLayoutZoom(next);
-  }, []);
-
-  useEffect(() => {
-    zoom.value = 1;
-    pinchStartZoom.value = 1;
-    setLayoutZoom(1);
-    onPinchActiveChangeRef.current?.(false);
-  }, [pinchStartZoom, stepFingerprint, zoom]);
-
-  const pinch = useMemo(
-    () =>
-      Gesture.Pinch()
-        .onStart(() => {
-          pinchStartZoom.value = zoom.value;
-          runOnJS(setPinchActive)(true);
-        })
-        .onUpdate((event) => {
-          const next = Math.min(MAX_DIAGRAM_ZOOM, Math.max(MIN_DIAGRAM_ZOOM, pinchStartZoom.value * event.scale));
-          zoom.value = next;
-          runOnJS(applyZoom)(next);
-        })
-        .onFinalize(() => {
-          runOnJS(applyZoom)(zoom.value);
-          runOnJS(setPinchActive)(false);
-        }),
-    [applyZoom, pinchStartZoom, setPinchActive, zoom],
-  );
-
-  const composed = useMemo(() => Gesture.Simultaneous(pinch, Gesture.Native()), [pinch]);
 
   return (
-    <View
-      style={styles.canvas}
-      onLayout={(event) => setCanvasWidth(event.nativeEvent.layout.width)}
-      onStartShouldSetResponderCapture={(event) => (event.nativeEvent.touches?.length ?? 0) > 1}
-      onMoveShouldSetResponderCapture={(event) => (event.nativeEvent.touches?.length ?? 0) > 1}>
-      <GestureDetector gesture={composed}>
-        <GestureScrollView
-          horizontal
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          style={{ height: zoomedHeight }}>
-          <View style={{ width: zoomedWidth, height: zoomedHeight }} collapsable={false}>
-            <Svg width="100%" height="100%" viewBox={`0 0 ${layout.width} ${layout.height}`}>
-              {visibleElements.map((element) => (
-                <DiagramSymbol key={element.id} element={element} />
-              ))}
-              {wires.map((wire) => (
-                <WirePath key={wire.key} wire={wire} />
-              ))}
-              {wires.map((wire) => (
-                <G key={`${wire.key}-ports`}>
-                  <Circle cx={wire.from.x} cy={wire.from.y} r={4} fill={wireKindColor(wire.kind)} />
-                  <Circle cx={wire.to.x} cy={wire.to.y} r={4} fill={wireKindColor(wire.kind)} />
-                </G>
-              ))}
-            </Svg>
-          </View>
-        </GestureScrollView>
-      </GestureDetector>
-      {legendKinds.length > 0 ? (
-        <View style={styles.legend}>
-          {legendKinds.map((item) => (
-            <LegendKey key={item.kind} kind={item.kind} label={item.label} />
-          ))}
-        </View>
-      ) : null}
-      {canvasWidth > 0 && canvasWidth < drawWidth - 8 ? (
-        <Text style={styles.legendLabel}>Swipe sideways to see the full diagram</Text>
-      ) : null}
-    </View>
+    <Svg width="100%" height="100%" viewBox={`0 0 ${layout.width} ${layout.height}`}>
+      {visibleElements.map((element) => (
+        <DiagramSymbol key={element.id} element={element} />
+      ))}
+      {wires.map((wire) => (
+        <WirePath key={wire.key} wire={wire} />
+      ))}
+      {wires.map((wire) => (
+        <G key={`${wire.key}-ports`}>
+          <Circle cx={wire.from.x} cy={wire.from.y} r={4} fill={wireKindColor(wire.kind)} />
+          <Circle cx={wire.to.x} cy={wire.to.y} r={4} fill={wireKindColor(wire.kind)} />
+        </G>
+      ))}
+    </Svg>
   );
 }
 
@@ -763,6 +760,29 @@ function createStyles(colors: SolderiPalette) {
       textTransform: 'uppercase',
       color: colors.textMuted,
     },
+    viewToggle: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    viewOption: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    viewOptionOn: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accent,
+    },
+    viewOptionLabel: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    viewOptionLabelOn: {
+      color: colors.textPrimary,
+    },
     canvas: {
       backgroundColor: colors.surfaceElevated,
       borderRadius: 16,
@@ -774,6 +794,21 @@ function createStyles(colors: SolderiPalette) {
       gap: 10,
       overflow: 'hidden',
     },
+    previewFrame: {
+      alignItems: 'center',
+      overflow: 'hidden',
+    },
+    enlarge: {
+      alignSelf: 'flex-start',
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    enlargeLabel: { color: colors.accent, fontSize: 14, fontWeight: '700' },
+    placementList: { gap: 4 },
+    placementLine: { color: colors.textPrimary, fontSize: 14, lineHeight: 20 },
     legend: {
       flexDirection: 'row',
       flexWrap: 'wrap',

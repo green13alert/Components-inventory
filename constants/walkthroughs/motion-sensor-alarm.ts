@@ -282,7 +282,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What to set up',
-        body: 'Place the Uno and breadboard on the desk. Plug one jumper from the Uno 5V pin into any hole on a + rail. Plug another jumper from an Uno GND pin into any hole on a − rail on the same side of the board. The PIR and buzzer will later take 5V and GND from these rails. Leave D2, D8, and D9 empty for now.',
+        body: 'Place the Uno beside the breadboard. Use male-to-male jumpers: Uno 5V into the left + rail at row 1, and Uno GND into the left − rail at row 1. Stay on rows 1–15, above a break in the coloured rail. This build uses 10 male-to-male jumpers from the pack. Leave D2, D8, and D9 empty for now.',
       },
       {
         type: 'text',
@@ -311,7 +311,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'VCC powers the module from the Uno 5V rail. GND shares the Uno ground. OUT is the motion flag and goes to digital pin D2 — that is PIR_PIN in the sketch.',
+        body: 'Plug the PIR pins into c3, c4, and c5: VCC, OUT, then GND. A male-to-male jumper joins a3 to the left + rail at row 3. Another joins a5 to the left − rail at row 5. D2 goes to a4. OUT is the motion flag — that is PIR_PIN in the sketch.',
       },
       {
         type: 'wiring',
@@ -341,7 +341,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Polarity and current limit',
-        body: 'The longer LED lead is the anode (toward D8 through the 220 Ω resistor). The shorter lead, or the flat side of the plastic, is the cathode to GND. The 220 Ω resistor drops the extra voltage so LED current stays in a safe range for an Uno pin. Use this one resistor only — do not add a second.',
+        body: 'The longer LED lead is the anode. Seat it in d12 and the shorter lead, by the flat, in d13. The 220 Ω resistor goes in e8 and e12, along column e so it does not cover the buzzer pins. D8 goes to a8. a13 goes to the left − rail at row 13. Use this one resistor only.',
       },
       {
         type: 'wiring',
@@ -370,7 +370,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Active vs two-pin buzzers',
-        body: 'A three-pin active module usually has VCC, I/O (or S), and GND. VCC goes to 5V, I/O to D9, GND to GND. If your buzzer has only two leads, treat the labelled + / longer lead as the D9 side and the other as GND, and skip the extra 5V wire.',
+        body: 'Plug the three-pin module into c9, c10, and c11: VCC, I/O, then GND. a9 goes to the left + rail at row 9, D9 goes to a10, and a11 goes to the left − rail at row 11. If your buzzer has only two leads, put the + lead in the D9 row and the other lead in the GND row, and skip the extra 5V wire.',
       },
       {
         type: 'wiring',

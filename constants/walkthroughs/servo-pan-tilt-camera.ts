@@ -533,7 +533,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Seat the PSU and jumpers',
-        body: 'Clip the breadboard PSU onto the rails if it is an MB102-style module, or seat it so its 5V and GND pins reach the servo-side rails. Set the PSU 5V jumper ON and the 3.3V jumper OFF unless your module docs say otherwise. Plug a jumper from Uno 5V into the logic + rail, Uno GND into a − rail, and PSU GND into that same − net. Do not run a jumper from the logic + rail to the servo + rail. Leave D9, D10, A0, A1, and D2 empty.',
+        body: 'The left + rail is Uno 5V. The right + rail is PSU 5V. Do not bridge those two + rails. Bridge the − rails with one male-to-male wire from left − row 1 to right − row 1. Uno 5V goes to left + row 2. Uno GND goes to left − row 2. PSU 5V goes to right + row 3. PSU GND goes to right − row 3. All of these stay on rows 1–15. This build uses 16 male-to-male jumpers from the pack. Leave D9, D10, A0, A1, and D2 empty.',
       },
       {
         type: 'wiring',
@@ -572,7 +572,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'Trace the pan servo — the one in the base. Red is VCC and must land on the servo + rail from the PSU, not the Uno 5V pin. Brown (sometimes black) is GND on the common − rail. Orange is SIG on digital pin D9, which is PAN_PIN in the sketch.',
+        body: 'The pan servo connector is female, so use male-to-male wires. Red goes from the right + rail at row 5 into the servo’s red pin. Brown goes from the right − rail at row 6 into the brown pin. Orange goes from Uno D9 straight into the signal pin. That orange wire does not enter a breadboard hole. Red must not touch the left + rail.',
       },
       {
         type: 'wiring',
@@ -602,7 +602,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'Trace the tilt servo — the one in the U-bracket. Red to the same PSU 5V servo rail as pan. Brown to the same common − rail. Orange to D10, which is TILT_PIN. Both servos share power and ground; only the signal pins differ.',
+        body: 'The tilt connector is female too. Red goes from the right + rail at row 8. Brown goes from the right − rail at row 9. Orange goes from Uno D10 straight to the signal pin. Both servos share the right-hand 5V rail and the common − rail. Only the signal pins differ.',
       },
       {
         type: 'wiring',
@@ -632,7 +632,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: '+5V goes to the Uno 5V / logic + rail. GND goes to the common − rail. VRx is the pan axis and goes to analog pin A0. VRy is the tilt axis and goes to A1. SW is the click switch and goes to D2. The sketch will later enable INPUT_PULLUP on D2, so an unpressed stick reads HIGH and a click reads LOW.',
+        body: 'Plug the joystick pins into c8 through c12: +5V, GND, VRx, VRy, SW. a8 goes to the left + rail at row 8, not the right + rail. a9 goes to the left − rail at row 9. A0 goes to a10, A1 to a11, and D2 to a12. The sketch later enables INPUT_PULLUP on D2, so an unpressed stick reads HIGH and a click reads LOW.',
       },
       {
         type: 'wiring',

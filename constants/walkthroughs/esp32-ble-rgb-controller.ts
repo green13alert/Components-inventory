@@ -216,13 +216,13 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
     STAGES.hardware,
     2,
     'Set the parts on the desk',
-    'Five male-to-female wires reach the DevKit. Four more wires reach the power rails.',
+    'Five male-to-female wires reach the DevKit. Eight male-to-male wires finish the board.',
     [
       { type: 'components', heading: 'Required parts', items: COMPONENTS },
       {
         type: 'text',
         heading: 'Count the wires before you start',
-        body: 'The five male-to-female wires join the DevKit headers to the breadboard: 5 V, GND, GPIO25, GPIO26, and GPIO27. The DevKit sits beside the board. Its pins do not plug into the breadboard. The jumper-wire line is one pack. Take four male-to-male wires from that pack. Those four join the LED anode and the three transistor emitters to the power rails. Component leads cannot reach the rails as well as their own rows.',
+        body: 'The DevKit sits beside the board. Its pins do not plug into the breadboard. Take five male-to-female wires for 5 V, GND, GPIO25, GPIO26, and GPIO27. The jumper-wire line is one pack. Take eight male-to-male wires from it: three emitters, the LED anode, one bridge on each of the + and − rails, the green link from b15 to j9, and the blue link from j12 to j8. A wire that arches over the board enters only the two holes named for it.',
       },
       {
         type: 'text',
@@ -293,7 +293,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Power rails',
-        body: 'The long red and blue strips along the edge are the power rails. Holes in the red strip connect along the strip. Holes in the blue strip connect along the strip. A rail is not connected to the numbered rows until you add a wire. Many full-size boards break each rail in the middle. Both ends of a rail jumper in this build must sit in the top half, on the same side of that break. Rows 1–23 do not need a wire across the break.',
+        body: 'The long red and blue strips along each edge are the power rails. Holes in one red strip connect along that strip until a break in the coloured line. The left red rail is not connected to the right red rail until you add a wire. This build uses rows 1–15, above the usual mid-board break. Rows 16 and 17 are shown so you can see that break and stay above it.',
       },
       {
         type: 'text',
@@ -310,27 +310,27 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
     STAGES.wiring,
     6,
     'Seat every part on these rows',
-    'Use the top half, columns a–e. The diagram names the same rows.',
+    'Use rows 1–15. The physical diagram names the same holes.',
     [
       {
         type: 'text',
         heading: 'The LED',
-        body: 'Flat side toward row 1. Spread the leads and seat pin 1 red in row 10, pin 2 anode in row 11, pin 3 blue in row 12, and pin 4 green in row 13.',
+        body: 'Flat side toward row 1, on the right half. Spread the leads into column f: pin 1 red in f6, pin 2 anode in f7, pin 3 blue in f8, and pin 4 green in f9.',
       },
       {
         type: 'text',
-        heading: 'Red channel, above the LED',
-        body: 'Transistor flat to the right: emitter in row 2, base in row 3, collector in row 4. The 1 kΩ leads go in row 1 and row 3. Its body crosses row 2 and must not enter row 2. The 220 Ω leads go in row 4 and row 10.',
+        heading: 'Red channel, left half',
+        body: 'Transistor flat to the right: emitter c1, base c2, collector c3. The 1 kΩ leads go in e2 and i2. The 220 Ω leads go in e3 and h6. h6 shares the right-hand row with f6. The resistor body sits above the gap and does not enter f6.',
       },
       {
         type: 'text',
-        heading: 'Green channel, below the LED',
-        body: 'Emitter in row 15, base in row 16, collector in row 17. The 1 kΩ leads go in row 16 and row 18, crossing row 17 without entering it. The 220 Ω leads go in row 17 and row 13.',
+        heading: 'Green channel, left half',
+        body: 'Emitter c10, base c11, collector c12, flat to the right. The 1 kΩ leads go in e11 and i11. The 220 Ω leads go in a12 and d15, on the left half. A male-to-male wire from b15 to j9 carries that node to f9. The wire arches over the board and enters only those two holes.',
       },
       {
         type: 'text',
-        heading: 'Blue channel',
-        body: 'Emitter in row 20, base in row 21, collector in row 22. The 1 kΩ leads go in row 21 and row 23, crossing row 22 without entering it. The 220 Ω leads go in row 22 and row 12. Rows 5–9, 14, and 19 stay empty so neighbouring parts cannot share a row by accident.',
+        heading: 'Blue channel, right half',
+        body: 'Emitter h13, base h14, collector h15, flat to the right. The 1 kΩ leads go in e14 and g14. The 220 Ω leads go in j15 and g12. A male-to-male wire from j12 to j8 carries that node to f8. It stays in column j, arches over j9, and does not enter j9.',
       },
       {
         type: 'wiring',
@@ -340,7 +340,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'test',
         heading: 'Checkpoint',
-        body: 'Each transistor has its three leads in three different rows, flat face to the right, emitter nearest the top. The LED has four leads in rows 10–13, flat toward the top, longest lead in row 11. No USB cable is plugged in yet.',
+        body: 'Each transistor has its three leads in three neighbouring holes of one column, flat face to the right, emitter nearest the top. The LED leads are f6, f7, f8, and f9, with the longest lead in f7. No USB cable is plugged in yet.',
       },
     ],
   ),
@@ -352,7 +352,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
     [
       {
         type: 'text',
-        body: 'Put the DevKit beside the breadboard. With a male-to-female wire, join the DevKit 5 V pin to the top-half red rail. Join DevKit GND to the top-half blue rail. With male-to-male wires, join row 11 to the red rail, and join rows 2, 15, and 20 to the blue rail. Leave USB unplugged.',
+        body: 'Put the DevKit beside the breadboard. With male-to-female wires, join DevKit 5 V to the left + rail at row 2, and DevKit GND to the left − rail at row 2. With male-to-male wires, bridge left + row 1 to right + row 1, and left − row 1 to right − row 1. Join j7 to the right + rail at row 7. Join a1 to the left − rail at row 3, a10 to the left − rail at row 10, and j13 to the right − rail at row 13. Leave USB unplugged.',
       },
       {
         type: 'wiring',
@@ -363,7 +363,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'test',
         heading: 'Checkpoint',
-        body: 'The 5 V jumper and the row 11 jumper are on the same half of the red rail. The GND jumper and the three emitter jumpers are on the same half of the blue rail. The GPIO wires are not in yet. USB is still unplugged.',
+        body: 'Both rail bridges and the 5 V and GND wires are on rows 1–15, above the rail break. j7 is the only LED lead row tied to +. a1, a10, and j13 are the emitter rows tied to −. The GPIO wires are not in yet. USB is still unplugged.',
       },
     ],
   ),
@@ -371,18 +371,18 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
     STAGES.wiring,
     8,
     'Build the red channel',
-    'GPIO25 switches the red cathode through row 10.',
+    'GPIO25 switches the red cathode through j2 and f6.',
     [
       {
         type: 'text',
-        body: 'Join DevKit GPIO25 to row 1 with a male-to-female wire. That row already holds one leg of the red 1 kΩ resistor. The other leg is in row 3 with the red transistor base. The collector in row 4 already meets the red 220 Ω resistor, and that resistor’s other leg is in row 10 with LED pin 1.',
+        body: 'Join DevKit GPIO25 to j2 with a male-to-female wire. e2 and i2 hold the red 1 kΩ. c2 is the base. e3 and h6 hold the red 220 Ω, and f6 is LED pin 1.',
       },
       { type: 'wiring', heading: 'Red channel', connections: RED_CONNECTIONS },
       { type: 'connections', heading: 'Red links', rows: RED_CONNECTIONS },
       {
         type: 'test',
         heading: 'Checkpoint',
-        body: 'GPIO25 meets the 1 kΩ in row 1. The 1 kΩ and the base share row 3 only. The collector and the 220 Ω share row 4, and the 220 Ω meets pin 1 in row 10. The 1 kΩ lead is not in row 2 or row 4.',
+        body: 'GPIO25 is in j2, the 1 kΩ in e2 and i2, and the base in c2. The collector is c3 and the 220 Ω meets it at e3 and the LED at h6. No two of those leads share one hole.',
       },
     ],
   ),
@@ -390,18 +390,18 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
     STAGES.wiring,
     9,
     'Build the green channel',
-    'GPIO26 switches the green cathode through row 13.',
+    'GPIO26 switches the green cathode through j11, b15, and f9.',
     [
       {
         type: 'text',
-        body: 'Join GPIO26 to row 18. The green 1 kΩ already joins row 18 to the base in row 16. The collector in row 17 meets the green 220 Ω resistor, and that resistor’s other leg is in row 13 with LED pin 4.',
+        body: 'Join GPIO26 to j11. The green 1 kΩ is in e11 and i11, the base is c11, and the 220 Ω runs from a12 to d15. Add the male-to-male wire from b15 to j9. j9 shares the row with LED pin 4 in f9.',
       },
       { type: 'wiring', heading: 'Green channel', connections: GREEN_CONNECTIONS },
       { type: 'connections', heading: 'Green links', rows: GREEN_CONNECTIONS },
       {
         type: 'test',
         heading: 'Checkpoint',
-        body: 'GPIO26 is in row 18. The 1 kΩ crosses row 17 without a lead in row 17. Row 13 holds LED pin 4 and the green 220 Ω lead, and nothing else.',
+        body: 'GPIO26 is in j11. The 1 kΩ lead is not in c10, c11, or c12. The b15 to j9 wire is the only extra lead in the green cathode row. f9 still holds the LED lead.',
       },
     ],
   ),
@@ -409,18 +409,18 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
     STAGES.wiring,
     10,
     'Build the blue channel',
-    'GPIO27 switches the blue cathode through row 12.',
+    'GPIO27 switches the blue cathode through a14, j12, and f8.',
     [
       {
         type: 'text',
-        body: 'Join GPIO27 to row 23. The blue 1 kΩ already joins row 23 to the base in row 21. The collector in row 22 meets the blue 220 Ω resistor, and that resistor’s other leg is in row 12 with LED pin 3.',
+        body: 'Join GPIO27 to a14. The blue 1 kΩ is in e14 and g14, the base is h14, and the 220 Ω runs from j15 to g12. Add the male-to-male wire from j12 to j8. j8 shares the row with LED pin 3 in f8. The wire arches over j9 and does not enter it.',
       },
       { type: 'wiring', heading: 'Blue channel', connections: BLUE_CONNECTIONS },
       { type: 'connections', heading: 'Blue links', rows: BLUE_CONNECTIONS },
       {
         type: 'test',
         heading: 'Checkpoint',
-        body: 'GPIO27 is in row 23. The 1 kΩ does not enter row 22. Row 12 holds LED pin 3 and the blue 220 Ω lead. Rows 10, 11, 12, and 13 still hold one LED lead each.',
+        body: 'GPIO27 is in a14. f8 and j8 share the blue cathode row. f6, f7, f8, and f9 still hold one LED lead each. j9 is only the green link.',
       },
     ],
   ),
@@ -434,7 +434,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'connections',
         heading: 'All 18 connections',
         rows: ESP32_BLE_RGB_CONNECTIONS,
-        summary: 'Five male-to-female wires leave the DevKit. Four male-to-male wires leave the rails. Every other join is two leads in the same row.',
+        summary: 'Five male-to-female wires leave the DevKit. Eight male-to-male wires join the rails, the emitters, and the green and blue cathode links. Every other join is two leads in the same five-hole row.',
       },
       {
         type: 'wiring',
@@ -664,12 +664,12 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
           {
             problem: 'The LED stays dark after upload.',
             solution:
-              'The usual causes are USB not powering the board, the anode off the red rail, or an emitter off the blue rail. Confirm the monitor prints the advertising line, then confirm row 11 is on the same red-rail half as the 5 V jumper and rows 2, 15, and 20 are on the blue rail. You should see a dim red light. If the monitor is alive and the LED is still dark, the LED is reversed or pin 2 is not the lead in row 11.',
+              'The usual causes are USB not powering the board, the anode off the + rail, or an emitter off the − rail. Confirm the monitor prints the advertising line. The anode jumper is j7 on the right + rail, and the two + rails are bridged on row 1. Emitters are a1 and a10 on the left − rail and j13 on the right − rail, with the − rails bridged on row 1. Those rows are above the rail break. You should see a dim red light. If the monitor is alive and the LED is still dark, the LED is reversed: pin 2, the anode, is the lead in f7.',
           },
           {
             problem: 'Only red lights. Green and blue stay off.',
             solution:
-              'Either those channels are in the wrong rows, or the USB port is too weak for a high forward voltage. Send 0,255,0 and 0,0,255 and read the monitor. If the monitor accepts the colour, move the green 220 Ω lead so it shares row 13 with pin 4, and the blue 220 Ω lead so it shares row 12 with pin 3. Try a different USB port near 5 V. A port that is already sagging can leave a 4.0 V blue chip or a 4.1 V green chip dark.',
+              'Either those links are in the wrong holes, or the USB port is too weak for a high forward voltage. Send 0,255,0 and 0,0,255 and read the monitor. If the monitor accepts the colour, confirm the green wire is in b15 and j9, and the blue wire is in j12 and j8. j9 shares the row with LED pin 4 in f9. j8 shares the row with LED pin 3 in f8. Try a different USB port near 5 V. A port that is already sagging can leave a 4.0 V blue chip or a 4.1 V green chip dark.',
           },
           {
             problem: 'One colour is stuck on, or two colours light together.',
@@ -732,7 +732,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Checklist',
-        body: 'The LED flat faces the top and the longest lead is in row 11. Each transistor flat faces right, with the emitter in the top lead of that transistor. The red rail feeds only pin 2, and the blue rail meets only the three emitters. No two component leads share a row unless this guide named that row. Upload finishes and the monitor prints Advertising as Solderi RGB. nRF Connect connects to that name. 255,0,0 is red, 0,255,0 is green, and 0,0,255 is blue. Brightness 100 is brighter than 10, and 0 is dark. The text 150 is rejected and the LED stays put. Disconnecting prints the advertising line, and a new connection can write 255,80,0.',
+        body: 'The LED flat faces the top and the longest lead is in f7. Each transistor flat faces right, with the emitter in the top lead of that transistor. The + rails feed only the anode row. The − rails meet only the three emitter jumpers. No two leads share one hole. Upload finishes and the monitor prints Advertising as Solderi RGB. nRF Connect connects to that name. 255,0,0 is red, 0,255,0 is green, and 0,0,255 is blue. Brightness 100 is brighter than 10, and 0 is dark. The text 150 is rejected and the LED stays put. Disconnecting prints the advertising line, and a new connection can write 255,80,0.',
       },
     ],
   ),

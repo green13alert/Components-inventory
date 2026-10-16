@@ -1,5 +1,6 @@
 import type { WiringLayout } from '../constants/wiring-diagrams/types.ts'
 import type { AuthoredWalkthroughStep, StepConnection } from '../constants/walkthrough-content.ts'
+import { validatePhysicalLayout } from './breadboard-layout.ts'
 import { resolvePort } from './wiring-diagram.ts'
 
 export type AuthoringGate =
@@ -193,6 +194,9 @@ export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFin
         if (!seenConnectionKeys.has(connectionKey(row))) {
           error('electrical', `${row.fromPin} to ${row.toPin} is in the connection list and is not drawn in a step.`)
         }
+      }
+      for (const problem of validatePhysicalLayout(input.layout, input.connections)) {
+        error('electrical', problem)
       }
     }
   }

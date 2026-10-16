@@ -1,7 +1,9 @@
 import type { WiringLayout } from '../types';
+import { SERVO_PHYSICAL } from '../physical-layouts.ts';
 
 export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
   slug: '18',
+  physical: SERVO_PHYSICAL,
   width: 1020,
   height: 760,
   elements: [

@@ -13,6 +13,8 @@ When creating or changing a Solderi project, walkthrough, BOM, wiring diagram, f
 - Include every physical part the build needs, with a catalogue id and a quantity, so the hardware list can be built as written. Count jumper wires the way the layout uses them.
 - Write the tutorial for a learner. Keep development notes in the authoring record. Show a control only when it does something.
 - Check the wiring table, diagram pins, instructions, code, and compatibility rows against each other. The same part and the same connection must use the same names.
+- Give a breadboard project a physical hole layout and keep the schematic separate. Validate the holes against the netlist. Count male-to-male and male-to-female wires in the steps.
+- Keep enlarged-diagram zoom and pan inside a clipped viewport. Put Close and Reset inside the safe area. Fit different aspect ratios, return to the same walkthrough step, and do not call the viewer finished until it has been tried on a phone.
 - Run `npm run test:compatibility`. `localAuthoredProjects` in `lib/authored-projects.ts` runs `reviewAuthoredProject` on every file in `constants/walkthroughs/`.
 - When the project has one firmware sketch and a matching toolchain is installed, compile that sketch and record the result. If the toolchain is missing, say compilation was not run.
 - Leave a new project unpublished. Publishing is a separate review.

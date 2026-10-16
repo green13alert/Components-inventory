@@ -1,7 +1,9 @@
 import type { WiringLayout } from '../types';
+import { MOTION_PHYSICAL } from '../physical-layouts.ts';
 
 export const MOTION_SENSOR_ALARM_LAYOUT: WiringLayout = {
   slug: '8',
+  physical: MOTION_PHYSICAL,
   width: 720,
   height: 500,
   elements: [
@@ -61,6 +63,7 @@ export const MOTION_SENSOR_ALARM_LAYOUT: WiringLayout = {
       kind: 'resistor',
       label: '220 Ω',
       aliases: ['220 ohm resistor', 'resistor'],
+      resistorOhms: 220,
       x: 300,
       y: 246,
       width: 150,

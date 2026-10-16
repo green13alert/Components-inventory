@@ -1,7 +1,9 @@
 import type { WiringLayout } from '../types';
+import { WEATHER_PHYSICAL } from '../physical-layouts.ts';
 
 export const ESP32_WIFI_WEATHER_LAYOUT: WiringLayout = {
   slug: '23',
+  physical: WEATHER_PHYSICAL,
   width: 360,
   height: 300,
   wireLabels: {

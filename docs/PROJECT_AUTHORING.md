@@ -26,6 +26,10 @@ The BOM must be enough to build the project: board, sensor or actuator, connecto
 
 Power voltage, GPIO numbers, interface, and signal levels must match across the BOM, the steps, the wiring list, the diagram layout, and the program. `reviewAuthoredProject` checks that every connection resolves to a diagram port and that step wiring uses the project connection list.
 
+A breadboard project needs a `physical` layout as well as the schematic symbols. The physical layout names holes. `validatePhysicalLayout` checks that those holes exist, that one hole does not hold two leads, that a split rail does not silently join, and that the holes reproduce the connection list. A coloured line in the schematic does not prove a hole is shared. State the male-to-male and male-to-female counts in the steps. A jumper-wire pack is still one catalogue line; the step says how many wires to take from it.
+
+Keep the schematic available for the circuit, and use the physical view for placement. A project without a breadboard can place connectors and cable ends instead of pretending the parts sit in holes. Do not use the same placement drawing for every project.
+
 ### 3. Code completeness
 
 A new single-program project needs one complete program. Excerpts must be slices of that program and must be labelled as excerpts. The upload step is the only place that pastes the whole file. An existing project that already shows a new complete sketch at each code step keeps that format.
@@ -62,7 +66,9 @@ Include the failures this circuit and this program actually produce: missing ser
 
 Covers follow `docs/PROJECT_THUMBNAILS.md`: 16:9 workbench photographs, with the finished build and space around it. A cover is not a wiring diagram or a schematic. If the photograph does not exist, register the image key in `PENDING_PROJECT_COVER_KEYS` and keep the placeholder. Do not reuse another project’s photograph.
 
-The wiring diagram is a separate layout keyed by slug. Its legend must name this project’s voltages, not another board’s. A person still has to look at the rendered diagram. The structural check only proves the ports resolve.
+The wiring diagram is a separate layout keyed by slug. Its legend must name this project’s voltages, not another board’s. The physical view is the placement guide: readable row and column marks, and a hole list for the current step. The schematic is the electrical view. Look at both at a phone width. A passing layout test does not mean the board was built.
+
+The enlarged diagram is a fixed viewport, not a page that grows. Pinch and drag move the drawing inside that viewport. The minimum zoom fits the whole diagram, and the drawing cannot be panned completely off screen. Close and Reset stay inside the safe area, including a notch or Dynamic Island, and closing returns to the same walkthrough step. A project with only one drawing does not show a broken Physical/Schematic switch. Treat the viewer as unfinished until those gestures and the return path have been tried on a phone.
 
 Step visuals, when they exist, follow `docs/SOLDERI_VISUAL_SOURCE_OF_TRUTH.md`.
 
