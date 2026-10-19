@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test:compatibility": "node --experimental-strip-types --test lib/compatibility.test.ts lib/breadboard-layout.test.ts lib/diagram-viewport.test.ts lib/physical-scene.test.ts lib/assembly-progress.test.ts components/projects/component-row-state.test.ts constants/component-catalogue.test.ts constants/component-illustrations.test.ts constants/esp32-wifi-weather-station.test.ts constants/esp32-ble-rgb-controller.test.ts lib/draft-preview.test.ts lib/project-navigation.test.ts lib/project-authoring.test.ts"
+    "test:compatibility": "node --experimental-strip-types --test lib/compatibility.test.ts lib/breadboard-layout.test.ts lib/diagram-viewport.test.ts lib/physical-scene.test.ts lib/assembly-progress.test.ts lib/component-key.test.ts lib/connection-reference.test.ts lib/project-discovery.test.ts components/projects/component-row-state.test.ts constants/component-catalogue.test.ts constants/component-illustrations.test.ts constants/esp32-wifi-weather-station.test.ts constants/esp32-ble-rgb-controller.test.ts lib/draft-preview.test.ts lib/project-navigation.test.ts lib/project-authoring.test.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

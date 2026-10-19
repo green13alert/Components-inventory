@@ -20,6 +20,7 @@ import {
 } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
 import { draftProjectsAreRequested } from '@/lib/draft-preview';
+import { discoverySections } from '@/lib/project-discovery';
 import {
   fetchDraftProjects,
   fetchProjectCompatibility,
@@ -145,9 +146,7 @@ export default function ProjectsScreen() {
       });
   }, [getUserProject, publishedProjects]);
 
-  const filteredProjects = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
+  const listedProjects = useMemo(() => {
     return publishedProjects.filter((project) => {
       const userProject = getUserProject(project.id);
       const status = getUserProjectStatus(userProject);
@@ -156,16 +155,24 @@ export default function ProjectsScreen() {
         (viewFilter === 'in_progress' && status === 'in_progress') ||
         (viewFilter === 'favourites' && userProject?.isFavourite === true) ||
         (viewFilter === 'completed' && status === 'completed');
-
       const matchesDifficulty = difficultyFilter === 'all' || project.difficulty === difficultyFilter;
-      const matchesSearch =
-        query.length === 0 ||
-        project.title.toLowerCase().includes(query) ||
-        project.description.toLowerCase().includes(query);
-
-      return matchesView && matchesDifficulty && matchesSearch;
+      return matchesView && matchesDifficulty;
     });
-  }, [difficultyFilter, getUserProject, publishedProjects, searchQuery, viewFilter]);
+  }, [difficultyFilter, getUserProject, publishedProjects, viewFilter]);
+
+  const catalogueSections = useMemo(
+    () =>
+      discoverySections({
+        published: listedProjects,
+        drafts: draftProjects,
+        search: searchQuery,
+        showDrafts,
+      }),
+    [draftProjects, listedProjects, searchQuery, showDrafts],
+  );
+  const publishedSection = catalogueSections.find((section) => section.id === 'published');
+  const draftSection = catalogueSections.find((section) => section.id === 'drafts');
+  const filteredProjects = publishedSection?.projects ?? [];
 
   const showContinueSection =
     viewFilter === 'all' && inProgressProjects.length > 0 && searchQuery.trim().length === 0;
@@ -207,6 +214,50 @@ export default function ProjectsScreen() {
           onSelect={setDifficultyFilter}
         />
 
+        <View style={styles.listHeader}>
+          <Text style={styles.listTitle}>
+            {showDrafts && viewFilter === 'all'
+              ? 'Published'
+              : viewFilter === 'all'
+                ? 'All Projects'
+                : PROJECT_VIEW_FILTERS.find((item) => item.id === viewFilter)?.label}
+          </Text>
+          <Text style={styles.listCount}>{filteredProjects.length} projects</Text>
+        </View>
+        {compatibilityError ? <Text style={styles.emptySubtitle}>{compatibilityError}</Text> : null}
+
+        {projectsLoading ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.emptySubtitle}>Loading projects…</Text>
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {filteredProjects.length > 0 ? (
+              filteredProjects.map((project) => {
+                const match = matchesByProjectId.get(project.id);
+                if (!match) {
+                  return null;
+                }
+                return (
+                  <ProjectListCard
+                    key={project.id}
+                    project={project}
+                    match={match}
+                    inventoryReady={!inventoryLoading}
+                  />
+                );
+              })
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="folder-open-outline" size={32} color={colors.textMuted} />
+                <Text style={styles.emptyTitle}>{emptyTitle}</Text>
+                <Text style={styles.emptySubtitle}>{emptySubtitle}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {showContinueSection ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Continue Building</Text>
@@ -239,7 +290,7 @@ export default function ProjectsScreen() {
           </View>
         ) : null}
 
-        {showDrafts ? (
+        {showDrafts && (searchQuery.trim().length === 0 || (draftSection?.projects.length ?? 0) > 0) ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Draft Projects</Text>
             <Text style={styles.draftNote}>
@@ -247,16 +298,22 @@ export default function ProjectsScreen() {
             </Text>
             {draftError ? <Text style={styles.emptySubtitle}>{draftError}</Text> : null}
             {draftAuthorized ? (
-              draftProjects.length > 0 ? (
+              (draftSection?.projects.length ?? 0) > 0 ? (
                 <View style={styles.list}>
-                  {draftProjects.map((project) => (
-                    <ProjectListCard
-                      key={project.id}
-                      project={project}
-                      match={matchesByProjectId.get(project.id)!}
-                      inventoryReady={!inventoryLoading}
-                    />
-                  ))}
+                  {draftSection?.projects.map((project) => {
+                    const match = matchesByProjectId.get(project.id);
+                    if (!match) {
+                      return null;
+                    }
+                    return (
+                      <ProjectListCard
+                        key={project.id}
+                        project={project}
+                        match={match}
+                        inventoryReady={!inventoryLoading}
+                      />
+                    );
+                  })}
                 </View>
               ) : (
                 <Text style={styles.emptySubtitle}>No unpublished projects.</Text>
@@ -270,40 +327,6 @@ export default function ProjectsScreen() {
             )}
           </View>
         ) : null}
-
-        <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>
-            {viewFilter === 'all' ? 'All Projects' : PROJECT_VIEW_FILTERS.find((item) => item.id === viewFilter)?.label}
-          </Text>
-          <Text style={styles.listCount}>{filteredProjects.length} projects</Text>
-        </View>
-        {compatibilityError ? <Text style={styles.emptySubtitle}>{compatibilityError}</Text> : null}
-
-        {projectsLoading ? (
-          <View style={styles.emptyState}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={styles.emptySubtitle}>Loading projects…</Text>
-          </View>
-        ) : (
-          <View style={styles.list}>
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map((project) => (
-                <ProjectListCard
-                  key={project.id}
-                  project={project}
-                  match={matchesByProjectId.get(project.id)!}
-                  inventoryReady={!inventoryLoading}
-                />
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="folder-open-outline" size={32} color={colors.textMuted} />
-                <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-                <Text style={styles.emptySubtitle}>{emptySubtitle}</Text>
-              </View>
-            )}
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

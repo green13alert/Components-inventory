@@ -18,6 +18,10 @@ export const ESP32_WIFI_WEATHER_LAYOUT: WiringLayout = {
       kind: 'esp32-devkit',
       label: 'ESP32 DevKit',
       aliases: ['esp32', 'esp32 devkit'],
+      identity: {
+        catalogueId: 'esp32',
+        role: 'Reads the sensor over I2C and serves the weather page.',
+      },
       x: 4,
       y: 28,
       width: 108,
@@ -34,6 +38,10 @@ export const ESP32_WIFI_WEATHER_LAYOUT: WiringLayout = {
       kind: 'breadboard',
       label: 'Breadboard',
       aliases: ['breadboard'],
+      identity: {
+        catalogueId: 'breadboard',
+        role: 'Joins the STEMMA QT pins to the DevKit jumpers. The positive rail is 3.3 V.',
+      },
       x: 120,
       y: 28,
       width: 128,
@@ -49,6 +57,16 @@ export const ESP32_WIFI_WEATHER_LAYOUT: WiringLayout = {
       kind: 'bme280',
       label: 'BME280',
       aliases: ['bme280', 'adafruit bme280'],
+      identity: {
+        catalogueId: 'bme280',
+        role: 'Measures temperature, humidity, and pressure. The board stays off the breadboard.',
+      },
+      accessory: {
+        id: 'stemma',
+        catalogueId: 'stemma-qt-cable',
+        role: 'Carries the sensor pins onto the breadboard.',
+        orientation: 'Red in the left + rail at row 6, black in the left − rail at row 6, blue in a10, yellow in a14.',
+      },
       x: 260,
       y: 96,
       width: 92,

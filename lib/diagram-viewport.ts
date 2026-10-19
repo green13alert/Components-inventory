@@ -50,13 +50,17 @@ export function clampDiagramTranslation(
 
 /**
  * Zoom around a focal point measured from the top-left of the viewport.
- * Translation is in viewport pixels and uses the centre of the viewport as the transform origin.
+ * Translation is in viewport pixels and is applied after scaling about the viewport centre.
+ * The content under the focal point at the start of the gesture stays under the fingers
+ * as the focal point moves.
  */
 export function zoomAroundFocal(input: {
   startScale: number
   startX: number
   startY: number
   scaleFactor: number
+  startFocalX: number
+  startFocalY: number
   focalX: number
   focalY: number
   viewportWidth: number
@@ -68,11 +72,13 @@ export function zoomAroundFocal(input: {
   const startScale = input.startScale === 0 ? MIN_DIAGRAM_ZOOM : input.startScale
   const scale = clampDiagramScale(startScale * input.scaleFactor)
   const ratio = scale / startScale
+  const startFocalX = input.startFocalX - input.viewportWidth / 2
+  const startFocalY = input.startFocalY - input.viewportHeight / 2
   const focalX = input.focalX - input.viewportWidth / 2
   const focalY = input.focalY - input.viewportHeight / 2
   const moved = clampDiagramTranslation(
-    focalX - (focalX - input.startX) * ratio,
-    focalY - (focalY - input.startY) * ratio,
+    focalX - (startFocalX - input.startX) * ratio,
+    focalY - (startFocalY - input.startY) * ratio,
     scale,
     input.viewportWidth,
     input.viewportHeight,

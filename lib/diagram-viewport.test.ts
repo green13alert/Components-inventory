@@ -33,6 +33,8 @@ test('zoom stays between fit and the maximum and does not jump when the gesture 
     startX: 12,
     startY: -8,
     scaleFactor: 1,
+    startFocalX: 40,
+    startFocalY: 80,
     focalX: 40,
     focalY: 80,
     viewportWidth: 300,
@@ -49,6 +51,8 @@ test('zoom stays between fit and the maximum and does not jump when the gesture 
     startX: 0,
     startY: 0,
     scaleFactor: 0.2,
+    startFocalX: 150,
+    startFocalY: 200,
     focalX: 150,
     focalY: 200,
     viewportWidth: 300,
@@ -64,6 +68,8 @@ test('zoom stays between fit and the maximum and does not jump when the gesture 
     startX: 0,
     startY: 0,
     scaleFactor: 4,
+    startFocalX: 150,
+    startFocalY: 200,
     focalX: 150,
     focalY: 200,
     viewportWidth: 300,
@@ -80,6 +86,8 @@ test('zooming around a corner keeps that corner under the focal point', () => {
     startX: 0,
     startY: 0,
     scaleFactor: 2,
+    startFocalX: 0,
+    startFocalY: 0,
     focalX: 0,
     focalY: 0,
     viewportWidth: 200,
@@ -119,6 +127,26 @@ test('panning is disabled when the diagram fits and stays inside the viewport wh
   })
   assert.equal(zoomed.x, 150)
   assert.equal(zoomed.y, -200)
+})
+
+test('a moving pinch keeps the original point under the fingers', () => {
+  const zoomed = zoomAroundFocal({
+    startScale: 1,
+    startX: 0,
+    startY: 0,
+    scaleFactor: 2,
+    startFocalX: 50,
+    startFocalY: 50,
+    focalX: 80,
+    focalY: 50,
+    viewportWidth: 200,
+    viewportHeight: 200,
+    contentWidth: 200,
+    contentHeight: 200,
+  })
+  assert.equal(zoomed.scale, 2)
+  assert.equal(zoomed.x, 80)
+  assert.equal(zoomed.y, 50)
 })
 
 test('switching diagram mode starts from the fitted view', () => {

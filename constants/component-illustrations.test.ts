@@ -24,11 +24,25 @@ test('every catalogue component resolves to a known illustration', () => {
 })
 
 test('resistor values share the resistor illustration', () => {
-  for (const id of ['resistor', 'resistor-220', 'resistor-100', 'resistor-10k', 'resistor-100k']) {
+  for (const id of ['resistor', 'resistor-100', 'resistor-10k', 'resistor-100k']) {
     assert.equal(resolved(id), 'resistor')
   }
+  assert.equal(resolved('resistor-220'), 'resistor-band-220')
+  assert.equal(resolved('resistor-1k'), 'resistor-band-1k')
   assert.equal(resolveComponentIllustration({ id: 'resistor-band-220' }), 'resistor-band-220')
   assert.equal(resolveComponentIllustration({ id: 'resistor-band-1k' }), 'resistor-band-1k')
+})
+
+test('tutorial parts use their own artwork', () => {
+  assert.equal(resolved('pn2222a'), 'transistor')
+  assert.equal(resolved('rgb-led-ca'), 'rgb-led')
+  assert.equal(resolved('buzzer'), 'buzzer')
+  assert.equal(resolved('joystick'), 'joystick')
+  assert.equal(resolved('breadboard-psu'), 'breadboard-psu')
+  assert.equal(resolved('stemma-qt-cable'), 'stemma-qt')
+  for (const id of ['pn2222a', 'rgb-led-ca', 'buzzer', 'joystick', 'breadboard-psu', 'stemma-qt-cable']) {
+    assert.equal(resolved(id) === 'generic-module', false)
+  }
 })
 
 test('new passives are not drawn as development boards or as a resistor', () => {

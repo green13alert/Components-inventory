@@ -5,6 +5,7 @@ import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-
 import type { WiringLayout } from '@/constants/wiring-diagrams';
 import type { StepConnection } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
+import { partHitBox } from '@/lib/diagram-hit';
 import { buildPhysicalScene, type AssemblyFrame, type Point, type ScenePart, type SceneWire } from '@/lib/physical-scene';
 
 type PhysicalBreadboardProps = {
@@ -12,9 +13,18 @@ type PhysicalBreadboardProps = {
   connections: StepConnection[];
   priorConnections?: StepConnection[];
   assembly?: AssemblyFrame | null;
+  selectedIds?: ReadonlySet<string>;
+  onSelectPart?: (id: string) => void;
 };
 
-export function PhysicalBreadboard({ layout, connections, priorConnections = [], assembly = null }: PhysicalBreadboardProps) {
+export function PhysicalBreadboard({
+  layout,
+  connections,
+  priorConnections = [],
+  assembly = null,
+  selectedIds,
+  onSelectPart,
+}: PhysicalBreadboardProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const scene = useMemo(
@@ -27,7 +37,14 @@ export function PhysicalBreadboard({ layout, connections, priorConnections = [],
 
   return (
     <View style={[styles.canvas, { aspectRatio: scene.width / scene.height }]}>
-      <BoardSvg layout={layout} connections={connections} priorConnections={priorConnections} assembly={assembly} />
+      <BoardSvg
+        layout={layout}
+        connections={connections}
+        priorConnections={priorConnections}
+        assembly={assembly}
+        selectedIds={selectedIds}
+        onSelectPart={onSelectPart}
+      />
     </View>
   );
 }
@@ -37,8 +54,18 @@ export function PhysicalBoard(props: {
   connections: StepConnection[];
   priorConnections?: StepConnection[];
   assembly?: AssemblyFrame | null;
+  selectedIds?: ReadonlySet<string>;
+  onSelectPart?: (id: string) => void;
 }) {
-  return <BoardSvg {...props} priorConnections={props.priorConnections ?? []} assembly={props.assembly ?? null} />;
+  return (
+    <BoardSvg
+      {...props}
+      priorConnections={props.priorConnections ?? []}
+      assembly={props.assembly ?? null}
+      selectedIds={props.selectedIds}
+      onSelectPart={props.onSelectPart}
+    />
+  );
 }
 
 function BoardSvg({
@@ -46,22 +73,37 @@ function BoardSvg({
   connections,
   priorConnections,
   assembly,
+  selectedIds = new Set<string>(),
+  onSelectPart,
 }: {
   layout: WiringLayout;
   connections: StepConnection[];
   priorConnections: StepConnection[];
   assembly: AssemblyFrame | null;
+  selectedIds?: ReadonlySet<string>;
+  onSelectPart?: (id: string) => void;
 }) {
   const scene = buildPhysicalScene(layout, connections, priorConnections, assembly);
   if (!scene) {
     return null;
   }
   const { board } = scene;
+  const selecting = selectedIds.size > 0;
 
   return (
     <View style={{ flex: 1 }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${scene.width} ${scene.height}`}>
-        <Rect x={board.x} y={board.y} width={board.width} height={board.height} rx={14} fill="#F4E7C8" stroke="#D6C4A3" strokeWidth={2} />
+        <Rect
+          x={board.x}
+          y={board.y}
+          width={board.width}
+          height={board.height}
+          rx={14}
+          fill="#F4E7C8"
+          stroke={selectedIds.has('breadboard') ? '#0F766E' : '#D6C4A3'}
+          strokeWidth={selectedIds.has('breadboard') ? 3 : 2}
+          onPress={() => onSelectPart?.('breadboard')}
+        />
         <Rail x={board.x + 6} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#F43F5E" />
         <Rail x={board.x + 24} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#2563EB" />
         <Rail x={board.x + board.width - 40} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#F43F5E" />
@@ -100,10 +142,16 @@ function BoardSvg({
           />
         ))}
         {scene.wires.map((wire) => (
-          <WirePath key={wire.id} wire={wire} />
+          <WirePath key={wire.id} wire={wire} dimmed={selecting && !cableSelected(wire, selectedIds)} marked={cableSelected(wire, selectedIds)} />
         ))}
         {scene.parts.map((part) => (
-          <PartShape key={part.id} part={part} />
+          <PartShape
+            key={part.id}
+            part={part}
+            dimmed={selecting && !selectedIds.has(part.id)}
+            selected={selectedIds.has(part.id)}
+            onSelectPart={onSelectPart}
+          />
         ))}
       </Svg>
     </View>
@@ -123,11 +171,24 @@ function Rail({ x, y, height, splitY, fill }: { x: number; y: number; height: nu
   );
 }
 
-function WirePath({ wire }: { wire: SceneWire }) {
-  const opacity = wire.emphasis === 'context' ? 0.4 : 1;
+function cableSelected(wire: SceneWire, selectedIds: ReadonlySet<string>) {
+  if (wire.role !== 'cable') {
+    return false;
+  }
+  for (const id of selectedIds) {
+    if (wire.id.startsWith(`${id}-`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function WirePath({ wire, dimmed, marked }: { wire: SceneWire; dimmed: boolean; marked: boolean }) {
+  const opacity = dimmed ? 0.45 : wire.emphasis === 'context' ? 0.4 : 1;
   return (
     <G opacity={opacity}>
-      {wire.emphasis === 'active' ? (
+      {marked ? <Path d={wire.d} fill="none" stroke="#0F766E" strokeWidth={7} strokeLinecap="round" /> : null}
+      {wire.emphasis === 'active' && !dimmed ? (
         <Path d={wire.d} fill="none" stroke="#FDE68A" strokeWidth={7} strokeLinecap="round" />
       ) : null}
       <Path d={wire.d} fill="none" stroke={wire.color} strokeWidth={wire.emphasis === 'active' ? 3.4 : 2.4} strokeLinecap="round" />
@@ -143,13 +204,45 @@ function Socket({ at }: { at: Point }) {
   return <Rect x={at.x - 5} y={at.y - 5} width={10} height={10} rx={2} fill="none" stroke="#0F172A" strokeWidth={1.4} />;
 }
 
-function PartShape({ part }: { part: ScenePart }) {
-  const opacity = part.emphasis === 'context' ? 0.5 : 1;
+function PartShape({
+  part,
+  dimmed,
+  selected,
+  onSelectPart,
+}: {
+  part: ScenePart;
+  dimmed: boolean;
+  selected: boolean;
+  onSelectPart?: (id: string) => void;
+}) {
+  const opacity = dimmed ? 0.55 : part.emphasis === 'context' ? 0.5 : 1;
+  const hit = partHitBox(part);
   return (
-    <IntroOpacity isNew={part.emphasis === 'active'}>
+    <IntroOpacity isNew={part.emphasis === 'active' && !dimmed}>
       <G opacity={opacity}>
-        {part.emphasis === 'active' ? <Highlight part={part} /> : null}
+        {part.emphasis === 'active' && !dimmed ? <Highlight part={part} /> : null}
+        {selected ? (
+          <Rect
+            x={hit.x}
+            y={hit.y}
+            width={hit.width}
+            height={hit.height}
+            rx={8}
+            fill="none"
+            stroke="#0F766E"
+            strokeWidth={2.5}
+            strokeDasharray="5 3"
+          />
+        ) : null}
         <PartArt part={part} />
+        <Rect
+          x={hit.x}
+          y={hit.y}
+          width={hit.width}
+          height={hit.height}
+          fill="transparent"
+          onPress={() => onSelectPart?.(part.id)}
+        />
       </G>
     </IntroOpacity>
   );
@@ -255,14 +348,6 @@ function Resistor({ a, b, ohms, label }: { a: Point; b: Point; ohms?: number; la
         ? ['#DC2626', '#DC2626', '#92400E', '#CA8A04']
         : ['#92400E', '#111827', '#111827', '#CA8A04'];
   const short = ohms === 1000 ? '1k' : ohms === 220 ? '220' : label;
-  const nx = -uy;
-  const ny = ux;
-  const flip = ny > 0.2;
-  const labelAt = {
-    x: (start.x + end.x) / 2 + (flip ? -nx : nx) * 12,
-    y: (start.y + end.y) / 2 + (flip ? -ny : ny) * 12 + 3,
-    anchor: 'middle' as const,
-  };
   return (
     <G>
       <Line x1={a.x} y1={a.y} x2={start.x} y2={start.y} stroke="#94A3B8" strokeWidth={1.6} />
@@ -272,10 +357,10 @@ function Resistor({ a, b, ohms, label }: { a: Point; b: Point; ohms?: number; la
         {bands.map((fill, index) => (
           <Rect key={`${fill}-${index}`} x={-length / 2 + 3 + index * 4} y={-5} width={2.4} height={10} fill={fill} />
         ))}
+        <SvgText x={0} y={-8} fill="#334155" fontSize={8} fontWeight="700" textAnchor="middle" stroke="#F4E7C8" strokeWidth={2}>
+          {short}
+        </SvgText>
       </G>
-      <SvgText x={labelAt.x} y={labelAt.y} fill="#334155" fontSize={9} fontWeight="700" textAnchor={labelAt.anchor} stroke="#F4E7C8" strokeWidth={2}>
-        {short}
-      </SvgText>
     </G>
   );
 }
@@ -303,7 +388,7 @@ function Transistor({ emitter, base, collector, label }: { emitter: Point; base:
       />
       <Line x1={x + 20} y1={top - 4} x2={x + 20} y2={bottom + 4} stroke="#E2E8F0" strokeWidth={2.4} />
       {leads.map((lead) => (
-        <SvgText key={lead.name} x={x - 1} y={lead.at.y + 3} fill="#0F172A" fontSize={8} fontWeight="700" textAnchor="end" stroke="#F4E7C8" strokeWidth={2}>
+        <SvgText key={lead.name} x={x - 2} y={lead.at.y + 3} fill="#0F172A" fontSize={9} fontWeight="700" textAnchor="end" stroke="#F4E7C8" strokeWidth={2}>
           {lead.name}
         </SvgText>
       ))}

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
+import { ComponentKey, SelectedPartCard } from '@/components/projects/walkthrough/ComponentKey';
+import { ConnectionReference } from '@/components/projects/walkthrough/ConnectionReference';
 import { DiagramViewer } from '@/components/projects/walkthrough/DiagramViewer';
 import { PhysicalBoard, PhysicalBreadboard } from '@/components/projects/walkthrough/PhysicalBreadboard';
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
@@ -11,8 +13,16 @@ import { getWiringLayout, type WiringElementDef, type WiringLayout } from '@/con
 import type { StepBlock, StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 import { resolveAssembly } from '@/lib/assembly-progress';
-import { describeInstalled, describePlacements } from '@/lib/breadboard-layout';
-import { physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
+import { connectionReference } from '@/lib/connection-reference';
+import {
+  buildComponentKey,
+  highlightedPartIds,
+  reconcileSelection,
+  toggleKeySelection,
+  type KeySelection,
+} from '@/lib/component-key';
+import { hitTestScene } from '@/lib/diagram-hit';
+import { buildPhysicalScene, physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
 import { fitContentSize } from '@/lib/diagram-viewport';
 import {
   routeWiringDiagram,
@@ -36,10 +46,6 @@ type WiringDiagramProps = {
 };
 
 const PREVIEW_MAX_HEIGHT = 320;
-
-function connectionLines(connections: StepConnection[]) {
-  return connections.map((row) => `${row.fromComponent} ${row.fromPin} → ${row.toComponent} ${row.toPin}`);
-}
 
 function resolveNodes(pair?: WiringPair, nodes?: WiringNode[]): WiringNode[] {
   if (nodes && nodes.length > 0) {
@@ -83,15 +89,19 @@ export function WiringDiagram({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const layout = getWiringLayout(projectSlug);
   const [view, setView] = useState<'physical' | 'schematic'>(layout?.physical ? 'physical' : 'schematic');
-  const [assemblyView, setAssemblyView] = useState<'current' | 'complete'>('current');
   const [open, setOpen] = useState(false);
+  const [selection, setSelection] = useState<KeySelection | null>(null);
+  const [keyOpen, setKeyOpen] = useState(false);
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
   useEffect(() => {
-    setAssemblyView('current');
+    setSelection(null);
+    setKeyOpen(false);
+    setConnectionsOpen(false);
   }, [stepIndex]);
   const showPhysical = Boolean(layout?.physical) && view === 'physical';
   const assembly = useMemo(
-    () => resolveAssembly(steps, stepIndex, assemblyView, layout?.physical?.fixtures ?? []),
-    [assemblyView, layout?.physical?.fixtures, stepIndex, steps],
+    () => resolveAssembly(steps, stepIndex, 'current', layout?.physical?.fixtures ?? []),
+    [layout?.physical?.fixtures, stepIndex, steps],
   );
   const assemblyFrame = useMemo<AssemblyFrame | null>(() => {
     if (!assembly.hasSequence || !showPhysical) {
@@ -108,81 +118,101 @@ export function WiringDiagram({
     () => (layout ? routeWiringDiagram(layout, connections, priorConnections) : []),
     [connections, layout, priorConnections],
   );
-  const lines = useMemo(() => {
-    if (!layout) {
-      return connectionLines(connections);
+  const entries = useMemo(
+    () => connectionReference(layout, connections, priorConnections),
+    [connections, layout, priorConnections],
+  );
+  const installedKey = assembly.hasSequence ? assembly.installedParts.join('\n') : null;
+  const groups = useMemo(() => {
+    if (!layout?.physical) {
+      return [];
     }
-    if (showPhysical && assembly.hasSequence) {
-      const parts = assemblyView === 'current' && assembly.phase === 'building' ? assembly.newParts : assembly.installedParts;
-      const jumpers = assemblyView === 'current' && assembly.phase === 'building' ? assembly.newJumpers : assembly.installedJumpers;
-      return describeInstalled(layout, parts, jumpers);
-    }
-    if (showPhysical) {
-      const placed = describePlacements(layout, connections);
-      return placed.length > 0 ? placed : connectionLines(connections);
-    }
-    return connectionLines(connections);
-  }, [assembly, assemblyView, connections, layout, showPhysical]);
+    const installed = installedKey == null ? null : new Set(installedKey.length > 0 ? installedKey.split('\n') : []);
+    return buildComponentKey(layout, installed);
+  }, [installedKey, layout]);
+  const selectedIds = useMemo(() => new Set(highlightedPartIds(groups, selection)), [groups, selection]);
+  useEffect(() => {
+    setSelection((current) => reconcileSelection(current, groups));
+  }, [groups]);
+  const scene = useMemo(
+    () => (showPhysical && layout ? buildPhysicalScene(layout, connections, priorConnections, assemblyFrame) : null),
+    [assemblyFrame, connections, layout, priorConnections, showPhysical],
+  );
   const physicalSize = showPhysical && layout ? physicalSceneSize(layout) : null;
   const contentWidth = physicalSize ? physicalSize.width : (layout?.width ?? 1);
   const contentHeight = physicalSize ? physicalSize.height : (layout?.height ?? 1);
+  const choose = (next: KeySelection) => setSelection((current) => toggleKeySelection(current, next));
+  const selectPart = (id: string) => choose({ kind: 'instance', id });
+
+  const detail = showPhysical && selection ? (
+    <SelectedPartCard groups={groups} selection={selection} onClear={() => setSelection(null)} />
+  ) : null;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.label}>{heading ?? 'Wiring diagram'}</Text>
-      {layout?.physical ? (
-        <View style={styles.viewToggle}>
+      {heading ? <Text style={styles.label}>{heading}</Text> : null}
+      <View style={styles.card}>
+        {layout?.physical ? (
+          <View style={[styles.controlRow, styles.cardPad]}>
+            <View style={styles.viewToggle}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setView('physical')}
+                style={[styles.viewOption, view === 'physical' && styles.viewOptionOn]}>
+                <Text style={[styles.viewOptionLabel, view === 'physical' && styles.viewOptionLabelOn]}>Physical</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setView('schematic')}
+                style={[styles.viewOption, view === 'schematic' && styles.viewOptionOn]}>
+                <Text style={[styles.viewOptionLabel, view === 'schematic' && styles.viewOptionLabelOn]}>Schematic</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+        {showPhysical && layout ? (
+          <PhysicalBreadboard
+            layout={layout}
+            connections={connections}
+            priorConnections={priorConnections}
+            assembly={assemblyFrame}
+            selectedIds={selectedIds}
+            onSelectPart={selectPart}
+          />
+        ) : layout ? (
+          <VisualWiringCanvas layout={layout} wires={wires} />
+        ) : (
+          <FallbackWiringList pair={pair} nodes={nodes} connections={connections} />
+        )}
+        {detail ? <View style={styles.cardDetail}>{detail}</View> : null}
+      </View>
+      <View style={styles.controlRow}>
+        {showPhysical && groups.length > 0 ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setView('physical')}
-            style={[styles.viewOption, view === 'physical' && styles.viewOptionOn]}>
-            <Text style={[styles.viewOptionLabel, view === 'physical' && styles.viewOptionLabelOn]}>Physical</Text>
+            accessibilityState={{ expanded: keyOpen }}
+            onPress={() => setKeyOpen((openKey) => !openKey)}
+            style={[styles.viewOption, keyOpen && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, keyOpen && styles.viewOptionLabelOn]}>Components</Text>
           </Pressable>
+        ) : null}
+        {layout ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setView('schematic')}
-            style={[styles.viewOption, view === 'schematic' && styles.viewOptionOn]}>
-            <Text style={[styles.viewOptionLabel, view === 'schematic' && styles.viewOptionLabelOn]}>Schematic</Text>
+            accessibilityState={{ expanded: connectionsOpen }}
+            onPress={() => setConnectionsOpen((openConnections) => !openConnections)}
+            style={[styles.viewOption, connectionsOpen && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, connectionsOpen && styles.viewOptionLabelOn]}>Connections</Text>
           </Pressable>
-        </View>
-      ) : null}
-      {showPhysical && assembly.hasSequence ? (
-        <View style={styles.viewToggle}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setAssemblyView('current')}
-            style={[styles.viewOption, assemblyView === 'current' && styles.viewOptionOn]}>
-            <Text style={[styles.viewOptionLabel, assemblyView === 'current' && styles.viewOptionLabelOn]}>Current step</Text>
+        ) : null}
+        {layout ? (
+          <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={styles.enlarge}>
+            <Text style={styles.enlargeLabel}>Enlarge</Text>
           </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setAssemblyView('complete')}
-            style={[styles.viewOption, assemblyView === 'complete' && styles.viewOptionOn]}>
-            <Text style={[styles.viewOptionLabel, assemblyView === 'complete' && styles.viewOptionLabelOn]}>Complete build</Text>
-          </Pressable>
-        </View>
-      ) : null}
-      {showPhysical && layout ? (
-        <PhysicalBreadboard layout={layout} connections={connections} priorConnections={priorConnections} assembly={assemblyFrame} />
-      ) : layout ? (
-        <VisualWiringCanvas layout={layout} wires={wires} />
-      ) : (
-        <FallbackWiringList pair={pair} nodes={nodes} connections={connections} />
-      )}
-      {layout ? (
-        <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={styles.enlarge}>
-          <Text style={styles.enlargeLabel}>Enlarge diagram</Text>
-        </Pressable>
-      ) : null}
-      {showPhysical && lines.length > 0 ? (
-        <View style={styles.placementList}>
-          {lines.map((line, index) => (
-            <Text key={`${line}-${index}`} style={styles.placementLine}>
-              {line}
-            </Text>
-          ))}
-        </View>
-      ) : null}
+        ) : null}
+      </View>
+      {showPhysical && keyOpen ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : null}
+      {layout && connectionsOpen ? <ConnectionReference entries={entries} /> : null}
       {layout ? (
         <DiagramViewer
           visible={open}
@@ -192,11 +222,31 @@ export function WiringDiagram({
           showModeToggle={Boolean(layout.physical)}
           contentWidth={contentWidth}
           contentHeight={contentHeight}
-          lines={lines}
-          assemblyView={showPhysical && assembly.hasSequence ? assemblyView : undefined}
-          onAssemblyViewChange={setAssemblyView}>
+          connections={<ConnectionReference entries={entries} />}
+          connectionsOpen={connectionsOpen}
+          onToggleConnections={() => setConnectionsOpen((openConnections) => !openConnections)}
+          componentsOpen={keyOpen}
+          onToggleComponents={() => setKeyOpen((openKey) => !openKey)}
+          detail={detail}
+          onSceneTap={
+            scene
+              ? (point) => {
+                  const id = hitTestScene(scene, point);
+                  if (id) {
+                    selectPart(id);
+                  }
+                }
+              : undefined
+          }
+          components={showPhysical ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : undefined}>
           {showPhysical ? (
-            <PhysicalBoard layout={layout} connections={connections} priorConnections={priorConnections} assembly={assemblyFrame} />
+            <PhysicalBoard
+              layout={layout}
+              connections={connections}
+              priorConnections={priorConnections}
+              assembly={assemblyFrame}
+              selectedIds={selectedIds}
+            />
           ) : (
             <SchematicFigure layout={layout} wires={wires} />
           )}
@@ -801,6 +851,25 @@ function createStyles(colors: SolderiPalette) {
     section: {
       gap: 10,
     },
+    card: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+      gap: 8,
+      paddingBottom: 8,
+    },
+    cardPad: {
+      paddingHorizontal: 8,
+      paddingTop: 8,
+    },
+    cardDetail: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingHorizontal: 12,
+      paddingTop: 10,
+    },
     label: {
       fontSize: 12,
       fontWeight: '700',
@@ -808,11 +877,19 @@ function createStyles(colors: SolderiPalette) {
       textTransform: 'uppercase',
       color: colors.textMuted,
     },
+    controlRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 8,
+    },
     viewToggle: {
       flexDirection: 'row',
       gap: 8,
     },
     viewOption: {
+      minHeight: 44,
+      justifyContent: 'center',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 999,
@@ -832,15 +909,9 @@ function createStyles(colors: SolderiPalette) {
       color: colors.textPrimary,
     },
     canvas: {
-      backgroundColor: colors.surfaceElevated,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
       paddingHorizontal: 8,
-      paddingTop: 10,
-      paddingBottom: 12,
+      paddingTop: 4,
       gap: 10,
-      overflow: 'hidden',
     },
     previewFrame: {
       alignItems: 'center',
@@ -848,6 +919,8 @@ function createStyles(colors: SolderiPalette) {
     },
     enlarge: {
       alignSelf: 'flex-start',
+      minHeight: 44,
+      justifyContent: 'center',
       borderColor: colors.border,
       borderWidth: 1,
       borderRadius: 999,
@@ -855,8 +928,6 @@ function createStyles(colors: SolderiPalette) {
       paddingVertical: 8,
     },
     enlargeLabel: { color: colors.accent, fontSize: 14, fontWeight: '700' },
-    placementList: { gap: 4 },
-    placementLine: { color: colors.textPrimary, fontSize: 14, lineHeight: 20 },
     legend: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -879,12 +950,8 @@ function createStyles(colors: SolderiPalette) {
       color: colors.textMuted,
     },
     fallbackCanvas: {
-      backgroundColor: colors.surfaceElevated,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
       paddingHorizontal: 14,
-      paddingVertical: 18,
+      paddingVertical: 12,
       gap: 18,
     },
     endpoints: {

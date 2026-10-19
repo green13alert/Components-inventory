@@ -187,7 +187,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Two-axis analog joystick with select switch',
     category: 'modules',
     type: 'joystick',
-    image: 'generic-module',
+    image: 'joystick',
   },
   {
     id: 'pan-tilt-bracket',
@@ -232,7 +232,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Active buzzer. A HIGH on the signal pin makes it sound.',
     category: 'actuators',
     type: 'buzzer',
-    image: 'generic-module',
+    image: 'buzzer',
   },
   {
     id: 'lcd-16x2',
@@ -295,7 +295,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: '3.3V / 5V breadboard PSU',
     category: 'power',
     type: 'power_supply',
-    image: 'battery',
+    image: 'breadboard-psu',
   },
   {
     id: 'hc-05',
@@ -378,7 +378,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
       'Kingbright WP154A4SEJ3VBDZGW/CA, a white-diffused 5 mm common-anode RGB LED. Datasheet DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, draws pin 1 as the red cathode, pin 2 as the common anode, pin 3 as the blue cathode, and pin 4 as the green cathode. The end view puts the flat of the flange next to pin 1. The package drawing labels the anode lead and shows it 2.5 mm minimum longer than the other leads. At 20 mA the forward voltage is 2.2 V typical and 2.8 V maximum for red, 3.3 V typical and 4.0 V maximum for blue, and 3.3 V typical and 4.1 V maximum for green. Absolute maximum DC forward current is 30 mA for red, 30 mA for blue, and 25 mA for green. This row is not a common-cathode LED and not an addressable pixel.',
     category: 'modules',
     type: 'led',
-    image: 'led',
+    image: 'rgb-led',
   },
   {
     id: 'pn2222a',
@@ -388,7 +388,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
       'onsemi PN2222ABU, the bulk TO-92 formerly listed by Fairchild. Top mark PN2222A. The PN2222A Rev. 1.1.0 package sketch labels the leads E, B, C: flat face toward you and leads down, left to right is emitter, base, collector. A metal-can 2N2222, and some other TO-92 parts with a similar mark, use a different order. Absolute maximum collector current is 1 A. Used as a low-side switch.',
     category: 'modules',
     type: 'transistor',
-    image: 'generic-module',
+    image: 'transistor',
   },
   {
     id: 'resistor',
@@ -406,7 +406,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Current-limiting resistor for a typical 5 V LED',
     category: 'modules',
     type: 'passive',
-    image: 'resistor',
+    image: 'resistor-band-220',
   },
   {
     id: 'breadboard',
@@ -460,7 +460,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: '1 kΩ through-hole resistor',
     category: 'modules',
     type: 'passive',
-    image: 'resistor',
+    image: 'resistor-band-1k',
   },
   {
     id: 'resistor-2k2',
@@ -622,7 +622,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'JST-SH female to four male pins, such as Adafruit 4209. Black is GND, red is VIN, blue is SDA, and yellow is SCL.',
     category: 'modules',
     type: 'cable',
-    image: 'jumper-wires',
+    image: 'stemma-qt',
   },
   {
     id: 'jumper-male-female',

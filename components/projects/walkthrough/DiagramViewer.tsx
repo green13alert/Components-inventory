@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SolderiPalette } from '@/constants/colors';
 import { useSolderiColors } from '@/context/theme-context';
+import { viewerPointToScene } from '@/lib/diagram-hit';
 import { fitContentSize, panDiagram, zoomAroundFocal } from '@/lib/diagram-viewport';
 
 type DiagramMode = 'physical' | 'schematic';
@@ -18,9 +19,14 @@ type DiagramViewerProps = {
   showModeToggle?: boolean;
   contentWidth: number;
   contentHeight: number;
-  lines: string[];
-  assemblyView?: 'current' | 'complete';
-  onAssemblyViewChange?: (view: 'current' | 'complete') => void;
+  connections?: ReactNode;
+  connectionsOpen?: boolean;
+  onToggleConnections?: () => void;
+  components?: ReactNode;
+  componentsOpen?: boolean;
+  onToggleComponents?: () => void;
+  detail?: ReactNode;
+  onSceneTap?: (point: { x: number; y: number }) => void;
   children: ReactNode;
 };
 
@@ -32,16 +38,20 @@ export function DiagramViewer({
   showModeToggle = false,
   contentWidth,
   contentHeight,
-  lines,
-  assemblyView,
-  onAssemblyViewChange,
+  connections,
+  connectionsOpen = false,
+  onToggleConnections,
+  components,
+  componentsOpen = false,
+  onToggleComponents,
+  detail,
+  onSceneTap,
   children,
 }: DiagramViewerProps) {
   const colors = useSolderiColors();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  const [listOpen, setListOpen] = useState(false);
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -52,6 +62,10 @@ export function DiagramViewer({
   const viewportHeight = useSharedValue(0);
   const diagramWidth = useSharedValue(contentWidth);
   const diagramHeight = useSharedValue(contentHeight);
+  const pinchStartFocalX = useSharedValue(0);
+  const pinchStartFocalY = useSharedValue(0);
+  const frameToken = useSharedValue('');
+  const lockedHeight = useSharedValue(0);
 
   useEffect(() => {
     diagramWidth.value = contentWidth;
@@ -62,20 +76,49 @@ export function DiagramViewer({
     savedScale.value = 1;
     savedX.value = 0;
     savedY.value = 0;
-    if (visible) {
-      setListOpen(false);
-    }
-  }, [contentHeight, contentWidth, diagramHeight, diagramWidth, mode, savedScale, savedX, savedY, scale, translateX, translateY, visible]);
+    frameToken.value = '';
+    lockedHeight.value = 0;
+  }, [contentHeight, contentWidth, diagramHeight, diagramWidth, frameToken, lockedHeight, mode, savedScale, savedX, savedY, scale, translateX, translateY, visible]);
+
+  const reportSceneTap = useCallback(
+    (x: number, y: number, nextScale: number, tx: number, ty: number, vw: number, vh: number) => {
+      if (!onSceneTap) {
+        return;
+      }
+      const fittedSize = fitContentSize(vw, vh, contentWidth, contentHeight);
+      if (fittedSize.width <= 0 || fittedSize.height <= 0) {
+        return;
+      }
+      onSceneTap(
+        viewerPointToScene({
+          x,
+          y,
+          scale: nextScale,
+          translateX: tx,
+          translateY: ty,
+          viewportWidth: vw,
+          viewportHeight: vh,
+          fittedWidth: fittedSize.width,
+          fittedHeight: fittedSize.height,
+          sceneWidth: contentWidth,
+          sceneHeight: contentHeight,
+        }),
+      );
+    },
+    [contentHeight, contentWidth, onSceneTap],
+  );
 
   const fitted = fitContentSize(viewport.width, viewport.height, contentWidth, contentHeight);
 
   const pinch = useMemo(
     () =>
       Gesture.Pinch()
-        .onStart(() => {
+        .onStart((event) => {
           savedScale.value = scale.value;
           savedX.value = translateX.value;
           savedY.value = translateY.value;
+          pinchStartFocalX.value = event.focalX;
+          pinchStartFocalY.value = event.focalY;
         })
         .onUpdate((event) => {
           const next = zoomAroundFocal({
@@ -83,6 +126,8 @@ export function DiagramViewer({
             startX: savedX.value,
             startY: savedY.value,
             scaleFactor: event.scale,
+            startFocalX: pinchStartFocalX.value,
+            startFocalY: pinchStartFocalY.value,
             focalX: event.focalX,
             focalY: event.focalY,
             viewportWidth: viewportWidth.value,
@@ -94,13 +139,19 @@ export function DiagramViewer({
           translateX.value = next.x;
           translateY.value = next.y;
         }),
-    [diagramHeight, diagramWidth, savedScale, savedX, savedY, scale, translateX, translateY, viewportHeight, viewportWidth],
+    [diagramHeight, diagramWidth, pinchStartFocalX, pinchStartFocalY, savedScale, savedX, savedY, scale, translateX, translateY, viewportHeight, viewportWidth],
   );
 
   const pan = useMemo(
     () =>
       Gesture.Pan()
         .maxPointers(1)
+        .minDistance(6)
+        .onTouchesMove((event, state) => {
+          if (event.numberOfTouches > 1) {
+            state.fail();
+          }
+        })
         .onStart(() => {
           savedX.value = translateX.value;
           savedY.value = translateY.value;
@@ -123,16 +174,30 @@ export function DiagramViewer({
     [diagramHeight, diagramWidth, savedX, savedY, scale, translateX, translateY, viewportHeight, viewportWidth],
   );
 
-  const gesture = useMemo(() => Gesture.Simultaneous(pinch, pan), [pan, pinch]);
+  const tap = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDistance(10)
+        .maxDuration(280)
+        .onEnd((event) => {
+          runOnJS(reportSceneTap)(event.x, event.y, scale.value, translateX.value, translateY.value, viewportWidth.value, viewportHeight.value);
+        }),
+    [reportSceneTap, scale, translateX, translateY, viewportHeight, viewportWidth],
+  );
+
+  const gesture = useMemo(() => Gesture.Exclusive(Gesture.Simultaneous(pinch, pan), tap), [pan, pinch, tap]);
+  const frameKey = `${mode}:${contentWidth}:${contentHeight}`;
 
   const animated = useAnimatedStyle(() => ({
+    // iOS and Android post-multiply each operation, so the last item reaches the
+    // point first. Scale stays last: zoom about the centre, then translate.
     transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { scale: scale.value }],
   }));
 
   const reset = () => {
-    scale.value = 1;
-    translateX.value = 0;
-    translateY.value = 0;
+    scale.value = withTiming(1, { duration: 220 });
+    translateX.value = withTiming(0, { duration: 220 });
+    translateY.value = withTiming(0, { duration: 220 });
     savedScale.value = 1;
     savedX.value = 0;
     savedY.value = 0;
@@ -163,17 +228,20 @@ export function DiagramViewer({
               <Text style={styles.headerLabel}>Reset</Text>
             </Pressable>
           </View>
-          {assemblyView && mode === 'physical' ? (
-            <View style={styles.modes}>
-              <ModeButton label="Current step" selected={assemblyView === 'current'} onPress={() => onAssemblyViewChange?.('current')} />
-              <ModeButton label="Complete build" selected={assemblyView === 'complete'} onPress={() => onAssemblyViewChange?.('complete')} />
-            </View>
-          ) : null}
           <GestureDetector gesture={gesture}>
             <View
               style={styles.viewport}
               onLayout={(event) => {
                 const { width, height } = event.nativeEvent.layout;
+                if (width <= 0 || height <= 0) {
+                  return;
+                }
+                const sameFrame = frameToken.value === frameKey;
+                if (sameFrame && (height <= lockedHeight.value || scale.value > 1)) {
+                  return;
+                }
+                frameToken.value = frameKey;
+                lockedHeight.value = height;
                 viewportWidth.value = width;
                 viewportHeight.value = height;
                 setViewport({ width, height });
@@ -183,25 +251,24 @@ export function DiagramViewer({
               </Animated.View>
             </View>
           </GestureDetector>
+          {detail ? <View style={styles.detail}>{detail}</View> : null}
           <View style={styles.sheet}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={listOpen ? 'Hide connections' : 'Show connections'}
-              onPress={() => setListOpen((open) => !open)}
-              style={styles.sheetToggle}>
-              <Text style={styles.sheetToggleLabel}>{listOpen ? 'Hide connections' : 'Show connections'}</Text>
-            </Pressable>
-            {listOpen ? (
+            <View style={styles.segmentRow}>
+              <View style={styles.segment}>
+                {components ? (
+                  <ModeButton label="Components" selected={componentsOpen} onPress={() => onToggleComponents?.()} />
+                ) : null}
+                <ModeButton label="Connections" selected={connectionsOpen} onPress={() => onToggleConnections?.()} />
+              </View>
+            </View>
+            {componentsOpen && components ? (
               <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetContent}>
-                {lines.length > 0 ? (
-                  lines.map((line, index) => (
-                    <Text key={`${line}-${index}`} style={styles.sheetLine}>
-                      {line}
-                    </Text>
-                  ))
-                ) : (
-                  <Text style={styles.sheetLine}>This step has no new connections.</Text>
-                )}
+                {components}
+              </ScrollView>
+            ) : null}
+            {connectionsOpen ? (
+              <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetContent}>
+                {connections}
               </ScrollView>
             ) : null}
           </View>
@@ -250,6 +317,8 @@ function createStyles(colors: SolderiPalette) {
     },
     headerLabel: { color: colors.textPrimary, fontSize: 15, fontWeight: '700' },
     modes: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 6 },
+    segmentRow: { alignItems: 'center', paddingBottom: 4 },
+    segment: { flexDirection: 'row', gap: 6 },
     modeButton: {
       minHeight: 44,
       paddingHorizontal: 10,
@@ -263,6 +332,13 @@ function createStyles(colors: SolderiPalette) {
     modeLabel: { color: colors.textSecondary, fontSize: 13, fontWeight: '700' },
     modeLabelOn: { color: colors.textPrimary },
     viewport: { flex: 1, overflow: 'hidden', backgroundColor: colors.surface },
+    detail: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
     stage: {
       position: 'absolute',
       top: 0,
@@ -277,15 +353,7 @@ function createStyles(colors: SolderiPalette) {
       borderTopColor: colors.border,
       backgroundColor: colors.surface,
     },
-    sheetToggle: {
-      minHeight: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 16,
-    },
-    sheetToggleLabel: { color: colors.accent, fontSize: 15, fontWeight: '700' },
     sheetList: { maxHeight: 220 },
     sheetContent: { paddingHorizontal: 16, paddingBottom: 12, gap: 6 },
-    sheetLine: { color: colors.textPrimary, fontSize: 15, lineHeight: 22 },
   });
 }

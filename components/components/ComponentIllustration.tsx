@@ -115,6 +115,18 @@ function IllustrationArt({
       return <Breadboard size={size} showGroundShadow={showGroundShadow} />;
     case 'pir-sensor':
       return <PirSensor size={size} showGroundShadow={showGroundShadow} />;
+    case 'transistor':
+      return <Transistor size={size} showGroundShadow={showGroundShadow} />;
+    case 'rgb-led':
+      return <RgbLed size={size} showGroundShadow={showGroundShadow} />;
+    case 'buzzer':
+      return <Buzzer size={size} showGroundShadow={showGroundShadow} />;
+    case 'joystick':
+      return <Joystick size={size} showGroundShadow={showGroundShadow} />;
+    case 'breadboard-psu':
+      return <BreadboardPsu size={size} showGroundShadow={showGroundShadow} />;
+    case 'stemma-qt':
+      return <StemmaQt size={size} showGroundShadow={showGroundShadow} />;
     case 'lcd-display':
       return <LcdDisplay size={size} showGroundShadow={showGroundShadow} />;
     case 'relay-module':
@@ -237,7 +249,8 @@ function ArduinoUno({ size, showGroundShadow = true }: IllustrationProps) {
 function Esp32({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      {/* Dark green PCB — recognisable ESP32 colour */}
+      {/* USB connector on the short edge, then the dark green DevKit PCB */}
+      <Rect x={4} y={26} width={10} height={12} rx={1} fill={HW.usbSilver} stroke={HW.metalDark} strokeWidth={0.5} />
       <Rect x={12} y={18} width={40} height={28} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.8} />
       <TopSheen x={14} y={19} w={24} h={5} rx={1} />
       {/* Metal RF shield — bright silver, high contrast */}
@@ -697,6 +710,84 @@ function ElectronicsKit({ size, showGroundShadow = true }: IllustrationProps) {
       {/* Small LED */}
       <Ellipse cx={44} cy={42} rx={3.2} ry={3} fill={HW.ledRed} />
       <Ellipse cx={43} cy={41} rx={1.4} ry={1} fill={HW.ledRedGlow} opacity={0.7} />
+    </IllustrationSvg>
+  );
+}
+
+function Transistor({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Path d="M 22 16 L 42 16 L 36 40 L 22 40 Z" fill={HW.icBlack} stroke={HW.metalDark} strokeWidth={0.7} />
+      <Line x1={22} y1={16} x2={22} y2={40} stroke={HW.metalLight} strokeWidth={1.2} />
+      <Line x1={26} y1={40} x2={24} y2={54} stroke={HW.pinGold} strokeWidth={2} strokeLinecap="round" />
+      <Line x1={32} y1={40} x2={32} y2={54} stroke={HW.pinGold} strokeWidth={2} strokeLinecap="round" />
+      <Line x1={38} y1={40} x2={40} y2={54} stroke={HW.pinGold} strokeWidth={2} strokeLinecap="round" />
+    </IllustrationSvg>
+  );
+}
+
+function RgbLed({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Circle cx={32} cy={24} r={14} fill="#F8FAFC" stroke={HW.metalDark} strokeWidth={0.8} />
+      <Path d="M 22 16 L 26 12" stroke={HW.icBlack} strokeWidth={2} strokeLinecap="round" />
+      <Circle cx={26} cy={24} r={3} fill={HW.ledRed} />
+      <Circle cx={34} cy={20} r={3} fill="#2563EB" />
+      <Circle cx={34} cy={28} r={3} fill={HW.ledGreen} />
+      <Line x1={24} y1={38} x2={24} y2={54} stroke={HW.ledRed} strokeWidth={2} strokeLinecap="round" />
+      <Line x1={30} y1={38} x2={30} y2={58} stroke={HW.pinGold} strokeWidth={2.4} strokeLinecap="round" />
+      <Line x1={36} y1={38} x2={36} y2={54} stroke="#2563EB" strokeWidth={2} strokeLinecap="round" />
+      <Line x1={42} y1={38} x2={42} y2={54} stroke={HW.ledGreen} strokeWidth={2} strokeLinecap="round" />
+    </IllustrationSvg>
+  );
+}
+
+function Buzzer({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={14} y={28} width={36} height={16} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.6} />
+      <Circle cx={32} cy={24} r={12} fill={HW.icBlack} stroke={HW.metalDark} strokeWidth={0.7} />
+      <Circle cx={32} cy={24} r={5} fill={HW.metal} />
+      <Circle cx={32} cy={24} r={1.6} fill={HW.metalLight} />
+      <PinRow x={22} y={48} count={3} spacing={8} />
+    </IllustrationSvg>
+  );
+}
+
+function Joystick({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={12} y={22} width={40} height={26} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.7} />
+      <Circle cx={32} cy={28} r={8} fill={HW.icBlack} />
+      <Line x1={32} y1={28} x2={40} y2={14} stroke={HW.metalDark} strokeWidth={3} strokeLinecap="round" />
+      <Circle cx={42} cy={12} r={5} fill={HW.icBlack} stroke={HW.metal} strokeWidth={0.6} />
+      <PinRow x={18} y={52} count={5} spacing={6} />
+    </IllustrationSvg>
+  );
+}
+
+function BreadboardPsu({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={10} y={16} width={44} height={28} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
+      <Rect x={14} y={20} width={12} height={8} rx={1} fill={HW.usbSilver} stroke={HW.metalDark} strokeWidth={0.4} />
+      <Circle cx={44} cy={24} r={4} fill={HW.icBlack} stroke={HW.metal} strokeWidth={0.6} />
+      <Rect x={28} y={30} width={10} height={6} rx={1} fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.4} />
+      <PinRow x={16} y={48} count={6} spacing={6} />
+    </IllustrationSvg>
+  );
+}
+
+function StemmaQt({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={8} y={22} width={14} height={16} rx={2} fill={HW.icBlack} />
+      <Rect x={11} y={26} width={2} height={8} fill={HW.pinGold} />
+      <Rect x={15} y={26} width={2} height={8} fill={HW.pinGold} />
+      <Path d="M 22 26 Q 36 18 52 30" stroke={HW.wireRed} strokeWidth={2} fill="none" strokeLinecap="round" />
+      <Path d="M 22 30 Q 36 24 52 34" stroke={HW.wireBlack} strokeWidth={2} fill="none" strokeLinecap="round" />
+      <Path d="M 22 34 Q 36 30 52 40" stroke="#2563EB" strokeWidth={2} fill="none" strokeLinecap="round" />
+      <Path d="M 22 38 Q 36 36 52 46" stroke={HW.wireYellow} strokeWidth={2} fill="none" strokeLinecap="round" />
     </IllustrationSvg>
   );
 }

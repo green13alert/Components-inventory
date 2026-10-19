@@ -1,6 +1,7 @@
 import type { WiringLayout } from '../constants/wiring-diagrams/types.ts'
 import type { AuthoredWalkthroughStep, StepConnection } from '../constants/walkthrough-content.ts'
 import { validateAssemblySequence } from './assembly-progress.ts'
+import { componentKeyProblems } from './component-key.ts'
 import { validatePhysicalLayout } from './breadboard-layout.ts'
 import { resolvePort } from './wiring-diagram.ts'
 
@@ -201,6 +202,9 @@ export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFin
       }
       if (input.layout.physical) {
         for (const problem of validateAssemblySequence(input.layout, input.steps)) {
+          error('instructions', problem)
+        }
+        for (const problem of componentKeyProblems(input.layout)) {
           error('instructions', problem)
         }
       }

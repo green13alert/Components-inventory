@@ -23,6 +23,21 @@ export type WiringPortDef = {
   aliases: string[];
 };
 
+/** Links one drawn part to a catalogue row and says what it does in this build. */
+export type DiagramComponentIdentity = {
+  catalogueId: string;
+  role: string;
+  /** Placement that the catalogue does not state, such as which way a flat faces on this board. */
+  orientation?: string;
+};
+
+export type DiagramAccessory = {
+  id: string;
+  catalogueId: string;
+  role: string;
+  orientation?: string;
+};
+
 export type WiringElementDef = {
   id: string;
   kind: WiringSymbolKind;
@@ -33,6 +48,10 @@ export type WiringElementDef = {
   width: number;
   height: number;
   ports: WiringPortDef[];
+  /** Catalogue identity for the component key. Required on parts that appear in a physical layout. */
+  identity?: DiagramComponentIdentity;
+  /** A cable or connector drawn with this part, identified separately in the key. */
+  accessory?: DiagramAccessory;
   railDomain?: WiringRailDomain;
   /** Replaces the default “+ 5V” breadboard rail caption. */
   powerRailLabel?: string;
