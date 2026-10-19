@@ -73,6 +73,20 @@ export type PhysicalRailBinding = {
   segment: 'upper' | 'lower';
 };
 
+/** An off-board part. Pin coordinates use the same space as breadboard holes. */
+export type PhysicalModulePlacement = {
+  elementId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pins: { portId: string; x: number; y: number; label: string }[];
+  /** Unlabelled header positions, so the real pin order stays visible. */
+  dots?: { x: number; y: number }[];
+  /** Male cable ends are the element's leads. The socket stays on this part. */
+  cableFrom?: { x: number; y: number };
+};
+
 /** A reproducible breadboard arrangement. Schematic symbols stay on WiringLayout.elements. */
 export type PhysicalLayout = {
   rows: number;
@@ -81,6 +95,9 @@ export type PhysicalLayout = {
   leads: PhysicalLead[];
   jumpers: PhysicalJumper[];
   railBindings: PhysicalRailBinding[];
+  modules?: PhysicalModulePlacement[];
+  /** Element ids drawn from the first physical step, such as the controller. */
+  fixtures?: string[];
 };
 
 export type WiringLayout = {

@@ -14,6 +14,12 @@ export type StepConnection = {
   signal?: WiringSignal;
 };
 
+/** Parts and jumper wires physically introduced on one walkthrough step. */
+export type AssemblyIntroduction = {
+  parts: string[];
+  jumpers: string[];
+};
+
 export type WiringNode = {
   id: string;
   name: string;
@@ -65,6 +71,7 @@ export type StepBlock =
       pair?: WiringPair;
       nodes?: WiringNode[];
       connections: StepConnection[];
+      assembly?: AssemblyIntroduction;
     }
   | { type: 'connections'; heading?: string; rows: StepConnection[]; summary?: string }
   | { type: 'code'; language: string; filename?: string; libraries?: string[]; code: string }

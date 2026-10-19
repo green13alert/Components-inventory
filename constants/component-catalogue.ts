@@ -419,9 +419,9 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   },
   {
     id: 'jumper-wires',
-    name: 'Jumper Wires',
-    aliases: ['jumpers', 'dupont wires', 'male to male'],
-    description: 'Dupont jumper wire pack',
+    name: 'Male-to-male jumper wires',
+    aliases: ['jumpers', 'dupont wires', 'male to male', 'jumper wires'],
+    description: 'Male-to-male Dupont jumper. A project parts list counts individual wires.',
     category: 'modules',
     type: 'prototyping',
     image: 'jumper-wires',

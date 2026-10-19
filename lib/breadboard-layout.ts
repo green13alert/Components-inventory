@@ -5,6 +5,7 @@ import type {
   PhysicalEndpoint,
   PhysicalJumper,
   PhysicalLayout,
+  PhysicalModulePlacement,
 } from '../constants/wiring-diagrams/types.ts'
 import type { StepConnection } from '../constants/walkthrough-content.ts'
 import { findElement, findPort } from './wiring-diagram.ts'
@@ -195,6 +196,11 @@ export function validatePhysicalLayout(layout: WiringLayout, connections: readon
         claim(occupancyKey(end), jumper.id)
       }
     }
+    for (const end of [jumper.from, jumper.to]) {
+      if ('kind' in end && end.kind === 'module' && !modulePin(physical, end.elementId, end.portId)) {
+        errors.push(`Jumper ${jumper.id} has no drawn pin for ${end.elementId} ${end.portId}.`)
+      }
+    }
   }
 
   const nets = buildPhysicalNets(layout, physical)
@@ -305,6 +311,40 @@ export function validatePhysicalLayout(layout: WiringLayout, connections: readon
   return errors
 }
 
+function modulePin(physical: PhysicalLayout, elementId: string, portId: string) {
+  const frame = physical.modules?.find((item) => item.elementId === elementId)
+  return frame?.pins.find((item) => item.portId === portId) ?? null
+}
+
+export function modulePlacement(physical: PhysicalLayout, elementId: string): PhysicalModulePlacement | null {
+  return physical.modules?.find((item) => item.elementId === elementId) ?? null
+}
+
+export function endpointMatchesPorts(layout: WiringLayout, endpoint: PhysicalEndpoint, ports: ReadonlySet<string>): boolean {
+  const physical = layout.physical
+  if (!physical || ports.size === 0) {
+    return false
+  }
+  if ('kind' in endpoint && endpoint.kind === 'module') {
+    return ports.has(`${endpoint.elementId}:${endpoint.portId}`)
+  }
+  const hole = endpoint as BreadboardHole
+  const leadHit = physical.leads.some(
+    (lead) =>
+      ports.has(`${lead.elementId}:${lead.portId}`) &&
+      holeKey(lead.hole, physical.railSplitAfter) === holeKey(hole, physical.railSplitAfter),
+  )
+  if (leadHit) {
+    return true
+  }
+  return physical.railBindings.some((binding) => {
+    if (!ports.has(`${binding.elementId}:${binding.portId}`)) {
+      return false
+    }
+    return hole.kind === 'rail' && hole.side === binding.side && hole.polarity === binding.polarity
+  })
+}
+
 function jumperGenderErrors(layout: WiringLayout, jumpers: PhysicalJumper[]): string[] {
   const errors: string[] = []
   for (const jumper of jumpers) {
@@ -386,6 +426,31 @@ export function holePosition(hole: BreadboardHole): { x: number; y: number } {
 export const PHYSICAL_BOARD_WIDTH = 340
 export const physicalBoardHeight = (rows: number) => 52 + rows * BREADBOARD_PITCH
 
+export function describeInstalled(layout: WiringLayout, partIds: readonly string[], jumperIds: readonly string[]): string[] {
+  const physical = layout.physical
+  if (!physical) {
+    return []
+  }
+  const parts = new Set(partIds)
+  const jumpers = new Set(jumperIds)
+  const lines: string[] = []
+  for (const lead of physical.leads) {
+    if (!parts.has(lead.elementId)) {
+      continue
+    }
+    const element = layout.elements.find((item) => item.id === lead.elementId)
+    const port = element ? findPort(element, lead.portId) : null
+    lines.push(`${element?.label ?? lead.elementId} ${port?.label ?? lead.portId}: ${holeLabel(lead.hole)}`)
+  }
+  for (const jumper of physical.jumpers) {
+    if (!jumpers.has(jumper.id)) {
+      continue
+    }
+    lines.push(jumperLine(layout, jumper))
+  }
+  return lines
+}
+
 export function describePlacements(layout: WiringLayout, connections: readonly StepConnection[]): string[] {
   const physical = layout.physical
   if (!physical) {
@@ -403,32 +468,8 @@ export function describePlacements(layout: WiringLayout, connections: readonly S
     lines.push(`${element?.label ?? lead.elementId} ${port?.label ?? lead.portId}: ${holeLabel(lead.hole)}`)
   }
   for (const jumper of physical.jumpers) {
-    const ends = [jumper.from, jumper.to]
-    const touches = ends.some((end) => 'kind' in end && end.kind === 'module' && active.has(`${end.elementId}:${end.portId}`))
-    const holeTouchesActiveLead = ends.some((end) => {
-      if ('kind' in end && end.kind === 'module') {
-        return false
-      }
-      return physical.leads.some((lead) => active.has(`${lead.elementId}:${lead.portId}`) && holeKey(lead.hole, physical.railSplitAfter) === holeKey(end as BreadboardHole, physical.railSplitAfter))
-    })
-    if (!touches && !holeTouchesActiveLead && connections.length > 0) {
-      const bindingHit = physical.railBindings.some((binding) => {
-        if (!active.has(`${binding.elementId}:${binding.portId}`)) {
-          return false
-        }
-        return ends.some((end) => {
-          if ('kind' in end && end.kind === 'module') {
-            return false
-          }
-          const hole = end as BreadboardHole
-          return hole.kind === 'rail' && hole.side === binding.side && hole.polarity === binding.polarity
-        })
-      })
-      if (!bindingHit) {
-        continue
-      }
-    }
-    if (connections.length === 0) {
+    const touches = [jumper.from, jumper.to].some((end) => endpointMatchesPorts(layout, end, active))
+    if (!touches || connections.length === 0) {
       continue
     }
     lines.push(jumperLine(layout, jumper))

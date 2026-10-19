@@ -19,7 +19,7 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'pan-tilt-bracket', name: 'Pan-Tilt Bracket Kit', illustrationId: 'electronics-kit', owned: false, quantity: 1 },
   { id: 'breadboard-psu', name: 'Breadboard Power Supply', illustrationId: 'battery', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
-  { id: 'jumper-wires', name: 'Jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 1 },
+  { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 16 },
 ];
 
 const NODE_ARDUINO: WiringNode = { id: 'arduino', name: 'Arduino Uno', illustrationId: 'arduino-uno' };
@@ -540,6 +540,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         heading: 'Power only',
         nodes: [NODE_ARDUINO, NODE_PSU],
         connections: POWER_CONNECTIONS,
+        assembly: { parts: ['psu'], jumpers: ['uno-5v', 'uno-gnd', 'psu-5v', 'psu-gnd', 'bridge-minus'] },
       },
       {
         type: 'connections',
@@ -578,6 +579,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_PSU, NODE_PAN],
         connections: PAN_CONNECTIONS,
+        assembly: { parts: ['pan'], jumpers: ['pan-vcc', 'pan-gnd', 'pan-sig'] },
       },
       {
         type: 'connections',
@@ -608,6 +610,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_PSU, NODE_TILT],
         connections: TILT_CONNECTIONS,
+        assembly: { parts: ['tilt'], jumpers: ['tilt-vcc', 'tilt-gnd', 'tilt-sig'] },
       },
       {
         type: 'connections',
@@ -638,6 +641,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_JOY],
         connections: JOY_CONNECTIONS,
+        assembly: { parts: ['joystick'], jumpers: ['joy-5v', 'joy-gnd', 'joy-vrx', 'joy-vry', 'joy-sw'] },
       },
       {
         type: 'connections',

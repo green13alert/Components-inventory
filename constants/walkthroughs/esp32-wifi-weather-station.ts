@@ -286,6 +286,12 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
         body: 'Set the DevKitC V4 beside the breadboard. Do not press its headers into the holes, and do not push the BME280 board in either. The STEMMA QT cable’s male pins are what enter the breadboard: red in the left + rail at row 6, black in the left − rail at row 6, blue in a10, yellow in a14. Stay above a break in the rail. Leave USB unplugged until the wiring check.',
       },
       {
+        type: 'wiring',
+        heading: 'Cable seated',
+        connections: ESP32_WIFI_WEATHER_CONNECTIONS.slice(2, 4),
+        assembly: { parts: ['bme280'], jumpers: [] },
+      },
+      {
         type: 'expected',
         heading: 'What you should see',
         body: 'The DevKit is beside the breadboard, the sensor is beside it, and four male cable pins are in the breadboard: red in the red rail, black in the blue rail, blue and yellow in their own rows. You can still read 3V3, GND, IO21, and IO22 on the DevKit.',
@@ -309,6 +315,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         heading: 'Power and ground',
         connections: POWER_CONNECTIONS,
+        assembly: { parts: [], jumpers: ['devkit-3v3', 'devkit-gnd'] },
       },
       {
         type: 'connections',
@@ -338,6 +345,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         heading: 'I2C signals',
         connections: SIGNAL_CONNECTIONS,
+        assembly: { parts: [], jumpers: ['devkit-io21', 'devkit-io22'] },
       },
       {
         type: 'connections',

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
@@ -8,9 +8,11 @@ import { ComponentIllustration } from '@/components/components/ComponentIllustra
 import { HW } from '@/constants/component-illustration-palette';
 import type { SolderiPalette } from '@/constants/colors';
 import { getWiringLayout, type WiringElementDef, type WiringLayout } from '@/constants/wiring-diagrams';
-import type { StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
+import type { StepBlock, StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
-import { describePlacements, PHYSICAL_BOARD_WIDTH, physicalBoardHeight } from '@/lib/breadboard-layout';
+import { resolveAssembly } from '@/lib/assembly-progress';
+import { describeInstalled, describePlacements } from '@/lib/breadboard-layout';
+import { physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
 import { fitContentSize } from '@/lib/diagram-viewport';
 import {
   routeWiringDiagram,
@@ -28,6 +30,8 @@ type WiringDiagramProps = {
   connections: StepConnection[];
   priorConnections?: StepConnection[];
   projectSlug?: string;
+  steps?: { blocks: StepBlock[] }[];
+  stepIndex?: number;
   onPinchActiveChange?: (active: boolean) => void;
 };
 
@@ -72,13 +76,34 @@ export function WiringDiagram({
   connections,
   priorConnections = [],
   projectSlug,
+  steps = [],
+  stepIndex = 0,
 }: WiringDiagramProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const layout = getWiringLayout(projectSlug);
   const [view, setView] = useState<'physical' | 'schematic'>(layout?.physical ? 'physical' : 'schematic');
+  const [assemblyView, setAssemblyView] = useState<'current' | 'complete'>('current');
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    setAssemblyView('current');
+  }, [stepIndex]);
   const showPhysical = Boolean(layout?.physical) && view === 'physical';
+  const assembly = useMemo(
+    () => resolveAssembly(steps, stepIndex, assemblyView, layout?.physical?.fixtures ?? []),
+    [assemblyView, layout?.physical?.fixtures, stepIndex, steps],
+  );
+  const assemblyFrame = useMemo<AssemblyFrame | null>(() => {
+    if (!assembly.hasSequence || !showPhysical) {
+      return null;
+    }
+    return {
+      installedParts: new Set(assembly.installedParts),
+      newParts: new Set(assembly.newParts),
+      installedJumpers: new Set(assembly.installedJumpers),
+      newJumpers: new Set(assembly.newJumpers),
+    };
+  }, [assembly, showPhysical]);
   const wires = useMemo(
     () => (layout ? routeWiringDiagram(layout, connections, priorConnections) : []),
     [connections, layout, priorConnections],
@@ -87,15 +112,20 @@ export function WiringDiagram({
     if (!layout) {
       return connectionLines(connections);
     }
+    if (showPhysical && assembly.hasSequence) {
+      const parts = assemblyView === 'current' && assembly.phase === 'building' ? assembly.newParts : assembly.installedParts;
+      const jumpers = assemblyView === 'current' && assembly.phase === 'building' ? assembly.newJumpers : assembly.installedJumpers;
+      return describeInstalled(layout, parts, jumpers);
+    }
     if (showPhysical) {
       const placed = describePlacements(layout, connections);
       return placed.length > 0 ? placed : connectionLines(connections);
     }
     return connectionLines(connections);
-  }, [connections, layout, showPhysical]);
-  const contentWidth = showPhysical && layout?.physical ? PHYSICAL_BOARD_WIDTH : (layout?.width ?? 1);
-  const contentHeight =
-    showPhysical && layout?.physical ? physicalBoardHeight(layout.physical.rows) : (layout?.height ?? 1);
+  }, [assembly, assemblyView, connections, layout, showPhysical]);
+  const physicalSize = showPhysical && layout ? physicalSceneSize(layout) : null;
+  const contentWidth = physicalSize ? physicalSize.width : (layout?.width ?? 1);
+  const contentHeight = physicalSize ? physicalSize.height : (layout?.height ?? 1);
 
   return (
     <View style={styles.section}>
@@ -116,8 +146,24 @@ export function WiringDiagram({
           </Pressable>
         </View>
       ) : null}
+      {showPhysical && assembly.hasSequence ? (
+        <View style={styles.viewToggle}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setAssemblyView('current')}
+            style={[styles.viewOption, assemblyView === 'current' && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, assemblyView === 'current' && styles.viewOptionLabelOn]}>Current step</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setAssemblyView('complete')}
+            style={[styles.viewOption, assemblyView === 'complete' && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, assemblyView === 'complete' && styles.viewOptionLabelOn]}>Complete build</Text>
+          </Pressable>
+        </View>
+      ) : null}
       {showPhysical && layout ? (
-        <PhysicalBreadboard layout={layout} connections={connections} priorConnections={priorConnections} />
+        <PhysicalBreadboard layout={layout} connections={connections} priorConnections={priorConnections} assembly={assemblyFrame} />
       ) : layout ? (
         <VisualWiringCanvas layout={layout} wires={wires} />
       ) : (
@@ -146,9 +192,11 @@ export function WiringDiagram({
           showModeToggle={Boolean(layout.physical)}
           contentWidth={contentWidth}
           contentHeight={contentHeight}
-          lines={lines}>
+          lines={lines}
+          assemblyView={showPhysical && assembly.hasSequence ? assemblyView : undefined}
+          onAssemblyViewChange={setAssemblyView}>
           {showPhysical ? (
-            <PhysicalBoard layout={layout} connections={connections} priorConnections={priorConnections} />
+            <PhysicalBoard layout={layout} connections={connections} priorConnections={priorConnections} assembly={assemblyFrame} />
           ) : (
             <SchematicFigure layout={layout} wires={wires} />
           )}

@@ -35,7 +35,7 @@ export const ESP32_BLE_RGB_BOM = [
   { slug: 'resistor-1k', name: '1 kÎ© resistor', quantity: 3, role: 'base_resistor', illustrationId: 'resistor-band-1k' as const },
   { slug: 'breadboard', name: 'Breadboard', quantity: 1, role: 'breadboard', illustrationId: 'breadboard' as const },
   { slug: 'jumper-male-female', name: 'Male-to-female jumper wires', quantity: 5, role: 'jumper_wires', illustrationId: 'jumper-wires' as const },
-  { slug: 'jumper-wires', name: 'Jumper wires', quantity: 1, role: 'rail_jumpers', illustrationId: 'jumper-wires' as const },
+  { slug: 'jumper-wires', name: 'Male-to-male jumper wires', quantity: 8, role: 'rail_jumpers', illustrationId: 'jumper-wires' as const },
   { slug: 'usb-data-cable', name: 'USB data cable', quantity: 1, role: 'usb_cable', illustrationId: 'usb-cable' as const },
   { slug: 'usb-power-source', name: 'USB power source', quantity: 1, role: 'usb_power', illustrationId: 'generic-module' as const },
 ] as const;
@@ -222,7 +222,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Count the wires before you start',
-        body: 'The DevKit sits beside the board. Its pins do not plug into the breadboard. Take five male-to-female wires for 5 V, GND, GPIO25, GPIO26, and GPIO27. The jumper-wire line is one pack. Take eight male-to-male wires from it: three emitters, the LED anode, one bridge on each of the + and − rails, the green link from b15 to j9, and the blue link from j12 to j8. A wire that arches over the board enters only the two holes named for it.',
+        body: 'The DevKit sits beside the board. Its pins do not plug into the breadboard. Take five male-to-female wires for 5 V, GND, GPIO25, GPIO26, and GPIO27. The parts list counts eight male-to-male wires: three emitters, the LED anode, one bridge on each of the + and − rails, the green link from b15 to j9, and the blue link from j12 to j8. A wire that arches over the board enters only the two holes named for it.',
       },
       {
         type: 'text',
@@ -304,6 +304,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'warning',
         body: 'Do not put two transistor leads in one row, and do not put two LED leads in one row. That shorts those leads together.',
       },
+      { type: 'wiring', heading: 'Empty board', connections: [] },
     ],
   ),
   lesson(
@@ -335,7 +336,11 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'wiring',
         heading: 'Where the parts sit',
-        connections: ESP32_BLE_RGB_CONNECTIONS,
+        connections: [],
+        assembly: {
+          parts: ['led', 'q-red', 'q-green', 'q-blue', 'base-red', 'base-green', 'base-blue', 'limit-red', 'limit-green', 'limit-blue'],
+          jumpers: [],
+        },
       },
       {
         type: 'test',
@@ -358,6 +363,10 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         heading: 'Supply and ground',
         connections: SUPPLY_CONNECTIONS,
+        assembly: {
+          parts: [],
+          jumpers: ['devkit-5v', 'devkit-gnd', 'bridge-plus', 'bridge-minus', 'anode-rail', 'red-emitter', 'green-emitter', 'blue-emitter'],
+        },
       },
       { type: 'connections', heading: 'These six links', rows: SUPPLY_CONNECTIONS },
       {
@@ -377,7 +386,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'text',
         body: 'Join DevKit GPIO25 to j2 with a male-to-female wire. e2 and i2 hold the red 1 kΩ. c2 is the base. e3 and h6 hold the red 220 Ω, and f6 is LED pin 1.',
       },
-      { type: 'wiring', heading: 'Red channel', connections: RED_CONNECTIONS },
+      { type: 'wiring', heading: 'Red channel', connections: RED_CONNECTIONS, assembly: { parts: [], jumpers: ['devkit-io25'] } },
       { type: 'connections', heading: 'Red links', rows: RED_CONNECTIONS },
       {
         type: 'test',
@@ -396,7 +405,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'text',
         body: 'Join GPIO26 to j11. The green 1 kΩ is in e11 and i11, the base is c11, and the 220 Ω runs from a12 to d15. Add the male-to-male wire from b15 to j9. j9 shares the row with LED pin 4 in f9.',
       },
-      { type: 'wiring', heading: 'Green channel', connections: GREEN_CONNECTIONS },
+      { type: 'wiring', heading: 'Green channel', connections: GREEN_CONNECTIONS, assembly: { parts: [], jumpers: ['devkit-io26', 'green-cathode'] } },
       { type: 'connections', heading: 'Green links', rows: GREEN_CONNECTIONS },
       {
         type: 'test',
@@ -415,7 +424,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'text',
         body: 'Join GPIO27 to a14. The blue 1 kΩ is in e14 and g14, the base is h14, and the 220 Ω runs from j15 to g12. Add the male-to-male wire from j12 to j8. j8 shares the row with LED pin 3 in f8. The wire arches over j9 and does not enter it.',
       },
-      { type: 'wiring', heading: 'Blue channel', connections: BLUE_CONNECTIONS },
+      { type: 'wiring', heading: 'Blue channel', connections: BLUE_CONNECTIONS, assembly: { parts: [], jumpers: ['devkit-io27', 'blue-cathode'] } },
       { type: 'connections', heading: 'Blue links', rows: BLUE_CONNECTIONS },
       {
         type: 'test',

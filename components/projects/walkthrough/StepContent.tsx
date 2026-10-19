@@ -20,6 +20,8 @@ type StepContentProps = {
   explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
   projectSlug?: string;
   priorWiringConnections?: StepConnection[];
+  steps?: { blocks: StepBlock[] }[];
+  stepIndex?: number;
   onWiringPinchActiveChange?: (active: boolean) => void;
 };
 
@@ -34,6 +36,8 @@ export function StepContent({
   explain,
   projectSlug,
   priorWiringConnections,
+  steps,
+  stepIndex,
   onWiringPinchActiveChange,
 }: StepContentProps) {
   const { styles } = useStepTheme();
@@ -48,6 +52,8 @@ export function StepContent({
           explain={explain}
           projectSlug={projectSlug}
           priorWiringConnections={priorWiringConnections}
+          steps={steps}
+          stepIndex={stepIndex}
           onWiringPinchActiveChange={onWiringPinchActiveChange}
         />
       ))}
@@ -60,12 +66,16 @@ function StepBlockView({
   explain,
   projectSlug,
   priorWiringConnections,
+  steps,
+  stepIndex,
   onWiringPinchActiveChange,
 }: {
   block: StepBlock;
   explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
   projectSlug?: string;
   priorWiringConnections?: StepConnection[];
+  steps?: { blocks: StepBlock[] }[];
+  stepIndex?: number;
   onWiringPinchActiveChange?: (active: boolean) => void;
 }) {
   switch (block.type) {
@@ -90,6 +100,8 @@ function StepBlockView({
           connections={block.connections}
           priorConnections={priorWiringConnections}
           projectSlug={projectSlug}
+          steps={steps}
+          stepIndex={stepIndex}
           onPinchActiveChange={onWiringPinchActiveChange}
         />
       );

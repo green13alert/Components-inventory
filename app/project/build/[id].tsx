@@ -439,6 +439,8 @@ export default function ProjectBuildScreen() {
             blocks={stepBlocks}
             projectSlug={project.slug}
             priorWiringConnections={priorWiringConnections}
+            steps={steps}
+            stepIndex={currentStepIndex}
             onWiringPinchActiveChange={setWiringPinchActive}
             explain={{
               projectId: project.id,

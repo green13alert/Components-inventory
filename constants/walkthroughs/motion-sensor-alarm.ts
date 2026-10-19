@@ -18,7 +18,7 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'led', name: 'LED', illustrationId: 'led', owned: false, quantity: 1 },
   { id: 'resistor-220', name: '220 Ω resistor', illustrationId: 'resistor', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
-  { id: 'jumper-wires', name: 'Jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 1 },
+  { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 10 },
 ];
 
 const NODE_ARDUINO: WiringNode = { id: 'arduino', name: 'Arduino Uno', illustrationId: 'arduino-uno' };
@@ -290,6 +290,12 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         body: 'Several parts need 5V and GND. Sharing rails keeps those nets common. If grounds are split, the PIR HIGH will not be a reliable HIGH relative to the Uno.',
       },
       {
+        type: 'wiring',
+        heading: 'Rails only',
+        connections: [],
+        assembly: { parts: [], jumpers: ['uno-5v', 'uno-gnd'] },
+      },
+      {
         type: 'test',
         body: 'Plug in USB. Confirm the Uno power LED is on. Check that D2, D8, and D9 still have no wires in them.',
       },
@@ -317,6 +323,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_PIR],
         connections: PIR_CONNECTIONS,
+        assembly: { parts: ['pir'], jumpers: ['pir-vcc', 'pir-out', 'pir-gnd'] },
       },
       {
         type: 'connections',
@@ -347,6 +354,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_RESISTOR, NODE_LED],
         connections: LED_CONNECTIONS,
+        assembly: { parts: ['resistor', 'led'], jumpers: ['led-signal', 'led-cathode'] },
       },
       {
         type: 'connections',
@@ -376,6 +384,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_BUZZER],
         connections: BUZZER_CONNECTIONS,
+        assembly: { parts: ['buzzer'], jumpers: ['buzzer-vcc', 'buzzer-sig', 'buzzer-gnd'] },
       },
       {
         type: 'connections',

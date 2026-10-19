@@ -19,6 +19,8 @@ type DiagramViewerProps = {
   contentWidth: number;
   contentHeight: number;
   lines: string[];
+  assemblyView?: 'current' | 'complete';
+  onAssemblyViewChange?: (view: 'current' | 'complete') => void;
   children: ReactNode;
 };
 
@@ -31,6 +33,8 @@ export function DiagramViewer({
   contentWidth,
   contentHeight,
   lines,
+  assemblyView,
+  onAssemblyViewChange,
   children,
 }: DiagramViewerProps) {
   const colors = useSolderiColors();
@@ -159,6 +163,12 @@ export function DiagramViewer({
               <Text style={styles.headerLabel}>Reset</Text>
             </Pressable>
           </View>
+          {assemblyView && mode === 'physical' ? (
+            <View style={styles.modes}>
+              <ModeButton label="Current step" selected={assemblyView === 'current'} onPress={() => onAssemblyViewChange?.('current')} />
+              <ModeButton label="Complete build" selected={assemblyView === 'complete'} onPress={() => onAssemblyViewChange?.('complete')} />
+            </View>
+          ) : null}
           <GestureDetector gesture={gesture}>
             <View
               style={styles.viewport}
