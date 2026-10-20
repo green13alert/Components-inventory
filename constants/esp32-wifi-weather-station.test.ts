@@ -22,7 +22,7 @@ test('the Wi-Fi weather station is a new unpublished project', () => {
   assert.equal(ESP32_WIFI_WEATHER_PROJECT.title, 'ESP32 Wi-Fi Weather Station')
   assert.equal(ESP32_WIFI_WEATHER_PROJECT.imageKey, 'esp32WifiWeather')
   assert.equal(projectCoverIsPending(ESP32_WIFI_WEATHER_PROJECT.imageKey), false)
-  assert.equal(ESP32_WIFI_WEATHER_STEPS.length, 32)
+  assert.equal(ESP32_WIFI_WEATHER_STEPS.length, 25)
   assert.equal(
     resolveBuildDestination({
       stepCount: ESP32_WIFI_WEATHER_STEPS.length,
@@ -42,7 +42,7 @@ test('the Wi-Fi weather station is a new unpublished project', () => {
   assert.equal(wiringBlocks.length > 0, true)
   assert.equal(ESP32_WIFI_WEATHER_LAYOUT.slug, ESP32_WIFI_WEATHER_PROJECT.slug)
   const stages = [...new Set(ESP32_WIFI_WEATHER_STEPS.map((step) => step.stageTitle))]
-  assert.equal(stages.length, 10)
+  assert.equal(stages.length, 9)
   assert.equal(ESP32_WIFI_WEATHER_STEPS.some((step) => step.description.includes('BMP280 can report')), false)
 })
 

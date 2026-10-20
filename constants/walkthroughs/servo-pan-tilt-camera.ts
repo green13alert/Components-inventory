@@ -312,62 +312,17 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         caption: 'Finished pan-tilt reference. Pin map: pan servo D9, tilt servo D10, joystick VRx A0, VRy A1, SW D2.',
       },
       {
-        type: 'text',
-        heading: 'Why this order',
-        body: 'Mechanics first, then power, then one servo at a time, then the joystick, then mapping and limits. A binding bracket, a missing ground, and a reversed axis are three different faults. Building in this order keeps them from stacking.',
+        type: 'components',
+        items: COMPONENTS,
+      },
+      {
+        type: 'warning',
+        body: 'Use position SG90 servos that hold an angle. A continuous-rotation servo will not stop at the angle this sketch writes.',
       },
     ],
   },
   {
     sortOrder: 1,
-    stageSortOrder: 0,
-    stageTitle: STAGE_UNDERSTAND,
-    title: 'How Pan-Tilt Works',
-    description: 'Each servo holds an angle. Pan rotates the base. Tilt nods the camera plate. The Arduino sends a pulse-width signal; the servo’s own board does the motor work.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'What a hobby servo does',
-        body: 'An SG90 is a geared motor plus a position sensor. write(90) means “go to mid-travel and hold.” The number is degrees, roughly 0 to 180. The Arduino pin only sends a control pulse. The servo draws its running current from the red VCC wire, not from that signal pin.',
-      },
-      {
-        type: 'text',
-        heading: 'Two axes',
-        body: 'The lower servo is pan: it yaws the whole upper assembly. The upper servo is tilt: it pitches the camera plate. They must be free to move without the bracket hitting itself. Mechanical stops are tighter than the servo’s 0–180 software range, which is why later code uses 20–160, not 0–180.',
-      },
-      {
-        type: 'warning',
-        body: 'Do not force a servo by hand while it is powered. If the bracket binds, remove power and ease the horn off rather than driving through the stall.',
-      },
-    ],
-  },
-  {
-    sortOrder: 2,
-    stageSortOrder: 0,
-    stageTitle: STAGE_UNDERSTAND,
-    title: 'Understand the Components',
-    description: 'Every part in this walkthrough is on the project BOM. Know what each one is for before you assemble or plug anything in.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'What each part does',
-        body: 'The Uno is the controller. Two SG90s are the joints. The pan-tilt bracket kit is the mechanical frame and camera plate. The analog joystick is the input (VRx, VRy, and a click switch). The breadboard PSU supplies 5V for the servos. The breadboard and jumpers are the wiring. A camera is optional payload — this sketch never talks to a camera module.',
-      },
-      {
-        type: 'components',
-        items: COMPONENTS,
-      },
-      {
-        type: 'expected',
-        heading: 'Check',
-        body: 'You can point to two separate SG90s, the bracket kit, the joystick, and the PSU. Do not substitute a continuous-rotation “360° servo” — this project needs position servos that hold an angle.',
-      },
-    ],
-  },
-  {
-    sortOrder: 3,
     stageSortOrder: 0,
     stageTitle: STAGE_UNDERSTAND,
     title: 'Understand Power and Pin Architecture',
@@ -398,7 +353,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 4,
+    sortOrder: 2,
     stageSortOrder: 1,
     stageTitle: STAGE_MECHANICAL,
     title: 'Prepare the Mechanical Parts',
@@ -423,7 +378,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 5,
+    sortOrder: 3,
     stageSortOrder: 1,
     stageTitle: STAGE_MECHANICAL,
     title: 'Assemble the Base and Pan Servo',
@@ -452,7 +407,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 6,
+    sortOrder: 4,
     stageSortOrder: 1,
     stageTitle: STAGE_MECHANICAL,
     title: 'Mount the Tilt Servo and Camera Plate',
@@ -481,7 +436,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 7,
+    sortOrder: 5,
     stageSortOrder: 1,
     stageTitle: STAGE_MECHANICAL,
     title: 'Check Mechanical Movement',
@@ -490,7 +445,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     blocks: [
       {
         type: 'test',
-        body: 'Hold the base still. Ease the camera plate through tilt. Then ease the whole U-bracket through pan. Watch the two servo leads: they should follow, not stretch.',
+        body: 'Hold the base still. Ease the camera plate through tilt. Then ease the whole U-bracket through pan. Watch the two servo leads: they should follow, not stretch. Power is still off. Once the servos are powered, do not force a horn by hand. If a joint binds, remove power and ease the horn off.',
       },
       {
         type: 'expected',
@@ -518,7 +473,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 8,
+    sortOrder: 6,
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Set Up Arduino, Breadboard, and Power',
@@ -563,7 +518,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 9,
+    sortOrder: 7,
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Connect the Pan Servo',
@@ -594,7 +549,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 10,
+    sortOrder: 8,
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Connect the Tilt Servo',
@@ -625,7 +580,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 11,
+    sortOrder: 9,
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Connect the Joystick',
@@ -655,7 +610,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 12,
+    sortOrder: 10,
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Check the Complete Circuit',
@@ -687,7 +642,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 13,
+    sortOrder: 11,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Create the Arduino Program',
@@ -713,7 +668,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 14,
+    sortOrder: 12,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Add the Servo Library',
@@ -739,7 +694,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 15,
+    sortOrder: 13,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Control the Pan Servo',
@@ -770,7 +725,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 16,
+    sortOrder: 14,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Control the Tilt Servo',
@@ -801,7 +756,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 17,
+    sortOrder: 15,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Read Joystick Input',
@@ -841,7 +796,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 18,
+    sortOrder: 16,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Map Joystick Values to Servo Angles',
@@ -867,7 +822,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 19,
+    sortOrder: 17,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
     title: 'Add Limits and Combine the Program',
@@ -893,7 +848,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 20,
+    sortOrder: 18,
     stageSortOrder: 4,
     stageTitle: STAGE_TEST,
     title: 'Upload the Program',
@@ -940,7 +895,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 21,
+    sortOrder: 19,
     stageSortOrder: 4,
     stageTitle: STAGE_TEST,
     title: 'Test Individual Movements',
@@ -977,7 +932,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 22,
+    sortOrder: 20,
     stageSortOrder: 4,
     stageTitle: STAGE_TEST,
     title: 'Calibrate Neutral Positions',
@@ -1015,7 +970,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 23,
+    sortOrder: 21,
     stageSortOrder: 4,
     stageTitle: STAGE_TEST,
     title: 'Test Combined Movement',

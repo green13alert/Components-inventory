@@ -1,8 +1,9 @@
 import type { WiringLayout } from '../types';
 import { RGB_PHYSICAL } from '../physical-layouts.ts';
 
-const channel = (colour: 'red' | 'green' | 'blue', y: number) =>
-  [
+const channel = (colour: 'red' | 'green' | 'blue', y: number) => {
+  const name = colour.charAt(0).toUpperCase() + colour.slice(1);
+  return [
     {
       id: `base-${colour}`,
       kind: 'resistor' as const,
@@ -11,6 +12,7 @@ const channel = (colour: 'red' | 'green' | 'blue', y: number) =>
       identity: {
         catalogueId: 'resistor-1k',
         role: `Limits base current for the ${colour} transistor.`,
+        keyLabel: `${name} base resistor`,
       },
       x: 20,
       y,
@@ -31,6 +33,7 @@ const channel = (colour: 'red' | 'green' | 'blue', y: number) =>
         catalogueId: 'pn2222a',
         role: `Switches the ${colour} LED channel.`,
         orientation: 'Flat face to the right. Emitter is the top lead, then base, then collector.',
+        keyLabel: `Q ${name}`,
       },
       x: 128,
       y: y - 8,
@@ -50,6 +53,7 @@ const channel = (colour: 'red' | 'green' | 'blue', y: number) =>
       identity: {
         catalogueId: 'resistor-220',
         role: `Limits current in the ${colour} LED channel.`,
+        keyLabel: `${name} LED resistor`,
       },
       x: 184,
       y,
@@ -62,6 +66,7 @@ const channel = (colour: 'red' | 'green' | 'blue', y: number) =>
       ],
     },
   ];
+};
 
 export const ESP32_BLE_RGB_LAYOUT: WiringLayout = {
   slug: '24',

@@ -129,7 +129,7 @@ export function buildComponentKey(layout: WiringLayout, installedIds: ReadonlySe
     add(
       {
         id: element.id,
-        label: element.label,
+        label: element.identity.keyLabel ?? element.label,
         role: element.identity.role,
         orientation: element.identity.orientation,
         pins: pinSummary(element),
@@ -186,10 +186,11 @@ export function reconcileSelection(selection: KeySelection | null, groups: reado
   if (!selection) {
     return null
   }
-  if (highlightedPartIds(groups, selection).length === 0) {
-    return null
+  if (selection.kind === 'instance') {
+    const found = groups.some((group) => group.instances.some((instance) => instance.id === selection.id))
+    return found ? selection : null
   }
-  return selection
+  return groups.some((group) => group.catalogueId === selection.catalogueId) ? selection : null
 }
 
 export function toggleKeySelection(current: KeySelection | null, next: KeySelection): KeySelection | null {

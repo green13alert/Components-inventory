@@ -29,6 +29,8 @@ export type DiagramComponentIdentity = {
   role: string;
   /** Placement that the catalogue does not state, such as which way a flat faces on this board. */
   orientation?: string;
+  /** Name in the component list. The diagram label stays the netlist name. */
+  keyLabel?: string;
 };
 
 export type DiagramAccessory = {

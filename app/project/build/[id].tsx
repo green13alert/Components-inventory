@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
+import { useWalkthroughScrollController, WalkthroughScrollProvider } from '@/components/projects/walkthrough/WalkthroughScroll';
 import type { SolderiPalette } from '@/constants/colors';
 import { useAtlas } from '@/context/atlas-context';
 import {
@@ -154,6 +155,7 @@ export default function ProjectBuildScreen() {
   stepCursorRef.current = currentStepIndex;
   const currentStep = steps[currentStepIndex] ?? steps[0];
   const stepNavigationKey = currentStep?.id ?? String(currentStepIndex);
+  const walkthroughScroll = useWalkthroughScrollController(stepNavigationKey);
   const footerControls = walkthroughFooterControls({
     stepIndex: currentStepIndex,
     stepCount: steps.length,
@@ -415,13 +417,22 @@ export default function ProjectBuildScreen() {
         </View>
       </View>
 
+      <WalkthroughScrollProvider reportMarker={walkthroughScroll.reportMarker}>
       <ScrollView
         key={stepNavigationKey}
+        ref={walkthroughScroll.scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
-        scrollEnabled={!wiringPinchActive}>
+        scrollEnabled={!wiringPinchActive}
+        scrollEventThrottle={16}
+        onScroll={walkthroughScroll.onScroll}
+        onScrollBeginDrag={walkthroughScroll.onScrollBeginDrag}
+        onScrollEndDrag={walkthroughScroll.onScrollEndDrag}
+        onMomentumScrollEnd={walkthroughScroll.onMomentumScrollEnd}
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+        contentInsetAdjustmentBehavior="never">
         <View style={styles.stepBody}>
           {stage ? (
             <Text style={styles.stageKicker}>
@@ -464,6 +475,7 @@ export default function ProjectBuildScreen() {
           </View>
         </View>
       </ScrollView>
+      </WalkthroughScrollProvider>
 
       <View style={[styles.footer, { paddingBottom: walkthroughFooterPadding(insets.bottom) }]}>
         {saveNotice ? <Text style={styles.continueHint}>{saveNotice}</Text> : null}

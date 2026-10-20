@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
@@ -77,30 +78,58 @@ export function SelectedPartCard({
 export function ComponentKey({ groups, selection, onSelect }: ComponentKeyProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [openIds, setOpenIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (selection?.kind !== 'instance') {
+      return;
+    }
+    const group = groups.find((item) => item.instances.some((instance) => instance.id === selection.id));
+    if (!group || group.instances.length < 2) {
+      return;
+    }
+    setOpenIds((current) => (current.includes(group.catalogueId) ? current : [...current, group.catalogueId]));
+  }, [groups, selection]);
 
   return (
     <View style={styles.wrap}>
       {groups.map((group) => {
+        const repeated = group.instances.length > 1;
+        const open = repeated && openIds.includes(group.catalogueId);
         const groupOn = selection?.kind === 'group' && selection.catalogueId === group.catalogueId;
         const status = groupStatus(group);
         return (
           <View key={group.catalogueId} style={styles.group}>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ selected: groupOn }}
+              accessibilityState={{ expanded: repeated ? open : undefined, selected: groupOn }}
               accessibilityLabel={`${group.name}, ${group.instances.length}, ${status}`}
-              onPress={() => onSelect(group.instances.length === 1 ? { kind: 'instance', id: group.instances[0].id } : { kind: 'group', catalogueId: group.catalogueId })}
+              onPress={() => {
+                if (!repeated) {
+                  onSelect({ kind: 'instance', id: group.instances[0].id });
+                  return;
+                }
+                if (open) {
+                  setOpenIds((current) => current.filter((id) => id !== group.catalogueId));
+                  return;
+                }
+                setOpenIds((current) => [...current, group.catalogueId]);
+                onSelect({ kind: 'group', catalogueId: group.catalogueId });
+              }}
               style={[styles.row, groupOn && styles.rowOn]}>
-              <ComponentIllustration id={group.illustrationId} size={44} plate={false} showGroundShadow={false} />
+              <ComponentIllustration id={group.illustrationId} size={40} plate={false} showGroundShadow={false} />
               <View style={styles.copy}>
                 <Text style={styles.name}>
                   {group.name}
-                  {group.instances.length > 1 ? `  × ${group.instances.length}` : ''}
+                  {repeated ? ` ×${group.instances.length}` : ''}
                 </Text>
                 <Text style={styles.status}>{status}</Text>
               </View>
+              {repeated ? (
+                <Ionicons name={open ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
+              ) : null}
             </Pressable>
-            {group.instances.length > 1
+            {open
               ? group.instances.map((instance) => {
                   const on = instanceSelected(selection, instance);
                   return (
@@ -108,11 +137,14 @@ export function ComponentKey({ groups, selection, onSelect }: ComponentKeyProps)
                       key={instance.id}
                       accessibilityRole="button"
                       accessibilityState={{ selected: on }}
-                      accessibilityLabel={`${instance.label}, ${instance.installed ? 'on the board' : 'not yet installed'}`}
+                      accessibilityLabel={`${instance.label}, ${instance.role}, ${instance.installed ? 'on the board' : 'not yet installed'}`}
                       onPress={() => onSelect({ kind: 'instance', id: instance.id })}
                       style={[styles.instance, on && styles.rowOn]}>
-                      <Text style={styles.instanceLabel}>{instance.label}</Text>
-                      <Text style={styles.status}>{instance.installed ? 'On the board' : 'Not yet installed'}</Text>
+                      <View style={styles.instanceCopy}>
+                        <Text style={styles.instanceLabel}>{instance.label}</Text>
+                        <Text style={styles.role}>{instance.role}</Text>
+                        <Text style={styles.status}>{instance.installed ? 'On the board' : 'Not yet installed'}</Text>
+                      </View>
                     </Pressable>
                   );
                 })
@@ -150,14 +182,16 @@ function createStyles(colors: SolderiPalette) {
     status: { color: colors.textSecondary, fontSize: 13 },
     instance: {
       minHeight: 44,
-      marginLeft: 50,
+      marginLeft: 28,
       paddingHorizontal: 8,
+      paddingVertical: 6,
       borderRadius: 10,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       gap: 8,
     },
+    instanceCopy: { flex: 1, gap: 2 },
     instanceLabel: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
+    role: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
   });
 }

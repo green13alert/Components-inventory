@@ -44,7 +44,8 @@ test('each physical project has a catalogue-linked component key', () => {
 test('project 24 names each transistor and hides parts that are not installed yet', () => {
   const steps = ESP32_BLE_RGB_STEPS
   const fixtures = ESP32_BLE_RGB_LAYOUT.physical?.fixtures ?? []
-  const empty = resolveAssembly(steps, steps.findIndex((step) => step.title.startsWith('Learn the breadboard')), 'current', fixtures)
+  const seatIndex = steps.findIndex((step) => step.title.startsWith('Seat every part'))
+  const empty = resolveAssembly(steps, seatIndex - 1, 'current', fixtures)
   const early = buildComponentKey(ESP32_BLE_RGB_LAYOUT, new Set(empty.installedParts))
   const transistors = early.find((group) => group.catalogueId === 'pn2222a')
   assert.ok(transistors)
@@ -52,6 +53,15 @@ test('project 24 names each transistor and hides parts that are not installed ye
     transistors.instances.map((instance) => instance.id),
     ['q-red', 'q-green', 'q-blue'],
   )
+  assert.deepEqual(
+    transistors.instances.map((instance) => instance.label),
+    ['Q Red', 'Q Green', 'Q Blue'],
+  )
+  const bases = early.find((group) => group.catalogueId === 'resistor-1k')
+  const limits = early.find((group) => group.catalogueId === 'resistor-220')
+  assert.deepEqual(bases?.instances.map((instance) => instance.label), ['Red base resistor', 'Green base resistor', 'Blue base resistor'])
+  assert.deepEqual(limits?.instances.map((instance) => instance.label), ['Red LED resistor', 'Green LED resistor', 'Blue LED resistor'])
+  assert.equal(bases?.catalogueId === limits?.catalogueId, false)
   assert.equal(transistors.instances.every((instance) => instance.highlightIds.length === 0), true)
   assert.equal(highlightedPartIds(early, { kind: 'group', catalogueId: 'pn2222a' }).length, 0)
 
@@ -59,14 +69,15 @@ test('project 24 names each transistor and hides parts that are not installed ye
   const onBoard = buildComponentKey(ESP32_BLE_RGB_LAYOUT, new Set(seated.installedParts))
   assert.deepEqual(highlightedPartIds(onBoard, { kind: 'group', catalogueId: 'pn2222a' }).sort(), ['q-blue', 'q-green', 'q-red'])
   const green = findKeyInstance(onBoard, 'q-green')
-  assert.equal(green?.instance.label, 'Q green')
+  assert.equal(green?.instance.label, 'Q Green')
   assert.equal(green?.group.name, 'PN2222A transistor')
   assert.equal(/green/.test(green?.instance.role ?? ''), true)
   assert.equal(green?.instance.pins, 'Base, Collector, Emitter')
 
   const complete = buildComponentKey(ESP32_BLE_RGB_LAYOUT, new Set(resolveAssembly(steps, 0, 'complete', fixtures).installedParts))
   assert.equal(complete.flatMap((group) => group.instances).every((instance) => instance.installed), true)
-  assert.equal(reconcileSelection({ kind: 'instance', id: 'q-green' }, early), null)
+  assert.deepEqual(reconcileSelection({ kind: 'instance', id: 'q-green' }, early), { kind: 'instance', id: 'q-green' })
+  assert.deepEqual(highlightedPartIds(early, { kind: 'instance', id: 'q-green' }), [])
   assert.deepEqual(reconcileSelection({ kind: 'instance', id: 'q-green' }, onBoard), { kind: 'instance', id: 'q-green' })
   assert.equal(toggleKeySelection({ kind: 'instance', id: 'q-green' }, { kind: 'instance', id: 'q-green' }), null)
   assert.deepEqual(toggleKeySelection({ kind: 'instance', id: 'q-red' }, { kind: 'instance', id: 'q-green' }), {

@@ -1,643 +1,789 @@
 # ESP32 Bluetooth RGB LED Controller
 
-Review export of slug `24`. The walkthrough text below is the text stored in Supabase and loaded by the app. It is not a summary.
+Exported from the current linked Supabase records (`public.projects`, `public.project_steps`, `public.project_components`, `public.components`, and `public.project_requirements`) on 20 October 2026. Step text is verbatim. This file is for independent review.
 
-The only stored field the app rewrites before display is a pending-cover caption. Where that happens, the stored caption and the caption shown in the app are both printed. Code blocks are shown in full. Each one also has a copy control and an Explain Code button that opens a coming-soon dialog.
+## Project
 
-## 1. Project
+- Slug: 24
+- Title: ESP32 Bluetooth RGB LED Controller
+- Description: Mix a red, green, and blue LED from a phone over Bluetooth Low Energy.
+- Overview: Build a breadboard RGB light that a phone sets over Bluetooth Low Energy. The LED takes current from the DevKit 5 V pin. Three PN2222A transistors switch the colours, and PWM sets the mix.
+- Category: iot
+- Difficulty: beginner
+- Estimated duration: 3 hrs
+- Publication status: unpublished
+- Cover image key: esp32BleRgb
+- Cover asset: no bundled photograph. The app keeps the pending-cover placeholder.
 
-Title: ESP32 Bluetooth RGB LED Controller
-
-Slug: 24
-
-Description: Mix a red, green, and blue LED from a phone over Bluetooth Low Energy.
-
-Overview: Build a breadboard RGB light on an ESP32 DevKit. The LED takes power from the DevKit 5 V pin through resistors and PN2222A switches. Three PWM pins set the colour, and Nordic nRF Connect writes the colour and brightness over BLE. The sketch does not use Bluetooth Classic.
-
-Difficulty: beginner
-
-Duration: 3 hrs
-
-Category: iot
-
-Publication: unpublished (`is_published` false in the database and false in the local source)
-
-Sort order: 24
-
-Learning objectives:
+### Learning objectives
 
 - Switch a common-anode RGB LED from the DevKit 5 V pin with a PN2222A and a 220 Ω resistor on each colour
 - Use LEDC PWM on GPIO25, GPIO26, and GPIO27 to drive those transistor bases through 1 kΩ
 - Advertise a BLE GATT service that accepts colour and brightness writes
 - Connect with nRF Connect for Mobile and compare the LED with the Serial Monitor
 
-Local authoring metadata, which is not a database column: compilation `passed`, hardware tested `false`, code style `single-program`. Those values do not appear in the walkthrough.
-
-## 2. Thumbnail status
-
-Database image key: `esp32BleRgb`.
-
-`esp32BleRgb` is the only key in `PENDING_PROJECT_COVER_KEYS`. No file for this project is registered in `PROJECT_IMAGES`, and no matching image is stored under `assets/images/projects`.
-
-On the project card and on step 1, the app shows a dark placeholder with the label “Photo needed”. It does not fall through to another project’s photograph, because the pending-cover check runs before the image lookup.
-
-## 3. Bill of materials
-
-Quantities, names, roles, and catalogue descriptions are the rows stored for slug 24.
-
-- 1 × ESP32 DevKit
-  Catalogue slug: `esp32`
-  Requirement role: `microcontroller`
-  Substitution policy: `exact`
-  Catalogue description: Wi-Fi and Bluetooth development board. This row does not fix header gender, USB socket, or board outline.
-- 1 × Common-anode RGB LED
-  Catalogue slug: `rgb-led-ca`
-  Requirement role: `rgb_led`
-  Substitution policy: `exact`
-  Catalogue description: Kingbright WP154A4SEJ3VBDZGW/CA, a white-diffused 5 mm common-anode RGB LED. Datasheet DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, draws pin 1 as the red cathode, pin 2 as the common anode, pin 3 as the blue cathode, and pin 4 as the green cathode. The end view puts the flat of the flange next to pin 1. The package drawing labels the anode lead and shows it 2.5 mm minimum longer than the other leads. At 20 mA the forward voltage is 2.2 V typical and 2.8 V maximum for red, 3.3 V typical and 4.0 V maximum for blue, and 3.3 V typical and 4.1 V maximum for green. Absolute maximum DC forward current is 30 mA for red, 30 mA for blue, and 25 mA for green. This row is not a common-cathode LED and not an addressable pixel.
-- 3 × PN2222A transistor
-  Catalogue slug: `pn2222a`
-  Requirement role: `low_side_switch`
-  Substitution policy: `exact`
-  Catalogue description: onsemi PN2222ABU, the bulk TO-92 formerly listed by Fairchild. Top mark PN2222A. The PN2222A Rev. 1.1.0 package sketch labels the leads E, B, C: flat face toward you and leads down, left to right is emitter, base, collector. A metal-can 2N2222, and some other TO-92 parts with a similar mark, use a different order. Absolute maximum collector current is 1 A. Used as a low-side switch.
-- 3 × 220 Ω resistor
-  Catalogue slug: `resistor-220`
-  Requirement role: `led_limiter`
-  Substitution policy: `exact`
-  Catalogue description: Current-limiting resistor for a typical 5 V LED
-- 3 × 1 kΩ resistor
-  Catalogue slug: `resistor-1k`
-  Requirement role: `base_resistor`
-  Substitution policy: `exact`
-  Catalogue description: 1 kΩ through-hole resistor
-- 1 × Breadboard
-  Catalogue slug: `breadboard`
-  Requirement role: `breadboard`
-  Substitution policy: `exact`
-  Catalogue description: Solderless prototyping board
-- 5 × Male-to-female jumper wires
-  Catalogue slug: `jumper-male-female`
-  Requirement role: `jumper_wires`
-  Substitution policy: `exact`
-  Catalogue description: Dupont wires with a female socket on one end and a male pin on the other. The socket fits a male header pin.
-- 1 × USB data cable
-  Catalogue slug: `usb-data-cable`
-  Requirement role: `usb_cable`
-  Substitution policy: `exact`
-  Catalogue description: Data-capable USB cable. Espressif ESP32-DevKitC V4 uses USB-A to Micro-B. The plug must match the DevKit socket.
-- 1 × USB power source
-  Catalogue slug: `usb-power-source`
-  Requirement role: `usb_power`
-  Substitution policy: `exact`
-  Catalogue description: Computer USB port or USB charger. Espressif ESP32-DevKitC V4 takes power from USB, or the 5V pin, or the 3V3 pin, and only one of those at a time.
-
-## 4. Component specifications stored for this project
-
-The Kingbright LED and the PN2222ABU transistor are specified by the catalogue descriptions in section 3 and by the hardware-preparation steps in section 6. Those descriptions are the stored specification. No separate pin-profile rows exist for any BOM component.
-
-Catalogue capabilities stored on the BOM components, separate from the project requirement constraints:
-
-- `esp32` board_package = esp32
-- `esp32` function = development_board
-- `esp32` gpio = analog_input
-- `esp32` gpio = digital_input
-- `esp32` gpio = digital_output
-- `esp32` gpio = pwm_output
-- `esp32` header_profile = esp32_devkit
-- `esp32` logic_level_v = 3.3
-- `esp32` physical_form = esp32_devkit
-- `esp32` programming_environment = arduino_ide
-- `esp32` supply_v = 3.3
-- `pn2222a` function = npn_transistor
-- `pn2222a` physical_form = to-92
-- `resistor-1k` function = fixed_resistor
-- `resistor-1k` resistance_ohms = 1000
-- `resistor-220` function = fixed_resistor
-- `resistor-220` resistance_ohms = 220
-- `rgb-led-ca` function = rgb_led
-- `rgb-led-ca` physical_form = common_anode
-
-## 5. Compatibility requirements and approved substitutions
-
-Every requirement is stored with substitution policy `exact`. Pin-role rows: 0. Substitution-review rows: 0. There are no approved substitutions.
-
-Requirement constraints stored for slug 24:
-
-- `esp32` board_package = esp32 (policy exact, role microcontroller)
-- `esp32` function = development_board (policy exact, role microcontroller)
-- `esp32` logic_level_v = 3.3 (policy exact, role microcontroller)
-- `esp32` programming_environment = arduino_ide (policy exact, role microcontroller)
-- `esp32` supply_v = 3.3 (policy exact, role microcontroller)
-- `rgb-led-ca` function = rgb_led (policy exact, role rgb_led)
-- `rgb-led-ca` physical_form = common_anode (policy exact, role rgb_led)
-- `pn2222a` function = npn_transistor (policy exact, role low_side_switch)
-- `pn2222a` physical_form = to-92 (policy exact, role low_side_switch)
-
-## 6. Walkthrough
-
-Step count stored in the database: 25.
-
-### Step 1 of 25
-
-Stage 1: Introduction
-
-Stored sort_order: 0. Stored stage_sort_order: 0.
-
-Heading: What the finished controller does
-
-Description: A phone sets the colour and brightness of one RGB LED over Bluetooth Low Energy.
-
-Tip: None.
-
-
-Visual reference: imageKey `esp32BleRgb`.
-
-Stored caption: The finished controller is an ESP32-DevKitC V4 above a breadboard, with one common-anode RGB LED, three PN2222A transistors, and six resistors, powered from USB. The wiring diagram is the connection reference.
-
-Caption shown in the app: The workbench photograph is not in the app yet. The wiring diagram is the connection reference.
-
-The app does not show a photograph. `esp32BleRgb` is a pending cover key, and `assets/images/projects` has no file for it. The cover control is a dark placeholder labelled “Photo needed”. Its accessibility label is “Cover photograph not yet added. Needs a 16:9 workbench photo of the finished build.”
-
-
-**Text: What you are building**
-
-The ESP32 DevKit switches one 5 mm common-anode RGB LED. The DevKit 5V pin feeds the common anode. Each colour cathode returns to ground through a 220 Ω resistor and a PN2222A. GPIO25, GPIO26, and GPIO27 drive the transistor bases through 1 kΩ, and a high PWM duty turns that colour on. After upload, the LED starts red at 30 percent brightness and the board advertises the BLE name Solderi RGB. Nordic nRF Connect writes a new colour and a new brightness. Nothing is sent to a cloud account, and the sketch does not join Wi-Fi.
-
-
-**Expected result: What done looks like**
-
-The Serial Monitor at 115200 baud prints the power-on line and “Advertising as Solderi RGB.” nRF Connect connects to that name. Writing 0,0,255 turns the light blue. Writing 100 to the brightness characteristic makes it as bright as this circuit allows. Writing 0 turns it off without disconnecting Bluetooth.
-
-### Step 2 of 25
-
-Stage 1: Introduction
-
-Stored sort_order: 1. Stored stage_sort_order: 0.
-
-Heading: What you will learn
-
-Description: This build is one LED, three transistors, six resistors, PWM, and one BLE service.
-
-Tip: None.
-
-
-**Text: Skills in this project**
-
-You will identify ESP32 5V, GND, IO25, IO26, and IO27, the four leads of a common-anode RGB LED, and the emitter, base, and collector of a PN2222A. You will see why green and blue need the 5 V rail, and why each colour still has a 220 Ω resistor. You will upload one complete sketch, then use nRF Connect to write colour text such as 255,80,0 and a brightness from 0 to 100.
-
-
-**Text: What this project does not use**
-
-It does not use Bluetooth Classic, a serial-port app, or BluetoothSerial.h. It does not use a common-cathode LED wired straight to a GPIO, a WS2812 addressable pixel, or an ESP8266. Those parts do not follow this pin map or this phone procedure. iOS can talk to BLE GATT devices, which is what nRF Connect does. This repository has not paired a phone to the board.
-
-### Step 3 of 25
-
-Stage 1: Introduction
-
-Stored sort_order: 2. Stored stage_sort_order: 0.
-
-Heading: How the hardware and the phone work together
-
-Description: USB powers the DevKit. The 5V pin feeds the LED. The GPIO pins only switch the transistors. The phone writes two BLE characteristics.
-
-Tip: None.
-
-
-**Text: The electrical path**
-
-USB power feeds the ESP32 DevKit. Do not also connect a second supply to the 5V or 3V3 header. With only USB connected, the DevKitC V4 5V header is the USB 5 V rail after the board’s series diode, so it can feed the LED. Current leaves that pin, enters the common anode, leaves through one colour cathode, passes through that colour’s 220 Ω resistor and PN2222A, and returns to GND. A GPIO high turns its transistor on. A higher PWM duty keeps it on for more of each cycle, so that colour looks brighter. The GPIO does not carry the LED current.
-
-
-**Text: The Bluetooth path**
-
-The sketch starts a BLE server named Solderi RGB. The service UUID is 8c4a2e10-1b6d-4f3a-9e72-5d0c8a1b6e24. One characteristic takes the colour. The next takes brightness. nRF Connect is the central. It scans, connects, and writes those characteristics. The LED holds the last accepted colour if the phone disconnects, and the board starts advertising again.
-
-### Step 4 of 25
-
-Stage 1: Introduction
-
-Stored sort_order: 3. Stored stage_sort_order: 0.
-
-Heading: What a successful build should do
-
-Description: Success is a visible colour change from a BLE write, plus a Serial line that matches it.
-
-Tip: None.
-
-
-**Text: Check these behaviours**
-
-Before any phone connects, the LED is red and dim. Serial prints “Power-on colour is red at 30 percent brightness.” and then “Advertising as Solderi RGB.” After a connection it prints “Phone connected.” A colour write of 0,255,0 prints “Colour 0,255,0” and the LED becomes green. A brightness write of 0 prints “Brightness 0” and the LED goes dark. A rejected write prints “Colour rejected:” or “Brightness rejected:” and leaves the previous light unchanged.
-
-
-**Warning**
-
-This repository has not run the sketch on a physical ESP32 and has not connected nRF Connect to a board. Treat the Serial lines and colours below as the behaviour the code is written to produce, and compare them with what your board and phone actually do.
-
-### Step 5 of 25
-
-Stage 2: Hardware preparation
-
-Stored sort_order: 4. Stored stage_sort_order: 1.
-
-Heading: Identify every required component
-
-Description: Every physical item in this build is on the BOM. The phone is the controller app, not a wired part.
-
-Tip: A phone with Bluetooth Low Energy is required to change the colour. It is not a BOM line.
-
-
-**Components: Required parts**
-
-- 1 × ESP32 DevKit (`esp32`), illustration `esp32`, owned false
-- 1 × Common-anode RGB LED (`rgb-led-ca`), illustration `led`, owned false
-- 3 × PN2222A transistor (`pn2222a`), illustration `generic-module`, owned false
-- 3 × 220 Ω resistor (`resistor-220`), illustration `resistor`, owned false
-- 3 × 1 kΩ resistor (`resistor-1k`), illustration `resistor`, owned false
-- 1 × Breadboard (`breadboard`), illustration `breadboard`, owned false
-- 5 × Male-to-female jumper wires (`jumper-male-female`), illustration `jumper-wires`, owned false
-- 1 × USB data cable (`usb-data-cable`), illustration `usb-cable`, owned false
-- 1 × USB power source (`usb-power-source`), illustration `generic-module`, owned false
-
-
-**Text: What each part is for**
-
-The ESP32 DevKit is the controller and the BLE peripheral. The common-anode RGB LED is the only lamp. Three PN2222A transistors switch the colours. Three 220 Ω resistors limit the LED current. Three 1 kΩ resistors limit the base current. The breadboard holds the LED, the transistors, and the resistors. Five male-to-female jumpers reach 5V, GND, IO25, IO26, and IO27. The USB data cable carries power and the upload. The USB power source is the computer port while you program, or a USB charger after the sketch is on the board.
-
-
-**Expected result: Check**
-
-You can point to one ESP32 DevKit, one four-lead RGB LED sold as common anode, three PN2222A transistors, three 220 Ω resistors, three 1 kΩ resistors, one breadboard, five male-to-female jumpers, one data-capable USB cable, and a USB port or charger.
-
-### Step 6 of 25
-
-Stage 2: Hardware preparation
-
-Stored sort_order: 5. Stored stage_sort_order: 1.
-
-Heading: Confirm the ESP32 DevKit labels
-
-Description: This guide uses 5V, GND, IO25, IO26, and IO27. Stop if your silkscreen does not show those names.
-
-Tip: Espressif’s ESP32-DevKitC V4 user guide lists a Micro-USB socket. The catalogue row does not fix the socket on every board sold as a DevKit.
-
-
-**Text: What to look for**
-
-Solderi’s ESP32 DevKit row is a 3.3 V board programmed with the Arduino-ESP32 package. This project’s wiring uses 5V, GND, IO25, IO26, and IO27. Those GPIO numbers are not the strapping pins 0, 2, 12, or 15, and they are not the input-only pins 34 to 39. Espressif’s ESP32-WROOM-32 module includes Bluetooth Low Energy. The sketch uses the Arduino-ESP32 BLE library, which speaks BLE GATT. It does not open a Bluetooth Classic serial port. Each GPIO only sources about 2.6 mA into a 1 kΩ base resistor. The ESP32 datasheet allows a much higher pin current, and that current falls as the high level sags, so the LED current stays on the 5V pin.
-
-
-**Text: USB and headers**
-
-Espressif’s ESP32-DevKitC V4 uses USB-A to Micro-B and male headers. Confirm the silkscreen shows 5V, GND, IO25, IO26, and IO27 before you continue. Use a data cable that fits the socket. A charge-only cable can light the board and still never appear as a serial port. Leave the DevKit beside the breadboard. Do not bend its header pins to press it into the breadboard.
-
-
-**Warning**
-
-If those labels are missing, stop. Do not move the wires onto an ESP32-CAM or an ESP32-S2. An S2 module does not provide this project’s Bluetooth radio. Power the board from USB only. The 5V header then feeds the LED. Do not connect a second supply to the 5V pin or the 3V3 pin while USB is plugged in.
-
-### Step 7 of 25
-
-Stage 2: Hardware preparation
-
-Stored sort_order: 6. Stored stage_sort_order: 1.
-
-Heading: Confirm the LED is common anode
-
-Description: Pin 2 is the common anode. Pin 1 is red, pin 3 is blue, and pin 4 is green.
-
-Tip: The flat on the flange is beside pin 1. The anode lead is the long one.
-
-
-**Text: What to look for**
-
-Use the Kingbright WP154A4SEJ3VBDZGW/CA, a white-diffused 5 mm lamp. Datasheet DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, draws the internal schematic on the package-dimensions page. Pin 1 is the red cathode, pin 2 is the common anode, pin 3 is the blue cathode, and pin 4 is the green cathode. The end view shows the flat of the flange beside pin 1, then pins 2, 3, and 4 in that order. The side view labels the anode lead and shows it 2.5 mm minimum longer than the other leads. At 20 mA the forward voltage is 2.2 V typical and 2.8 V maximum for red, 3.3 V typical and 4.0 V maximum for blue, and 3.3 V typical and 4.1 V maximum for green. Absolute maximum DC current is 30 mA for red, 30 mA for blue, and 25 mA for green. The China Young Sun YSL-R596AR3G4B5C-C10 schematic also joins the anodes at pin 2, but that drawing does not name the colours of pins 1, 3, and 4, so this project does not use it.
-
-
-**Warning**
-
-Do not substitute a common-cathode LED, and do not tie the common pin to GND to try one. A 3.3 V GPIO cannot light the blue or green die: the typical forward voltage is already 3.3 V, and the maximum is 4.0 V for blue and 4.1 V for green. An addressable LED such as a WS2812 uses one data pin and is a different project.
-
-
-**Expected result: Check**
-
-You can point to the longest lead, pin 2, as the common anode. The lead beside the flat is pin 1, red. The next lead is pin 3, blue. The last lead is pin 4, green. If the part in your hand is not this Kingbright common-anode model, stop. Do not copy a colour order from a common-cathode datasheet or from the unlabeled Young Sun anode drawing.
-
-### Step 8 of 25
-
-Stage 2: Hardware preparation
-
-Stored sort_order: 7. Stored stage_sort_order: 1.
-
-Heading: Read the resistors and the transistor leads
-
-Description: Each colour uses one 220 Ω LED resistor, one 1 kΩ base resistor, and one PN2222A.
-
-Tip: 220 Ω is red, red, brown, gold. 1 kΩ is brown, black, red, gold.
-
-
-**Text: Why these values**
-
-The Kingbright datasheet lists a typical forward voltage of 3.3 V for blue and green, a maximum of 4.0 V for blue, and a maximum of 4.1 V for green, all at 20 mA. A 3.3 V GPIO has no voltage left for those dice, so the LED current comes from the 5V pin. Espressif’s DevKitC V4 schematic places a BAT760 diode between USB VBUS and that pin. On a USB port near 5 V the pin is about 4.7 V. Allow about 0.2 V across a saturated PN2222A. Blue or green at the typical 3.3 V through 220 Ω is then about (4.7 − 3.3 − 0.2) / 220, about 5.5 mA. Blue at its 4.0 V maximum is about (4.7 − 4.0 − 0.2) / 220, about 2.3 mA. Green at its 4.1 V maximum is about (4.7 − 4.1 − 0.2) / 220, about 1.8 mA. Red at the typical 2.2 V is about (4.7 − 2.2 − 0.2) / 220, about 10.5 mA. From a 5.0 V pin at 2.2 V it is about 12 mA, still under the red absolute maximum of 30 mA. The same 220 Ω fits every colour, and those currents stay under the datasheet limits of 30 mA red, 30 mA blue, and 25 mA green. If a weak USB port is only 4.4 V and the diode drops 0.5 V, the pin can fall to about 3.9 V. A typical 3.3 V blue or green die then has about 1.8 mA. A blue die at 4.0 V, or a green die at 4.1 V, does not conduct from that 3.9 V pin, so use a USB port near 5 V. Each base resistor is 1 kΩ, so the base current is about (3.3 − 0.7) / 1000, about 2.6 mA. That saturates the transistor at these LED currents, and three pins together are about 8 mA, inside the ESP32 pin budget. Do not remove the 220 Ω resistors.
-
-
-**Text: Transistor leads**
-
-Use the onsemi PN2222ABU, the bulk TO-92 whose top mark is PN2222A. Fairchild’s PN2222A Rev. 1.1.0 package sketch labels that part E, B, C. Flat face toward you and leads pointing down, left to right is emitter, base, collector. The diagram labels these Q red, Q green, and Q blue. A metal-can 2N2222 uses a different pin order. Another maker’s TO-92 with a similar marking can too. If the part is not this onsemi TO-92, stop and read its own datasheet before you insert it.
-
-
-**Expected result: Check**
-
-Set three 220 Ω resistors aside, one for each colour, and three 1 kΩ resistors aside for the three bases. Each transistor’s flat face is identified, and you can point to emitter, base, and collector.
-
-### Step 9 of 25
-
-Stage 3: Wiring
-
-Stored sort_order: 8. Stored stage_sort_order: 2.
-
-Heading: Connect 5 V, the anode, and the emitters
-
-Description: The 5V pin feeds the common anode. All three emitters share the ground rail.
-
-Tip: USB is the only power source. The 5V header is an output for the LED, not a second supply.
-
-
-**Text: Connection sequence**
-
-Seat the RGB LED so each lead has its own row. On the Kingbright drawing the flat of the flange is beside pin 1. From that flat the leads are pin 1 red, pin 2 the common anode, pin 3 blue, and pin 4 green. Pin 2 is the long lead. Seat each PN2222ABU with the flat face toward you: emitter, base, collector in three neighbouring rows. Jumper ESP32 5V to the red breadboard rail, and jumper that rail to pin 2. Jumper ESP32 GND to the blue ground rail, and connect each transistor emitter to that rail. Leave the 3V3 header empty. Leave USB unplugged. The diagram names the transistors Q red, Q green, and Q blue, and it draws the LED leads in the same order as the datasheet.
-
-
-**Wiring diagram: Supply and ground**
-
-The app draws these connections on the slug 24 layout described in section 7. There is no diagram image file. The diagram can be pinched to zoom.
-
-1. ESP32 DevKit 5V → Breadboard 5V rail (power)
-2. Breadboard 5V rail → RGB LED Anode (power)
-3. ESP32 DevKit GND → Breadboard GND rail (ground)
-4. Breadboard GND rail → Q red Emitter (ground)
-5. Breadboard GND rail → Q green Emitter (ground)
-6. Breadboard GND rail → Q blue Emitter (ground)
-
-
-**Connections: Wiring instructions**
-
-5V to the anode · emitters to GND
-
-1. ESP32 DevKit 5V → Breadboard 5V rail (power)
-2. Breadboard 5V rail → RGB LED Anode (power)
-3. ESP32 DevKit GND → Breadboard GND rail (ground)
-4. Breadboard GND rail → Q red Emitter (ground)
-5. Breadboard GND rail → Q green Emitter (ground)
-6. Breadboard GND rail → Q blue Emitter (ground)
-
-
-**Warning**
-
-Do not connect a GPIO to the 5V rail or to a colour cathode. The GPIO only reaches a 1 kΩ resistor. Do not connect another supply to the 5V pin while the USB cable is the board’s power source.
-
-### Step 10 of 25
-
-Stage 3: Wiring
-
-Stored sort_order: 9. Stored stage_sort_order: 2.
-
-Heading: Connect red, green, and blue
-
-Description: Each colour is GPIO, 1 kΩ, base, collector, 220 Ω, cathode. The colours are not interchangeable.
-
-Tip: IO25 is red, IO26 is green, and IO27 is blue. The sketch uses those same numbers.
-
-
-**Text: Connection sequence**
-
-For red, jumper IO25 to leg 1 of the resistor labelled 1k red. Put leg 2 in the base row of Q red. Put the collector of Q red in the same row as leg 1 of the resistor labelled 220 red. Put leg 2 of that resistor in the pin 1 row, the red cathode. Repeat with IO26, 1k green, Q green, 220 green, and pin 4, the green cathode. Repeat with IO27, 1k blue, Q blue, 220 blue, and pin 3, the blue cathode. The five male-to-female jumpers are 5V, GND, IO25, IO26, and IO27. The other links are component leads in shared breadboard rows. The diagram still draws every electrical segment.
-
-
-**Wiring diagram: Colour channels**
-
-The app draws these connections on the slug 24 layout described in section 7. There is no diagram image file. The diagram can be pinched to zoom.
-
-1. ESP32 DevKit IO25 → 1k red leg 1 (signal)
-2. 1k red leg 2 → Q red Base (signal)
-3. Q red Collector → 220 red leg 1 (signal)
-4. 220 red leg 2 → RGB LED Red (signal)
-5. ESP32 DevKit IO26 → 1k green leg 1 (signal)
-6. 1k green leg 2 → Q green Base (signal)
-7. Q green Collector → 220 green leg 1 (signal)
-8. 220 green leg 2 → RGB LED Green (signal)
-9. ESP32 DevKit IO27 → 1k blue leg 1 (signal)
-10. 1k blue leg 2 → Q blue Base (signal)
-11. Q blue Collector → 220 blue leg 1 (signal)
-12. 220 blue leg 2 → RGB LED Blue (signal)
-
-
-**Connections: Wiring instructions**
-
-IO25 red · IO26 green · IO27 blue
-
-1. ESP32 DevKit IO25 → 1k red leg 1 (signal)
-2. 1k red leg 2 → Q red Base (signal)
-3. Q red Collector → 220 red leg 1 (signal)
-4. 220 red leg 2 → RGB LED Red (signal)
-5. ESP32 DevKit IO26 → 1k green leg 1 (signal)
-6. 1k green leg 2 → Q green Base (signal)
-7. Q green Collector → 220 green leg 1 (signal)
-8. 220 green leg 2 → RGB LED Green (signal)
-9. ESP32 DevKit IO27 → 1k blue leg 1 (signal)
-10. 1k blue leg 2 → Q blue Base (signal)
-11. Q blue Collector → 220 blue leg 1 (signal)
-12. 220 blue leg 2 → RGB LED Blue (signal)
-
-### Step 11 of 25
-
-Stage 3: Wiring
-
-Stored sort_order: 10. Stored stage_sort_order: 2.
-
-Heading: Read the complete wiring table
-
-Description: These eighteen connections are the whole circuit. Five of them are jumpers.
-
-Tip: None.
-
-
-**Wiring diagram: Complete wiring diagram**
-
-The app draws these connections on the slug 24 layout described in section 7. There is no diagram image file. The diagram can be pinched to zoom.
-
-1. ESP32 DevKit 5V → Breadboard 5V rail (power)
-2. Breadboard 5V rail → RGB LED Anode (power)
-3. ESP32 DevKit GND → Breadboard GND rail (ground)
-4. Breadboard GND rail → Q red Emitter (ground)
-5. Breadboard GND rail → Q green Emitter (ground)
-6. Breadboard GND rail → Q blue Emitter (ground)
-7. ESP32 DevKit IO25 → 1k red leg 1 (signal)
-8. 1k red leg 2 → Q red Base (signal)
-9. Q red Collector → 220 red leg 1 (signal)
-10. 220 red leg 2 → RGB LED Red (signal)
-11. ESP32 DevKit IO26 → 1k green leg 1 (signal)
-12. 1k green leg 2 → Q green Base (signal)
-13. Q green Collector → 220 green leg 1 (signal)
-14. 220 green leg 2 → RGB LED Green (signal)
-15. ESP32 DevKit IO27 → 1k blue leg 1 (signal)
-16. 1k blue leg 2 → Q blue Base (signal)
-17. Q blue Collector → 220 blue leg 1 (signal)
-18. 220 blue leg 2 → RGB LED Blue (signal)
-
-
-**Connections: Every electrical connection**
-
-5V to the anode · IO25 red · IO26 green · IO27 blue · emitters to GND
-
-1. ESP32 DevKit 5V → Breadboard 5V rail (power)
-2. Breadboard 5V rail → RGB LED Anode (power)
-3. ESP32 DevKit GND → Breadboard GND rail (ground)
-4. Breadboard GND rail → Q red Emitter (ground)
-5. Breadboard GND rail → Q green Emitter (ground)
-6. Breadboard GND rail → Q blue Emitter (ground)
-7. ESP32 DevKit IO25 → 1k red leg 1 (signal)
-8. 1k red leg 2 → Q red Base (signal)
-9. Q red Collector → 220 red leg 1 (signal)
-10. 220 red leg 2 → RGB LED Red (signal)
-11. ESP32 DevKit IO26 → 1k green leg 1 (signal)
-12. 1k green leg 2 → Q green Base (signal)
-13. Q green Collector → 220 green leg 1 (signal)
-14. 220 green leg 2 → RGB LED Green (signal)
-15. ESP32 DevKit IO27 → 1k blue leg 1 (signal)
-16. 1k blue leg 2 → Q blue Base (signal)
-17. Q blue Collector → 220 blue leg 1 (signal)
-18. 220 blue leg 2 → RGB LED Blue (signal)
-
-
-**Text: How this matches the sketch**
-
-The firmware sets RED_PIN to 25, GREEN_PIN to 26, and BLUE_PIN to 27. Those headers drive the bases. A higher duty still means a brighter colour, because a high output turns the PN2222A on. The diagram draws eighteen segments: two for the 5 V path, four for ground, and four for each colour. That is three PWM pins. Each colour still has its 220 Ω resistor between the collector and the cathode.
-
-### Step 12 of 25
-
-Stage 3: Wiring
-
-Stored sort_order: 11. Stored stage_sort_order: 2.
-
-Heading: Check the circuit before you apply power
-
-Description: Count the paths, then connect USB. Do not add a second power source.
-
-Tip: USB is the only supply. The 5V header feeds the LED from that same USB rail.
-
-
-**Test: What to verify**
-
-The common anode reaches only the 5V rail, and that rail reaches only the ESP32 5V pin. Each emitter reaches only the GND rail, and that rail reaches only ESP32 GND. IO25 reaches only 1k red, that resistor reaches only the red base, the red collector reaches only 220 red, and that resistor reaches only the red cathode. Green follows IO26, and blue follows IO27. No cathode shares a row with the anode. The 3V3 header is empty. No GPIO touches 5V. USB is still unplugged.
-
-
-**Text: Then apply power**
-
-Plug the data cable into the DevKit and into the computer USB port you will use for upload. On an ESP32-DevKitC V4, the power LED lights when USB power is present. If you later move the board to a USB charger, unplug the computer first so only one power source is connected.
-
-
-**Expected result: Expected result**
-
-The board’s power LED is on. The RGB LED stays off until the sketch runs. The LED package does not get hot.
-
-### Step 13 of 25
-
-Stage 4: Development environment
-
-Stored sort_order: 12. Stored stage_sort_order: 3.
-
-Heading: Install the ESP32 board package
-
-Description: BLE and LEDC come from Espressif’s ESP32 package. They are not separate Library Manager installs.
-
-Tip: Use the stable package URL. The development URL is a different package.
-
-
-**Text: What to do**
-
-Install the current Arduino IDE from arduino.cc. Open File > Preferences, or Arduino IDE > Settings. In Additional boards manager URLs, add https://espressif.github.io/arduino-esp32/package_esp32_index.json and click OK. Open Tools > Board > Boards Manager, search for esp32 by Espressif Systems, and install the esp32 platform. This sketch uses ledcAttach and the BLE classes from that platform’s 3.x API.
-
-
-**Expected result: What you should see**
-
-Boards Manager shows the esp32 package as installed. Tools > Board contains an ESP32 Arduino group. You do not install a Bluetooth library from Library Manager for this sketch.
-
-### Step 14 of 25
-
-Stage 4: Development environment
-
-Stored sort_order: 13. Stored stage_sort_order: 3.
-
-Heading: Select the board and the serial port
-
-Description: Choose ESP32 Dev Module, then the port that appears when the data cable is plugged in.
-
-Tip: If the port never appears, try another data cable before you change any wiring.
-
-
-**Text: Board and port**
-
-Open Tools > Board > ESP32 Arduino and choose ESP32 Dev Module. Do not choose ESP32-S2, ESP32-C3, or ESP32-CAM. Plug in the data cable. Open Tools > Port and select the new port. On Windows it is a COM port. On macOS it is a /dev/cu.usbserial or /dev/cu.SLAB port. Unplug the cable and open the menu again: the correct port is the one that disappears.
-
-
-**Troubleshooting: If the port is missing**
-
-Problem: No new port appears
-
-Solution: The cable may be charge-only, or it may be in the wrong socket. Use a data cable that fits the DevKit. Then reopen Tools > Port.
-
-Problem: Several ports are listed
-
-Solution: Unplug the DevKit, see which port vanishes, and select that one after reconnecting.
-
-### Step 15 of 25
-
-Stage 4: Development environment
-
-Stored sort_order: 14. Stored stage_sort_order: 3.
-
-Heading: Set the Serial Monitor to 115200 baud
-
-Description: The sketch calls Serial.begin(115200). A mismatched baud rate looks like garbage text.
-
-Tip: None.
-
-
-**Text: What to do**
-
-Open Tools > Serial Monitor. Choose 115200 baud. Leave the line ending on Newline. The colour and brightness lines appear only after the sketch is uploaded.
-
-
-**Expected result: What you should observe**
-
-The monitor is open on the same port you selected for upload, and the baud value reads 115200.
-
-### Step 16 of 25
-
-Stage 5: Firmware
-
-Stored sort_order: 15. Stored stage_sort_order: 4.
-
-Heading: See how PWM sets each colour
-
-Description: Excerpt only. This is not a complete sketch. Brightness scales the three channel values before LEDC writes them.
-
-Tip: A duty of 0 is off. A duty of 255 is the brightest this 8-bit setup can make that channel, before the brightness percentage.
-
-
-**Text: What this code does**
-
-channelDuty multiplies the colour byte by the brightness percentage and divides by 100. applyColour writes that duty to GPIO25, GPIO26, and GPIO27 with ledcWrite. Each GPIO drives a PN2222A base, so a higher duty turns that colour on for longer. The phone does not send PWM numbers. It sends a colour and a percentage, and this function turns them into duties.
-
-
-**Code: esp32_ble_rgb_controller.ino (Arduino)**
-
-Libraries named on this block: BLE (ESP32 Arduino core), LEDC (ESP32 Arduino core)
-
-The app shows this code in a block with a copy control and an Explain Code button. Explain Code opens a coming-soon dialog. It does not change the code.
+### Hardware-testing limit recorded in the exported text
+
+No separate hardware-test certificate is stored in Supabase. The only testing limits are the ones written in the steps and firmware comments below. A published flag is not a record that the board was built.
+
+## Bill of materials
+
+| Qty | Catalogue id | Name | Category | Manufacturer | Part number |
+| --- | --- | --- | --- | --- | --- |
+| 1 | esp32 | ESP32 DevKit | microcontrollers |  |  |
+| 1 | rgb-led-ca | Common-anode RGB LED | modules |  |  |
+| 3 | pn2222a | PN2222A transistor | modules |  |  |
+| 3 | resistor-220 | 220 Ω resistor | modules |  |  |
+| 3 | resistor-1k | 1 kΩ resistor | modules |  |  |
+| 1 | breadboard | Breadboard | modules |  |  |
+| 5 | jumper-male-female | Male-to-female jumper wires | modules |  |  |
+| 1 | usb-data-cable | USB data cable | modules |  |  |
+| 1 | usb-power-source | USB power source | power |  |  |
+| 8 | jumper-wires | Jumper Wires | modules |  |  |
+
+- **ESP32 DevKit:** Wi-Fi and Bluetooth development board. This row does not fix header gender, USB socket, or board outline.
+- **Common-anode RGB LED:** Kingbright WP154A4SEJ3VBDZGW/CA, a white-diffused 5 mm common-anode RGB LED. Datasheet DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, draws pin 1 as the red cathode, pin 2 as the common anode, pin 3 as the blue cathode, and pin 4 as the green cathode. The end view puts the flat of the flange next to pin 1. The package drawing labels the anode lead and shows it 2.5 mm minimum longer than the other leads. At 20 mA the forward voltage is 2.2 V typical and 2.8 V maximum for red, 3.3 V typical and 4.0 V maximum for blue, and 3.3 V typical and 4.1 V maximum for green. Absolute maximum DC forward current is 30 mA for red, 30 mA for blue, and 25 mA for green. This row is not a common-cathode LED and not an addressable pixel.
+- **PN2222A transistor:** onsemi PN2222ABU, the bulk TO-92 formerly listed by Fairchild. Top mark PN2222A. The PN2222A Rev. 1.1.0 package sketch labels the leads E, B, C: flat face toward you and leads down, left to right is emitter, base, collector. A metal-can 2N2222, and some other TO-92 parts with a similar mark, use a different order. Absolute maximum collector current is 1 A. Used as a low-side switch.
+- **220 Ω resistor:** Current-limiting resistor for a typical 5 V LED
+- **1 kΩ resistor:** 1 kΩ through-hole resistor
+- **Breadboard:** Solderless prototyping board
+- **Male-to-female jumper wires:** Dupont wires with a female socket on one end and a male pin on the other. The socket fits a male header pin.
+- **USB data cable:** Data-capable USB cable. Espressif ESP32-DevKitC V4 uses USB-A to Micro-B. The plug must match the DevKit socket.
+- **USB power source:** Computer USB port or USB charger. Espressif ESP32-DevKitC V4 takes power from USB, or the 5V pin, or the 3V3 pin, and only one of those at a time.
+- **Jumper Wires:** Dupont jumper wire pack
+
+## Compatibility requirements
+
+- ESP32 DevKit (`esp32`) ×1 — role `microcontroller`, policy `exact`
+- Common-anode RGB LED (`rgb-led-ca`) ×1 — role `rgb_led`, policy `exact`
+- PN2222A transistor (`pn2222a`) ×3 — role `low_side_switch`, policy `exact`
+- 220 Ω resistor (`resistor-220`) ×3 — role `led_limiter`, policy `exact`
+- 1 kΩ resistor (`resistor-1k`) ×3 — role `base_resistor`, policy `exact`
+- Breadboard (`breadboard`) ×1 — role `breadboard`, policy `exact`
+- Male-to-female jumper wires (`jumper-male-female`) ×5 — role `jumper_wires`, policy `exact`
+- USB data cable (`usb-data-cable`) ×1 — role `usb_cable`, policy `exact`
+- USB power source (`usb-power-source`) ×1 — role `usb_power`, policy `exact`
+- Jumper Wires (`jumper-wires`) ×8 — role `rail_jumpers`, policy `exact`
+
+## Complete firmware source
+
+This is the longest code block stored on the walkthrough. The same text is repeated, unabbreviated, on the step where the app shows it.
 
 ```arduino
+/*
+ * ESP32 Bluetooth RGB LED Controller
+ * Board: ESP32 Dev Module
+ * LED: Kingbright WP154A4SEJ3VBDZGW/CA, common-anode
+ * Pin 1 red cathode, pin 2 common anode, pin 3 blue cathode, pin 4 green cathode
+ * DevKit 5V pin -> pin 2
+ * IO25 -> 1k -> onsemi PN2222ABU base; collector -> 220 ohm -> pin 1 red cathode
+ * IO26 -> 1k -> onsemi PN2222ABU base; collector -> 220 ohm -> pin 4 green cathode
+ * IO27 -> 1k -> onsemi PN2222ABU base; collector -> 220 ohm -> pin 3 blue cathode
+ * Emitters and DevKit GND share the ground rail
+ * A higher PWM duty turns the transistor on for longer
+ * Phone app: nRF Connect for Mobile
+ * One write format: UTF-8 text
+ * Colour: 255,80,0
+ * Brightness: 0, 48, or 100
+ * Arduino-ESP32 3.x: ledcAttach, BLECharacteristic::PROPERTY_WRITE
+ */
+
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+
+const int RED_PIN = 25;
+const int GREEN_PIN = 26;
+const int BLUE_PIN = 27;
+const int PWM_FREQUENCY_HZ = 5000;
+const int PWM_RESOLUTION_BITS = 8;
+const size_t MAX_TEXT_BYTES = 16;
+
+const char *DEVICE_NAME = "Solderi RGB";
+const char *SERVICE_UUID = "8c4a2e10-1b6d-4f3a-9e72-5d0c8a1b6e24";
+const char *COLOR_UUID = "8c4a2e11-1b6d-4f3a-9e72-5d0c8a1b6e24";
+const char *BRIGHTNESS_UUID = "8c4a2e12-1b6d-4f3a-9e72-5d0c8a1b6e24";
+
+int redValue = 255;
+int greenValue = 0;
+int blueValue = 0;
+int brightnessPercent = 30;
+
+bool clientConnected = false;
+
+int channelDuty(int channel) {
+  return (int)(((long)channel * (long)brightnessPercent) / 100L);
+}
+
+void applyColour() {
+  ledcWrite(RED_PIN, channelDuty(redValue));
+  ledcWrite(GREEN_PIN, channelDuty(greenValue));
+  ledcWrite(BLUE_PIN, channelDuty(blueValue));
+}
+
+bool digitsOnly(const String &text) {
+  if (text.length() == 0) {
+    return false;
+  }
+  for (int i = 0; i < text.length(); i++) {
+    char letter = text.charAt(i);
+    if (letter < '0' || letter > '9') {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool copyTextPayload(const uint8_t *data, size_t length, String &text) {
+  text = "";
+  if (data == nullptr || length == 0 || length > MAX_TEXT_BYTES) {
+    return false;
+  }
+  for (size_t i = 0; i < length; i++) {
+    char letter = (char)data[i];
+    bool allowed = (letter >= '0' && letter <= '9') || letter == ',' || letter == ' ';
+    if (!allowed) {
+      return false;
+    }
+    text += letter;
+  }
+  text.trim();
+  return text.length() > 0;
+}
+
+bool parseColourText(const String &text) {
+  if (text.indexOf(',') < 0) {
+    return false;
+  }
+  int first = text.indexOf(',');
+  int second = text.indexOf(',', first + 1);
+  if (first <= 0 || second <= first + 1 || text.indexOf(',', second + 1) >= 0) {
+    return false;
+  }
+
+  String redText = text.substring(0, first);
+  String greenText = text.substring(first + 1, second);
+  String blueText = text.substring(second + 1);
+  redText.trim();
+  greenText.trim();
+  blueText.trim();
+  if (!digitsOnly(redText) || !digitsOnly(greenText) || !digitsOnly(blueText)) {
+    return false;
+  }
+
+  long red = redText.toInt();
+  long green = greenText.toInt();
+  long blue = blueText.toInt();
+  if (red > 255 || green > 255 || blue > 255) {
+    return false;
+  }
+
+  redValue = (int)red;
+  greenValue = (int)green;
+  blueValue = (int)blue;
+  return true;
+}
+
+bool parseBrightnessText(const String &text) {
+  if (text.indexOf(',') >= 0 || !digitsOnly(text)) {
+    return false;
+  }
+  long value = text.toInt();
+  if (value > 100) {
+    return false;
+  }
+  brightnessPercent = (int)value;
+  return true;
+}
+
+String colourText() {
+  return String(redValue) + "," + String(greenValue) + "," + String(blueValue);
+}
+
+String brightnessText() {
+  return String(brightnessPercent);
+}
+
+class ServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *server) override {
+    (void)server;
+    clientConnected = true;
+    Serial.println("Phone connected.");
+  }
+
+  void onDisconnect(BLEServer *server) override {
+    (void)server;
+    clientConnected = false;
+    Serial.println("Phone disconnected. Advertising again.");
+    BLEDevice::startAdvertising();
+  }
+};
+
+class ColorCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *characteristic) override {
+    String text;
+    bool accepted = copyTextPayload(characteristic->getData(), characteristic->getLength(), text) && parseColourText(text);
+    if (!accepted) {
+      characteristic->setValue(colourText());
+      Serial.print("Colour rejected: ");
+      Serial.println(text);
+      return;
+    }
+
+    applyColour();
+    characteristic->setValue(colourText());
+    Serial.print("Colour ");
+    Serial.println(colourText());
+  }
+};
+
+class BrightnessCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *characteristic) override {
+    String text;
+    bool accepted = copyTextPayload(characteristic->getData(), characteristic->getLength(), text) && parseBrightnessText(text);
+    if (!accepted) {
+      characteristic->setValue(brightnessText());
+      Serial.print("Brightness rejected: ");
+      Serial.println(text);
+      return;
+    }
+
+    applyColour();
+    characteristic->setValue(brightnessText());
+    Serial.print("Brightness ");
+    Serial.println(brightnessPercent);
+  }
+};
+
+void setup() {
+  Serial.begin(115200);
+  delay(300);
+
+  if (!ledcAttach(RED_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS) ||
+      !ledcAttach(GREEN_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS) ||
+      !ledcAttach(BLUE_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS)) {
+    Serial.println("PWM setup failed.");
+  }
+  applyColour();
+
+  Serial.println("ESP32 Bluetooth RGB LED controller");
+  Serial.println("Power-on colour is red at 30 percent brightness.");
+
+  BLEDevice::init(DEVICE_NAME);
+  BLEServer *server = BLEDevice::createServer();
+  server->setCallbacks(new ServerCallbacks());
+  BLEService *service = server->createService(SERVICE_UUID);
+
+  BLECharacteristic *colorCharacteristic = service->createCharacteristic(
+    COLOR_UUID,
+    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
+  );
+  colorCharacteristic->setCallbacks(new ColorCallbacks());
+  colorCharacteristic->setValue(colourText());
+
+  BLECharacteristic *brightnessCharacteristic = service->createCharacteristic(
+    BRIGHTNESS_UUID,
+    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
+  );
+  brightnessCharacteristic->setCallbacks(new BrightnessCallbacks());
+  brightnessCharacteristic->setValue(brightnessText());
+
+  service->start();
+
+  BLEAdvertising *advertising = BLEDevice::getAdvertising();
+  advertising->addServiceUUID(SERVICE_UUID);
+  advertising->setScanResponse(true);
+  BLEDevice::startAdvertising();
+  Serial.println("Advertising as Solderi RGB.");
+}
+
+void loop() {
+  delay(200);
+}
+
+```
+
+## Wiring diagram source
+
+The app draws the physical diagram from the local layout `constants/wiring-diagrams/layouts/esp32-ble-rgb-controller.ts`, not from a diagram stored in Supabase. The connections named inside each step below are the database records. Hole coordinates are listed here so a reviewer can find the placement without treating this prose as a substitute for the drawing.
+
+Schematic canvas: 360 × 700. Legend voltages come from that layout file.
+
+Breadboard rows: 17. Rail split after row: 15.
+
+### Component leads
+
+- q-red emitter → strip row 1 column c
+- q-red base → strip row 2 column c
+- q-red collector → strip row 3 column c
+- base-red leg1 → strip row 2 column i
+- base-red leg2 → strip row 2 column e
+- limit-red leg1 → strip row 3 column e
+- limit-red leg2 → strip row 6 column h
+- led red → strip row 6 column f
+- led anode → strip row 7 column f
+- led blue → strip row 8 column f
+- led green → strip row 9 column f
+- q-green emitter → strip row 10 column c
+- q-green base → strip row 11 column c
+- q-green collector → strip row 12 column c
+- base-green leg1 → strip row 11 column i
+- base-green leg2 → strip row 11 column e
+- limit-green leg1 → strip row 12 column a
+- limit-green leg2 → strip row 15 column d
+- q-blue emitter → strip row 13 column h
+- q-blue base → strip row 14 column h
+- q-blue collector → strip row 15 column h
+- base-blue leg1 → strip row 14 column e
+- base-blue leg2 → strip row 14 column g
+- limit-blue leg1 → strip row 15 column j
+- limit-blue leg2 → strip row 12 column g
+
+### Jumpers
+
+- `devkit-5v` (male-female) module esp32 port v5 → left plus rail row 2
+- `devkit-gnd` (male-female) module esp32 port gnd → left minus rail row 2
+- `devkit-io25` (male-female) module esp32 port io25 → strip row 2 column j
+- `devkit-io26` (male-female) module esp32 port io26 → strip row 11 column j
+- `devkit-io27` (male-female) module esp32 port io27 → strip row 14 column a
+- `red-emitter` (male-male) strip row 1 column a → left minus rail row 3
+- `green-emitter` (male-male) strip row 10 column a → left minus rail row 10
+- `blue-emitter` (male-male) strip row 13 column j → right minus rail row 13
+- `anode-rail` (male-male) strip row 7 column j → right plus rail row 7
+- `bridge-plus` (male-male) left plus rail row 1 → right plus rail row 1
+- `bridge-minus` (male-male) left minus rail row 1 → right minus rail row 1
+- `green-cathode` (male-male) strip row 15 column b → strip row 9 column j
+- `blue-cathode` (male-male) strip row 12 column j → strip row 8 column j
+
+### Off-board modules
+
+- esp32 at (400, 12), 148 × 344
+  - v5 (5V) at (416, 322)
+  - gnd (GND) at (416, 242)
+  - io25 (IO25) at (416, 162)
+  - io26 (IO26) at (416, 178)
+  - io27 (IO27) at (416, 194)
+
+## Walkthrough
+
+22 steps.
+
+### Step 1 of 22 — Build a phone-controlled colour light
+
+- Stage 0: Introduction
+- Sort order: 0
+
+One RGB LED follows the colour and brightness a phone sends.
+
+**Block:** image
+
+Image key: esp32BleRgb
+Asset: no bundled photograph for this key. The app uses its pending-cover placeholder.
+Caption: The workbench photograph is not in the app yet. The wiring diagram is the connection reference.
+
+**Block:** text
+**Heading:** What you are building
+
+An ESP32 DevKit, three small transistors, and one RGB LED on a breadboard. The phone is the colour picker. The board does the switching.
+
+**Block:** text
+**Heading:** What it will do
+
+After you upload the sketch, the LED comes on red at a low brightness and the board advertises the name Solderi RGB. From the phone you can turn that light orange, purple, white, or off, and you can make it brighter or dimmer.
+
+### Step 2 of 22 — Follow one colour from the phone to the LED
+
+- Stage 0: Introduction
+- Sort order: 1
+
+The phone sends text. The ESP32 switches current from the 5 V pin.
+
+**Block:** text
+**Heading:** Four parts, four jobs
+
+The phone writes a colour such as 255,80,0. The ESP32 receives that text and sets three PWM outputs. PWM means the pin is switching on and off very quickly. A higher duty cycle means the pin stays on for more of each cycle, so that colour looks brighter. Each output drives one PN2222A transistor. The transistor connects that colour of the LED to ground. The LED itself takes its current from the DevKit 5 V pin, through a 220 Ω resistor.
+
+**Block:** text
+**Heading:** Why the transistor is there
+
+This LED is common anode: the shared pin is the positive side. A 3.3 V GPIO cannot light the green or blue chip directly, because those chips need more voltage than the pin can provide. The transistor lets the 5 V pin supply the LED while the GPIO only asks the transistor to turn on.
+
+**Block:** warning
+
+Power the DevKit from USB only. With USB plugged in, the 5 V pin is an output, about 4.7 V after the board’s diode. Do not connect another supply to 5 V or 3.3 V at the same time. Do not connect a GPIO pin to 5 V or straight to an LED cathode.
+
+**Block:** tip
+
+Use a USB port close to 5 V. On a weak port the green and blue chips can stay dark even when the wiring is right, because their forward voltage is already about 3.3 V and can be as high as 4.0 V and 4.1 V.
+
+### Step 3 of 22 — Set the parts on the desk
+
+- Stage 1: Hardware preparation
+- Sort order: 2
+
+Five male-to-female wires reach the DevKit. Eight male-to-male wires finish the board.
+
+**Block:** components
+**Heading:** Required parts
+
+- ESP32 DevKit ×1 — catalogue id `esp32`, illustration `esp32` (shared vector illustration, not a photograph)
+
+- Common-anode RGB LED ×1 — catalogue id `rgb-led-ca`, illustration `led` (shared vector illustration, not a photograph)
+
+- PN2222A transistor ×3 — catalogue id `pn2222a`, illustration `generic-module` (shared vector illustration, not a photograph)
+
+- 220 Ω resistor ×3 — catalogue id `resistor-220`, illustration `resistor-band-220` (shared vector illustration, not a photograph)
+
+- 1 kΩ resistor ×3 — catalogue id `resistor-1k`, illustration `resistor-band-1k` (shared vector illustration, not a photograph)
+
+- Breadboard ×1 — catalogue id `breadboard`, illustration `breadboard` (shared vector illustration, not a photograph)
+
+- Male-to-female jumper wires ×5 — catalogue id `jumper-male-female`, illustration `jumper-wires` (shared vector illustration, not a photograph)
+
+- Male-to-male jumper wires ×8 — catalogue id `jumper-wires`, illustration `jumper-wires` (shared vector illustration, not a photograph)
+
+- USB data cable ×1 — catalogue id `usb-data-cable`, illustration `usb-cable` (shared vector illustration, not a photograph)
+
+- USB power source ×1 — catalogue id `usb-power-source`, illustration `generic-module` (shared vector illustration, not a photograph)
+
+**Block:** text
+**Heading:** Count the wires before you start
+
+The DevKit sits beside the board. Its pins do not plug into the breadboard. Take five male-to-female wires for 5 V, GND, GPIO25, GPIO26, and GPIO27. The parts list counts eight male-to-male wires: three emitters, the LED anode, one bridge on each of the + and − rails, the green link from b15 to j9, and the blue link from j12 to j8. A wire that arches over the board enters only the two holes named for it.
+
+**Block:** text
+
+You also need a phone with Bluetooth Low Energy and the free app nRF Connect for Mobile, from Nordic Semiconductor. The phone is not a line on this parts list.
+
+### Step 4 of 22 — Confirm the LED is common anode
+
+- Stage 1: Hardware preparation
+- Sort order: 3
+
+Pin 2 is the common anode. Pin 1 is red, pin 3 is blue, and pin 4 is green.
+
+**Block:** text
+**Heading:** Find the leads
+
+Hold the Kingbright WP154A4SEJ3VBDZGW/CA with the dome up. One side of the rim has a flat. The lead nearest that flat is pin 1, the red cathode. The next lead, pin 2, is the longest and is the common anode. Pin 3 is the blue cathode. Pin 4 is the green cathode. All four leads must be spread to neighbouring breadboard rows. Make the first bend at least 3 mm below the lens.
+
+**Block:** text
+**Heading:** The datasheet detail
+
+Kingbright drawing DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, shows that order and shows the anode lead at least 2.5 mm longer. At 20 mA the typical forward voltage is 2.2 V red, 3.3 V blue, and 3.3 V green. The maximums are 2.8 V, 4.0 V, and 4.1 V. The absolute maximum current is 30 mA red, 30 mA blue, and 25 mA green. The leads are spaced about 1.27 mm, which is half a breadboard pitch, so they do not drop into four holes until you spread them.
+
+**Block:** warning
+
+A common-cathode LED will not work in this circuit. The Young Sun YSL-R596AR3G4B5C-C10 joins its anodes at pin 2, but its drawing does not name the colour of each cathode, so this project does not use it.
+
+### Step 5 of 22 — Know the transistors and the resistors
+
+- Stage 1: Hardware preparation
+- Sort order: 4
+
+Each colour uses one PN2222A, one 1 kΩ resistor, and one 220 Ω resistor.
+
+**Block:** text
+**Heading:** Which way the transistor faces
+
+Use an onsemi PN2222ABU. The flat face is marked PN2222A. With that flat toward you and the leads pointing down, the leads are emitter, base, collector from left to right. On this breadboard the flat faces the right edge, so the top lead is the emitter, the middle lead is the base, and the bottom lead is the collector. Spread those leads to three neighbouring rows. A metal-can 2N2222, or a part marked only 2N2222, can use a different pin order.
+
+**Block:** text
+**Heading:** Why each resistor is there
+
+The 220 Ω resistor sits between the transistor and one LED cathode. It limits the LED current. The 1 kΩ resistor sits between a GPIO pin and the transistor base. It limits the current the ESP32 pin has to supply. Without the 220 Ω resistor the LED can draw more current than it is rated for. Without the 1 kΩ resistor the GPIO pin can be asked for far too much base current.
+
+**Block:** tip
+
+A 220 Ω resistor reads red, red, brown, gold. A 1 kΩ resistor reads brown, black, red, gold. The parts list draws those bands. Match three of each before you insert them.
+
+### Step 6 of 22 — Seat every part on these rows
+
+- Stage 2: Wiring
+- Sort order: 5
+
+Use rows 1–15. The physical diagram names the same holes.
+
+**Block:** warning
+
+Holes a–e in one numbered row are joined. Holes f–j with the same number are a separate connection. Do not put two transistor leads in one row, or two LED leads in one row.
+
+**Block:** text
+**Heading:** The LED
+
+Flat side toward row 1, on the right half. Spread the leads into column f: pin 1 red in f6, pin 2 anode in f7, pin 3 blue in f8, and pin 4 green in f9.
+
+**Block:** text
+**Heading:** Red channel, left half
+
+Transistor flat to the right: emitter c1, base c2, collector c3. The 1 kΩ leads go in e2 and i2. The 220 Ω leads go in e3 and h6. h6 shares the right-hand row with f6. The resistor body sits above the gap and does not enter f6.
+
+**Block:** text
+**Heading:** Green channel, left half
+
+Emitter c10, base c11, collector c12, flat to the right. The 1 kΩ leads go in e11 and i11. The 220 Ω leads go in a12 and d15, on the left half. A male-to-male wire from b15 to j9 carries that node to f9. The wire arches over the board and enters only those two holes.
+
+**Block:** text
+**Heading:** Blue channel, right half
+
+Emitter h13, base h14, collector h15, flat to the right. The 1 kΩ leads go in e14 and g14. The 220 Ω leads go in j15 and g12. A male-to-male wire from j12 to j8 carries that node to f8. It stays in column j, arches over j9, and does not enter j9.
+
+**Block:** wiring
+**Heading:** Where the parts sit
+
+Progressive assembly — parts introduced: led, q-red, q-green, q-blue, base-red, base-green, base-blue, limit-red, limit-green, limit-blue
+Progressive assembly — jumpers introduced: (none)
+
+**Block:** test
+**Heading:** Checkpoint
+
+Each transistor has its three leads in three neighbouring holes of one column, flat face to the right, emitter nearest the top. The LED leads are f6, f7, f8, and f9, with the longest lead in f7. No USB cable is plugged in yet.
+
+### Step 7 of 22 — Connect 5 V and ground
+
+- Stage 2: Wiring
+- Sort order: 6
+
+Two male-to-female wires feed the rails. Four male-to-male wires reach the parts.
+
+**Block:** text
+
+Put the DevKit beside the breadboard. With male-to-female wires, join DevKit 5 V to the left + rail at row 2, and DevKit GND to the left − rail at row 2. With male-to-male wires, bridge left + row 1 to right + row 1, and left − row 1 to right − row 1. Join j7 to the right + rail at row 7. Join a1 to the left − rail at row 3, a10 to the left − rail at row 10, and j13 to the right − rail at row 13. Leave USB unplugged.
+
+**Block:** wiring
+**Heading:** Supply and ground
+- ESP32 DevKit 5V → Breadboard 5V rail (power)
+- Breadboard 5V rail → RGB LED Anode (power)
+- ESP32 DevKit GND → Breadboard GND rail (ground)
+- Breadboard GND rail → Q red Emitter (ground)
+- Breadboard GND rail → Q green Emitter (ground)
+- Breadboard GND rail → Q blue Emitter (ground)
+
+Progressive assembly — parts introduced: (none)
+Progressive assembly — jumpers introduced: devkit-5v, devkit-gnd, bridge-plus, bridge-minus, anode-rail, red-emitter, green-emitter, blue-emitter
+
+**Block:** connections
+**Heading:** These six links
+- ESP32 DevKit 5V → Breadboard 5V rail (power)
+- Breadboard 5V rail → RGB LED Anode (power)
+- ESP32 DevKit GND → Breadboard GND rail (ground)
+- Breadboard GND rail → Q red Emitter (ground)
+- Breadboard GND rail → Q green Emitter (ground)
+- Breadboard GND rail → Q blue Emitter (ground)
+
+**Block:** test
+**Heading:** Checkpoint
+
+Both rail bridges and the 5 V and GND wires are on rows 1–15, above the rail break. j7 is the only LED lead row tied to +. a1, a10, and j13 are the emitter rows tied to −. The GPIO wires are not in yet. USB is still unplugged.
+
+### Step 8 of 22 — Build the red channel
+
+- Stage 2: Wiring
+- Sort order: 7
+
+GPIO25 switches the red cathode through j2 and f6.
+
+**Block:** text
+
+Join DevKit GPIO25 to j2 with a male-to-female wire. e2 and i2 hold the red 1 kΩ. c2 is the base. e3 and h6 hold the red 220 Ω, and f6 is LED pin 1.
+
+**Block:** wiring
+**Heading:** Red channel
+- ESP32 DevKit IO25 → 1k red leg 1 (signal)
+- 1k red leg 2 → Q red Base (signal)
+- Q red Collector → 220 red leg 1 (signal)
+- 220 red leg 2 → RGB LED Red (signal)
+
+Progressive assembly — parts introduced: (none)
+Progressive assembly — jumpers introduced: devkit-io25
+
+**Block:** connections
+**Heading:** Red links
+- ESP32 DevKit IO25 → 1k red leg 1 (signal)
+- 1k red leg 2 → Q red Base (signal)
+- Q red Collector → 220 red leg 1 (signal)
+- 220 red leg 2 → RGB LED Red (signal)
+
+**Block:** test
+**Heading:** Checkpoint
+
+GPIO25 is in j2, the 1 kΩ in e2 and i2, and the base in c2. The collector is c3 and the 220 Ω meets it at e3 and the LED at h6. No two of those leads share one hole.
+
+### Step 9 of 22 — Build the green channel
+
+- Stage 2: Wiring
+- Sort order: 8
+
+GPIO26 switches the green cathode through j11, b15, and f9.
+
+**Block:** text
+
+Join GPIO26 to j11. The green 1 kΩ is in e11 and i11, the base is c11, and the 220 Ω runs from a12 to d15. Add the male-to-male wire from b15 to j9. j9 shares the row with LED pin 4 in f9.
+
+**Block:** wiring
+**Heading:** Green channel
+- ESP32 DevKit IO26 → 1k green leg 1 (signal)
+- 1k green leg 2 → Q green Base (signal)
+- Q green Collector → 220 green leg 1 (signal)
+- 220 green leg 2 → RGB LED Green (signal)
+
+Progressive assembly — parts introduced: (none)
+Progressive assembly — jumpers introduced: devkit-io26, green-cathode
+
+**Block:** connections
+**Heading:** Green links
+- ESP32 DevKit IO26 → 1k green leg 1 (signal)
+- 1k green leg 2 → Q green Base (signal)
+- Q green Collector → 220 green leg 1 (signal)
+- 220 green leg 2 → RGB LED Green (signal)
+
+**Block:** test
+**Heading:** Checkpoint
+
+GPIO26 is in j11. The 1 kΩ lead is not in c10, c11, or c12. The b15 to j9 wire is the only extra lead in the green cathode row. f9 still holds the LED lead.
+
+### Step 10 of 22 — Build the blue channel
+
+- Stage 2: Wiring
+- Sort order: 9
+
+GPIO27 switches the blue cathode through a14, j12, and f8.
+
+**Block:** text
+
+Join GPIO27 to a14. The blue 1 kΩ is in e14 and g14, the base is h14, and the 220 Ω runs from j15 to g12. Add the male-to-male wire from j12 to j8. j8 shares the row with LED pin 3 in f8. The wire arches over j9 and does not enter it.
+
+**Block:** wiring
+**Heading:** Blue channel
+- ESP32 DevKit IO27 → 1k blue leg 1 (signal)
+- 1k blue leg 2 → Q blue Base (signal)
+- Q blue Collector → 220 blue leg 1 (signal)
+- 220 blue leg 2 → RGB LED Blue (signal)
+
+Progressive assembly — parts introduced: (none)
+Progressive assembly — jumpers introduced: devkit-io27, blue-cathode
+
+**Block:** connections
+**Heading:** Blue links
+- ESP32 DevKit IO27 → 1k blue leg 1 (signal)
+- 1k blue leg 2 → Q blue Base (signal)
+- Q blue Collector → 220 blue leg 1 (signal)
+- 220 blue leg 2 → RGB LED Blue (signal)
+
+**Block:** test
+**Heading:** Checkpoint
+
+GPIO27 is in a14. f8 and j8 share the blue cathode row. f6, f7, f8, and f9 still hold one LED lead each. j9 is only the green link.
+
+### Step 11 of 22 — Check the whole circuit, then plug in USB
+
+- Stage 2: Wiring
+- Sort order: 10
+
+This is the only full connection list. Use it once, before power.
+
+**Block:** connections
+**Heading:** All 18 connections
+
+Five male-to-female wires leave the DevKit. Eight male-to-male wires join the rails, the emitters, and the green and blue cathode links. Every other join is two leads in the same five-hole row.
+- ESP32 DevKit 5V → Breadboard 5V rail (power)
+- Breadboard 5V rail → RGB LED Anode (power)
+- ESP32 DevKit GND → Breadboard GND rail (ground)
+- Breadboard GND rail → Q red Emitter (ground)
+- Breadboard GND rail → Q green Emitter (ground)
+- Breadboard GND rail → Q blue Emitter (ground)
+- ESP32 DevKit IO25 → 1k red leg 1 (signal)
+- 1k red leg 2 → Q red Base (signal)
+- Q red Collector → 220 red leg 1 (signal)
+- 220 red leg 2 → RGB LED Red (signal)
+- ESP32 DevKit IO26 → 1k green leg 1 (signal)
+- 1k green leg 2 → Q green Base (signal)
+- Q green Collector → 220 green leg 1 (signal)
+- 220 green leg 2 → RGB LED Green (signal)
+- ESP32 DevKit IO27 → 1k blue leg 1 (signal)
+- 1k blue leg 2 → Q blue Base (signal)
+- Q blue Collector → 220 blue leg 1 (signal)
+- 220 blue leg 2 → RGB LED Blue (signal)
+
+**Block:** wiring
+**Heading:** Finished arrangement
+- ESP32 DevKit 5V → Breadboard 5V rail (power)
+- Breadboard 5V rail → RGB LED Anode (power)
+- ESP32 DevKit GND → Breadboard GND rail (ground)
+- Breadboard GND rail → Q red Emitter (ground)
+- Breadboard GND rail → Q green Emitter (ground)
+- Breadboard GND rail → Q blue Emitter (ground)
+- ESP32 DevKit IO25 → 1k red leg 1 (signal)
+- 1k red leg 2 → Q red Base (signal)
+- Q red Collector → 220 red leg 1 (signal)
+- 220 red leg 2 → RGB LED Red (signal)
+- ESP32 DevKit IO26 → 1k green leg 1 (signal)
+- 1k green leg 2 → Q green Base (signal)
+- Q green Collector → 220 green leg 1 (signal)
+- 220 green leg 2 → RGB LED Green (signal)
+- ESP32 DevKit IO27 → 1k blue leg 1 (signal)
+- 1k blue leg 2 → Q blue Base (signal)
+- Q blue Collector → 220 blue leg 1 (signal)
+- 220 blue leg 2 → RGB LED Blue (signal)
+
+**Block:** test
+**Heading:** Before USB
+
+LED pin 2 is the only lead on the red rail. The three emitters are the only transistor leads on the blue rail. No GPIO wire touches a rail. No two LED leads share a row. Then plug the data USB cable into the DevKit and the computer. Do not add another supply.
+
+### Step 12 of 22 — Install the ESP32 board package
+
+- Stage 3: Development environment
+- Sort order: 11
+
+The Arduino IDE needs the Espressif package before it can see this board.
+
+**Block:** text
+
+Install the Arduino IDE. Open File, Preferences, and add this URL to Additional boards manager URLs: https://espressif.github.io/arduino-esp32/package_esp32_index.json. Open Tools, Board, Boards Manager, search for esp32, and install the package Espressif Systems. This sketch uses Arduino-ESP32 3.x calls such as ledcAttach.
+
+**Block:** tip
+
+If the board list has no ESP32 Dev Module after the install, close the IDE and open it again.
+
+### Step 13 of 22 — Select the board and the port
+
+- Stage 3: Development environment
+- Sort order: 12
+
+The sketch talks to the computer at 115200 baud.
+
+**Block:** text
+
+Connect the data cable. In Tools, set Board to ESP32 Dev Module. Set Port to the new serial port. Set Upload Speed to 115200. Open Serial Monitor and set its speed to 115200 as well. A charge-only cable can power the board and still leave the port missing.
+
+**Block:** expected
+**Heading:** If the port is missing
+
+Install the USB-to-UART driver for the chip on your DevKit, try another USB socket, and try a cable you know can carry data. The port should appear in the Tools menu while the board is plugged in.
+
+### Step 14 of 22 — See how PWM sets the brightness
+
+- Stage 4: Firmware
+- Sort order: 13
+
+GPIO25, GPIO26, and GPIO27 were chosen because they can output PWM.
+
+**Block:** text
+**Heading:** Why these pins
+
+GPIO25 drives red, GPIO26 drives green, and GPIO27 drives blue. They are ordinary output pins. They are not the strapping pins 0, 2, 12, or 15, and they are not the input-only pins 34–39. A high duty cycle turns the matching transistor on for longer, so that colour gets brighter.
+
+**Block:** text
+
+The next block is an excerpt from the sketch. It shows how brightness scales a colour. Do not upload this fragment.
+
+**Block:** code
+
+Language: cpp
+Filename: excerpt-brightness.ino
+
+```cpp
 int channelDuty(int channel) {
   return (int)(((long)channel * (long)brightnessPercent) / 100L);
 }
@@ -648,36 +794,56 @@ void applyColour() {
   ledcWrite(BLUE_PIN, channelDuty(blueValue));
 ```
 
+**Block:** text
+**Heading:** What that excerpt does
 
-**Code explanation**
+channelDuty multiplies one colour, 0–255, by the brightness percent and divides by 100. At 30 percent, red 255 becomes duty 76. ledcWrite sends that duty to the pin. Zero is off. 255 is fully on for that colour.
 
-Red 255 at brightness 30 becomes duty 76. Red 255 at brightness 48 becomes duty 122. Red 255 at brightness 100 becomes duty 255, and at brightness 0 it becomes duty 0. Green 0 stays duty 0 at every brightness, so a pure red mix does not light the green die.
+**Block:** text
 
-### Step 17 of 25
+This second excerpt is the setup that attaches those pins. Do not upload it on its own.
 
-Stage 5: Firmware
+**Block:** code
 
-Stored sort_order: 16. Stored stage_sort_order: 4.
+Language: cpp
+Filename: excerpt-pwm-setup.ino
 
-Heading: See how BLE accepts colour and brightness
+```cpp
+if (!ledcAttach(RED_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS) ||
+      !ledcAttach(GREEN_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS) ||
+      !ledcAttach(BLUE_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS)) {
+    Serial.println("PWM setup failed.");
+  }
+  applyColour();
+```
 
-Description: Excerpt only. This is not a complete sketch. The board advertises one service and two write characteristics.
+**Block:** text
+**Heading:** What ledcAttach does
 
-Tip: The advertised name is Solderi RGB. A Bluetooth Classic serial app will not show this service.
+ledcAttach(pin, 5000, 8) gives that pin a PWM signal at 5000 Hz with 8 bits of duty, so the duty runs from 0 to 255. The same call is made for all three pins. applyColour then writes the power-on colour, which is red at 30 percent.
 
+### Step 15 of 22 — Watch the write 255,80,0 travel through the sketch
 
-**Text: What this code does**
+- Stage 4: Firmware
+- Sort order: 14
 
-BLEDevice::init starts the BLE stack with the name Solderi RGB. The server owns one service. The colour characteristic can be read or written. The brightness characteristic can be read or written. After a disconnect, startAdvertising runs again so the phone can reconnect. The accepted colour is also written back so a later read shows the text the sketch stored.
+A characteristic is one value the phone can read or write.
 
+**Block:** text
+**Heading:** The path of one colour
 
-**Code: esp32_ble_rgb_controller.ino (Arduino)**
+The phone sends the text 255,80,0 to the colour characteristic. The ESP32 callback copies that text, checks it, stores red 255, green 80, and blue 0, then calls applyColour. The three PWM duties change, and the LED moves toward orange. A service is the group that holds the colour characteristic and the brightness characteristic. The board advertises that service under the name Solderi RGB so the phone can find it.
 
-Libraries named on this block: BLE (ESP32 Arduino core), LEDC (ESP32 Arduino core)
+**Block:** text
 
-The app shows this code in a block with a copy control and an Explain Code button. Explain Code opens a coming-soon dialog. It does not change the code.
+Both blocks below are excerpts. The complete sketch is in the next step.
 
-```arduino
+**Block:** code
+
+Language: cpp
+Filename: excerpt-advertise.ino
+
+```cpp
 BLEDevice::init(DEVICE_NAME);
   BLEServer *server = BLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
@@ -706,31 +872,65 @@ BLEDevice::init(DEVICE_NAME);
   Serial.println("Advertising as Solderi RGB.");
 ```
 
+**Block:** code
 
-**Code explanation**
+Language: cpp
+Filename: excerpt-colour-write.ino
 
-The only accepted colour is UTF-8 text such as 255,80,0. Each number is 0 to 255. Spaces around the commas are allowed. The only accepted brightness is UTF-8 text from 0 to 100, including 0, 48, and 100. A three-byte colour such as FF 50 00 is rejected. A rejected write is printed and the previous text is put back, so the LED and a later read stay on the last good value. A valid write then calls applyColour.
+```cpp
+class ColorCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *characteristic) override {
+    String text;
+    bool accepted = copyTextPayload(characteristic->getData(), characteristic->getLength(), text) && parseColourText(text);
+    if (!accepted) {
+      characteristic->setValue(colourText());
+      Serial.print("Colour rejected: ");
+      Serial.println(text);
+      return;
+    }
 
-### Step 18 of 25
+    applyColour();
+    characteristic->setValue(colourText());
+    Serial.print("Colour ");
+    Serial.println(colourText());
+```
 
-Stage 5: Firmware
+**Block:** text
+**Heading:** Rejected writes and a disconnect
 
-Stored sort_order: 17. Stored stage_sort_order: 4.
+A colour must be three numbers from 0 to 255, separated by commas, with no spaces. Brightness must be a whole number from 0 to 100. Anything else, including a raw three-byte colour, is rejected. The callback writes the last accepted text back into the characteristic, because the ESP32 stack stores the incoming bytes before the callback runs. When the phone disconnects, the sketch prints a line and starts advertising again. The last colour stays on the LED.
 
-Heading: Paste the complete sketch and upload it
+**Block:** code
 
-Description: The program below is the whole firmware. Upload it with ESP32 Dev Module selected.
+Language: cpp
+Filename: excerpt-disconnect.ino
 
-Tip: If the upload times out, hold Boot, press and release EN, then release Boot and try again. That is the DevKitC V4 download-mode sequence.
+```cpp
+void onDisconnect(BLEServer *server) override {
+    (void)server;
+    clientConnected = false;
+    Serial.println("Phone disconnected. Advertising again.");
+    BLEDevice::startAdvertising();
+```
 
+### Step 16 of 22 — Upload the complete sketch
 
-**Code: esp32_ble_rgb_controller.ino (Arduino)**
+- Stage 4: Firmware
+- Sort order: 15
 
-Libraries named on this block: BLE (ESP32 Arduino core), LEDC (ESP32 Arduino core)
+This is the program to copy. The earlier blocks were excerpts.
 
-The app shows this code in a block with a copy control and an Explain Code button. Explain Code opens a coming-soon dialog. It does not change the code.
+**Block:** text
 
-```arduino
+Create a sketch, replace its contents with the program below, and click Upload. When it finishes, the Serial Monitor should show the power-on line and then Advertising as Solderi RGB.
+
+**Block:** code
+
+Language: cpp
+Filename: esp32-ble-rgb-controller.ino
+Libraries: BLE (ESP32 Arduino core), LEDC (ESP32 Arduino core)
+
+```cpp
 /*
  * ESP32 Bluetooth RGB LED Controller
  * Board: ESP32 Dev Module
@@ -964,603 +1164,157 @@ void loop() {
 
 ```
 
+**Block:** expected
+**Heading:** After a successful upload
 
-**Text: Upload**
+The LED is red at a low brightness. The monitor shows Advertising as Solderi RGB. If upload fails, hold the BOOT button when the IDE says Connecting, then release it.
 
-Create a sketch named esp32_ble_rgb_controller and replace its contents with the program above. Do not add BluetoothSerial.h. Click Upload. Wait until the IDE reports the upload is done. Open the Serial Monitor at 115200 baud. Do not change pins 25, 26, or 27 unless you also change the wiring.
+### Step 17 of 22 — Find Solderi RGB in nRF Connect
 
+- Stage 5: Phone control
+- Sort order: 16
 
-**Expected result: What you should observe**
+Use the Bluetooth Low Energy scanner, not a classic Bluetooth device list.
 
-The IDE finishes the upload. The Serial Monitor prints “ESP32 Bluetooth RGB LED controller”, “Power-on colour is red at 30 percent brightness.”, and “Advertising as Solderi RGB.” The LED is red and not at full brightness.
+**Block:** text
 
-### Step 19 of 25
+Install nRF Connect for Mobile. Turn on the phone’s Bluetooth. Open the app and tap the scanner. Look for the name Solderi RGB and tap Connect. A speaker pairing screen is the wrong place. This board does not appear there, because it is a BLE peripheral.
 
-Stage 6: Phone control
+**Block:** text
+**Heading:** The service, once
 
-Stored sort_order: 18. Stored stage_sort_order: 5.
+After it connects, open the service whose UUID starts with 8c4a2e10. Inside it, the colour characteristic starts with 8c4a2e11 and the brightness characteristic starts with 8c4a2e12. You can match those prefixes. You do not need to retype the full UUID for each write.
 
-Heading: Install nRF Connect and find Solderi RGB
+**Block:** expected
+**Heading:** When the connection works
 
-Description: Use Nordic nRF Connect for Mobile. It is a BLE GATT app on Android and iOS.
+nRF Connect shows the service, and the Serial Monitor prints Phone connected. The full service UUID is 8c4a2e10-1b6d-4f3a-9e72-5d0c8a1b6e24.
 
-Tip: Turn the phone’s Bluetooth on. This scan does not use the phone’s Wi-Fi.
+### Step 18 of 22 — Write a colour as text
 
+- Stage 5: Phone control
+- Sort order: 17
 
-**Text: Which app**
+The write format is UTF-8 text, three numbers separated by commas.
 
-Install nRF Connect for Mobile, published by Nordic Semiconductor. On Android, install it from Google Play. On iPhone or iPad, install it from the App Store; Nordic’s listing is nRF Connect for Mobile, Apple id 1054362403, and the current listing requires a recent iOS. The app scans for Bluetooth Low Energy devices and can write a characteristic. This repository has not installed the app or connected it to a board. Do not use a Bluetooth Classic terminal. Those apps look for a serial-port profile, and this sketch does not advertise one. iOS does not provide that Classic serial profile to ordinary apps.
+**Block:** text
 
+On the colour characteristic, choose the write action and set the format to text, or UTF-8. Send 255,80,0. The LED should move from dim red toward orange: full red, some green, no blue. Then send 0,0,255 for blue and 0,255,0 for green. Read the characteristic afterward. It should show the text you sent.
 
-**Text: What to do**
+**Block:** text
+**Heading:** If the app asks for hex
 
-Open nRF Connect and start a scan. Find the name Solderi RGB. The 128-bit service UUID fills most of the advertising packet, so the name is carried in the scan response. If a row has a blank name, open it and match the service that starts with 8c4a2e10. Connect. You should see a colour characteristic starting with 8c4a2e11 and a brightness characteristic starting with 8c4a2e12. A read of the colour characteristic returns the text 255,0,0 until you write a new colour. The Serial Monitor prints “Phone connected.”
+Some iOS write fields want the UTF-8 bytes in hexadecimal. 255,80,0 is 32 35 35 2C 38 30 2C 30. 0,0,255 is 30 2C 30 2C 32 35 35. 0,255,0 is 30 2C 32 35 35 2C 30. The characters are still the same text.
 
+**Block:** warning
 
-**Expected result: Expected result**
+Do not send the three raw bytes FF 50 00. The sketch rejects that. Send the digits and the commas.
 
-The phone shows Solderi RGB as connected. The LED is still the power-on red, because connecting does not by itself change the colour.
+### Step 19 of 22 — Change brightness, then disconnect and come back
 
-### Step 20 of 25
+- Stage 5: Phone control
+- Sort order: 18
 
-Stage 6: Phone control
+Brightness is a second text value, from 0 to 100.
 
-Stored sort_order: 19. Stored stage_sort_order: 5.
+**Block:** text
 
-Heading: Write a colour
+On the brightness characteristic, write the text 100. The current colour should become brighter. Write 10 and it should become dim. Write 0 and it should go dark. Read the characteristic to confirm the stored number. Then disconnect in nRF Connect. The monitor should print that the phone disconnected and that the board is advertising again. The last colour remains. Connect once more and write 255,0,0 to return to red.
 
-Description: Send 0,0,255 as text. The LED should turn blue and Serial should print that colour.
+**Block:** text
 
-Tip: On Android, set the value format to Text. On iOS, use the UTF-8 string field. Both have been in nRF Connect since the iOS 1.8.8 text-input update. This session did not tap Send on a phone.
+A brightness of 100 in hex text is 31 30 30. A rejected write, such as 150 or the word high, should leave the LED unchanged, and the monitor should print that the value was rejected.
 
+**Block:** tip
 
-**Text: What to do**
+Compare the LED with the Serial Monitor line for the same write. The monitor is the sketch telling you which text it accepted.
 
-Open the colour characteristic that starts with 8c4a2e11. On Android, tap the write icon and set the format to Text. On iOS, choose the UTF-8 string input rather than the hexadecimal byte field. Type 0,0,255. If the app offers Request and Command, either is accepted; Request is the normal write. Send it. Then send 255,80,0 the same way. If the iOS field will only take hex, type the UTF-8 bytes of that same text: 30 2C 30 2C 32 35 35 for 0,0,255, or 32 35 35 2C 38 30 2C 30 for 255,80,0. Do not send FF 50 00. Those three raw bytes are rejected.
+### Step 20 of 22 — Fix the light before you blame the phone
 
+- Stage 6: Troubleshooting
+- Sort order: 19
 
-**Expected result: Expected result**
+Match the symptom, then work down the checks.
 
-Serial prints “Colour 0,0,255” and the LED is blue at the current brightness. The next write prints “Colour 255,80,0” and the light becomes orange. A read of the characteristic shows the text the sketch stored. Red may look brighter than green or blue at the same number because its forward voltage is lower, so the same 220 Ω passes more current. On a USB port near 5 V, typical blue and green current is about 5.5 mA and typical red current is about 10.5 mA.
+**Block:** troubleshooting
+**Heading:** The LED itself
 
-### Step 21 of 25
+**Problem:** The LED stays dark after upload.
 
-Stage 6: Phone control
+The usual causes are USB not powering the board, the anode off the + rail, or an emitter off the − rail. Confirm the monitor prints the advertising line. The anode jumper is j7 on the right + rail, and the two + rails are bridged on row 1. Emitters are a1 and a10 on the left − rail and j13 on the right − rail, with the − rails bridged on row 1. Those rows are above the rail break. You should see a dim red light. If the monitor is alive and the LED is still dark, the LED is reversed: pin 2, the anode, is the lead in f7.
 
-Stored sort_order: 20. Stored stage_sort_order: 5.
+**Problem:** Only red lights. Green and blue stay off.
 
-Heading: Write a brightness
+Either those links are in the wrong holes, or the USB port is too weak for a high forward voltage. Send 0,255,0 and 0,0,255 and read the monitor. If the monitor accepts the colour, confirm the green wire is in b15 and j9, and the blue wire is in j12 and j8. j9 shares the row with LED pin 4 in f9. j8 shares the row with LED pin 3 in f8. Try a different USB port near 5 V. A port that is already sagging can leave a 4.0 V blue chip or a 4.1 V green chip dark.
 
-Description: Brightness is a separate write from 0 to 100. It does not change the stored colour mix.
+**Problem:** One colour is stuck on, or two colours light together.
 
-Tip: Text 100 is full scale for this circuit. Text 0 turns the LED off and leaves the phone connected.
+Two leads are probably in the same row. Check that each transistor uses three separate rows and that the 1 kΩ lead is not in the collector row. Pull that channel’s parts and seat them again. The stuck colour should follow only its own GPIO pin.
 
+**Problem:** The LED is very hot or a resistor smells.
 
-**Text: What to do**
+Unplug USB. A 220 Ω resistor is missing or a cathode is wired straight to ground. Seat the 220 Ω resistor again before you reconnect power. The part should stay cool at the currents in the resistor step.
 
-Open the brightness characteristic that starts with 8c4a2e12. Use the same Text or UTF-8 field. Write 100, then 48, then 0, then 30. 100 is full scale for this circuit, 48 is a mid value, 0 turns the LED off while the phone stays connected, and 30 returns to the power-on level. If the field will only take hex, type the UTF-8 bytes of those characters: 31 30 30 for 100, 34 38 for 48, 30 for 0, and 33 30 for 30. A single hex byte 30 is the character 0, so it sets brightness 0. It is not decimal 48.
+### Step 21 of 22 — Fix the phone connection
 
+- Stage 6: Troubleshooting
+- Sort order: 20
 
-**Expected result: Expected result**
+The board has to be advertising before the phone can write.
 
-Serial prints “Brightness 100”, then “Brightness 48”, then “Brightness 0”, then “Brightness 30”. The colour text stays whatever you wrote last. Disconnecting the phone prints “Phone disconnected. Advertising again.” and the LED stays at the last accepted colour and brightness. Connecting again does not change that colour.
+**Block:** troubleshooting
+**Heading:** nRF Connect
 
+**Problem:** Solderi RGB never appears in the scanner.
 
-**Warning**
+The sketch is not running, or the phone is looking at classic Bluetooth devices. Re-upload, set the monitor to 115200, and wait for Advertising as Solderi RGB. In nRF Connect use the BLE scanner and pull to refresh. The name should appear within a few seconds.
 
-Any phone nearby can write these characteristics. The sketch does not ask for a pairing code. Use it as a bench project, not as a lock or a private control.
+**Problem:** The app connects, then the write does nothing.
 
-### Step 22 of 25
+The write is on the wrong characteristic, or it is not UTF-8 text. Open the colour characteristic that starts with 8c4a2e11 and send 255,80,0 as text. The monitor should print Colour 255,80,0 and the LED should change. If it prints Colour rejected, the text has a space, a missing comma, or a number outside 0–255.
 
-Stage 7: Troubleshooting
+**Problem:** Upload never finishes.
 
-Stored sort_order: 21. Stored stage_sort_order: 6.
+The port is wrong or the board never entered the bootloader. Select the port that appears when you plug the board in, lower the upload speed if 115200 fails, and hold BOOT when the IDE says Connecting. A finished upload returns the IDE to a done message and the monitor prints the advertising line.
 
-Heading: The phone cannot connect
+**Problem:** It worked once, and the phone cannot reconnect.
 
-Description: Fix the app type, the board power, and the advertisement before you change the LED wiring.
+Disconnect in nRF Connect, wait for the monitor line that says the board is advertising again, then scan and connect. If that line never appears, press the DevKit reset button and wait for the advertising line before you scan.
 
-Tip: None.
+### Step 22 of 22 — Walk the finished controller
 
+- Stage 7: Final check
+- Sort order: 21
 
-**Troubleshooting: Bluetooth connection**
+Do these in order and compare the LED with each line.
 
-Problem: Solderi RGB never appears in the scan
+**Block:** text
 
-Solution: Confirm Serial printed “Advertising as Solderi RGB.” If it did not, the upload did not start the BLE server. Use nRF Connect’s BLE scanner, not a Bluetooth Classic device list. Stay within a few metres and scan again. Press EN once to restart advertising.
+The sketch is written to do every line below. Use the troubleshooting steps for any line that does not match. A USB port well under 5 V can still leave green or blue dim or dark after the wiring is correct.
 
-Problem: A serial Bluetooth app cannot find the board
+**Block:** expected
+**Heading:** Checklist
 
-Solution: That app is looking for Bluetooth Classic. This sketch does not call BluetoothSerial. Install nRF Connect for Mobile and scan for Solderi RGB.
+The LED flat faces the top and the longest lead is in f7. Each transistor flat faces right, with the emitter in the top lead of that transistor. The + rails feed only the anode row. The − rails meet only the three emitter jumpers. No two leads share one hole. Upload finishes and the monitor prints Advertising as Solderi RGB. nRF Connect connects to that name. 255,0,0 is red, 0,255,0 is green, and 0,0,255 is blue. Brightness 100 is brighter than 10, and 0 is dark. The text 150 is rejected and the LED stays put. Disconnecting prints the advertising line, and a new connection can write 255,80,0.
 
-Problem: The phone connects, then immediately drops
+## Appendix — supporting notes
 
-Solution: Keep the Serial Monitor open and read the next line. The sketch advertises again after “Phone disconnected. Advertising again.” Connect once more from nRF Connect. A second phone already connected can make the link look busy.
+**NOT CURRENTLY SHOWN TO USERS**
 
-Problem: iOS shows the device but the write button does nothing
+These notes were removed from the main walkthrough and are kept in `constants/walkthroughs/supporting-notes.ts` for a future optional explanation. They are not step content and the app does not render them.
 
-Solution: Stay on the connected screen. On Android set the format to Text. On iOS choose the UTF-8 string field. Type 0,0,255 and send a Write Request if the app lists Request and Command. This repository has not completed that write on an iPhone.
+### Learn the breadboard before you insert a part
 
-### Step 23 of 25
+The middle of the board is split by a gap. In one half, holes a, b, c, d, and e of the same row number are connected. Holes f, g, h, i, and j of that row are a separate connection. The gap is not a wire. The long red and blue strips are the power rails. Holes in one strip connect along that strip until a break in the coloured line. The left rail is not connected to the right rail until a wire joins them. This build uses rows 1–15, above the usual mid-board break. Two leads connect when they sit in the same numbered row on the same side of the gap. A resistor body may pass over a row it must not join. Only the holes that hold its leads are connected. Do not put two transistor leads in one row, and do not put two LED leads in one row.
 
-Stage 7: Troubleshooting
+### The numbers
 
-Stored sort_order: 22. Stored stage_sort_order: 6.
+From a USB port near 5 V, the DevKit 5 V pin is about 4.7 V. Allow about 0.2 V across the transistor. Red at its typical 2.2 V then has about (4.7 − 2.2 − 0.2) / 220 = 10.5 mA. From a 5.0 V pin that is about 12 mA, still under the 30 mA red maximum. Blue and green at a typical 3.3 V have about 5.5 mA. A blue chip at its 4.0 V maximum has about 2.3 mA, and a green chip at 4.1 V has about 1.8 mA, so those colours can look dim. A weak USB port near 4.4 V can leave a high-forward-voltage green or blue chip dark. Each base takes about (3.3 − 0.7) / 1000 = 2.6 mA, about 8 mA for all three pins.
 
-Heading: The colour or the wiring is wrong
+### What you will learn
 
-Description: Match the Serial colour line to the LED before you rewrite the sketch.
+Each colour needs a transistor and two resistors. A phone writes a colour over Bluetooth Low Energy. BLE is the short-range radio this project uses. It is a different system from the classic Bluetooth link a speaker uses.
 
-Tip: A swapped cathode looks like the wrong colour even when the write was accepted.
+## Local source comparison
 
-
-**Troubleshooting: Colours and wiring**
-
-Problem: Serial prints Colour 0,0,255 but the LED is not blue
-
-Solution: The write worked. IO27 is not reaching the blue base, or the blue cathode is in another row. Trace IO27 through 1k blue to the blue base, then from the blue collector through 220 blue to the blue cathode. The anode must be on the 5V rail and the blue emitter on GND.
-
-Problem: The LED stays dark after a successful colour line
-
-Solution: Write brightness 100. A stored brightness of 0 keeps every duty at 0. If it is still dark, the anode is not on the 5V rail, an emitter is not on GND, or the part is not common anode. Stop. Do not move the common lead to GND and do not tie a cathode straight to a GPIO.
-
-Problem: One colour stays off while the other two follow the phone
-
-Solution: Check that colour’s 220 Ω resistor, the transistor lead order, and the 1 kΩ base resistor. A collector and emitter swapped, or a base left open, leaves that die dark. Do not bypass the 220 Ω resistor. Green and blue are expected to light from this 5 V path when the USB port is near 5 V. At a 4.1 V green drop the current is about 2 mA, so that die is dimmer than red. A weak USB port can leave a maximum-forward-voltage green or blue die dark.
-
-Problem: Serial prints Colour rejected
-
-Solution: Send UTF-8 text such as 255,80,0. Words, a trailing comma, a number above 255, or three raw bytes such as FF 50 00 are rejected. Serial prints Colour rejected and the previous colour stays.
-
-Problem: One colour stays on at full brightness as soon as USB is plugged in, before upload
-
-Solution: A cathode is connected toward ground without its transistor, or a base is tied to 5V. Unplug USB. Each cathode must reach ground only through its 220 Ω resistor and its transistor. Each GPIO must reach only a 1 kΩ resistor.
-
-### Step 24 of 25
-
-Stage 8: How the light mixes
-
-Stored sort_order: 23. Stored stage_sort_order: 7.
-
-Heading: PWM, BLE, and RGB mixing
-
-Description: The phone sends a mix. PWM turns that mix into three pin duties.
-
-Tip: None.
-
-
-**Text: PWM**
-
-LEDC switches each GPIO on and off at 5000 Hz with 8-bit resolution. The eye sees the average, not the individual pulses. Duty 0 is off. Duty 255 is on for the whole cycle. Brightness scales all three duties together, so 50 percent brightness halves each channel without changing the mix.
-
-
-**Text: BLE**
-
-Bluetooth Low Energy here is a GATT server. The ESP32 is the peripheral and advertises a name plus a service UUID. The phone is the central. A write is a short value to one characteristic, not a stream of serial bytes. Bluetooth Classic SPP is a different radio profile. This sketch never starts it, which is why a Classic terminal cannot connect, including on phones that only expose BLE to apps.
-
-
-**Text: RGB mixing**
-
-The three dice sit in one lens. 255,0,0 is red. 0,255,0 is green. 0,0,255 is blue. 255,255,255 turns all three on and looks white or slightly tinted, because red passes more current through the same 220 Ω. 255,80,0 is red plus a little green, which reads as orange. The numbers are not watts. They are fractions of each channel’s current from the 5V pin.
-
-### Step 25 of 25
-
-Stage 9: Final check
-
-Stored sort_order: 24. Stored stage_sort_order: 8.
-
-Heading: Final verification checklist
-
-Description: Walk this list once on the bench. A printed line that you have not seen is still unchecked.
-
-Tip: None.
-
-
-**Test: Checklist**
-
-The longest lead is pin 2, the common anode, and it is on the 5V rail. The lead nearest the flat is pin 1, red, and it reaches ground only through 220 red and Q red from IO25. Pin 3 is blue, through 220 blue and Q blue from IO27. Pin 4 is green, through 220 green and Q green from IO26. IO25, IO26, and IO27 each reach only their own 1 kΩ resistor. The 3V3 header is empty, and no second supply is on the 5V pin. The board is ESP32 Dev Module and the upload finished. Serial shows the power-on red line and “Advertising as Solderi RGB.” Pin 1 lights red at power-on. nRF Connect connects to Solderi RGB. Colour text 0,0,255 turns pin 3 blue and Serial prints Colour 0,0,255. Colour text 0,255,0 turns pin 4 green. Brightness text 48 changes the level, brightness text 0 turns it off, and brightness text 100 restores it. Disconnecting the phone prints the advertising-again line and leaves the last colour lit.
-
-
-**Expected result: What you have now**
-
-An ESP32 DevKit mixes one common-anode RGB LED from the 5V pin, with GPIO25, GPIO26, and GPIO27 switching PN2222A transistors, and a phone changes that mix with nRF Connect over BLE. The project is still unpublished, and a completed checklist on your bench is the hardware test this repository has not recorded.
-
-## 7. Electrical connections and wiring diagram
-
-These connections are the “Every electrical connection” table stored in the walkthrough. The same rows are the local connection list.
-
-1. ESP32 DevKit 5V → Breadboard 5V rail (power)
-2. Breadboard 5V rail → RGB LED Anode (power)
-3. ESP32 DevKit GND → Breadboard GND rail (ground)
-4. Breadboard GND rail → Q red Emitter (ground)
-5. Breadboard GND rail → Q green Emitter (ground)
-6. Breadboard GND rail → Q blue Emitter (ground)
-7. ESP32 DevKit IO25 → 1k red leg 1 (signal)
-8. 1k red leg 2 → Q red Base (signal)
-9. Q red Collector → 220 red leg 1 (signal)
-10. 220 red leg 2 → RGB LED Red (signal)
-11. ESP32 DevKit IO26 → 1k green leg 1 (signal)
-12. 1k green leg 2 → Q green Base (signal)
-13. Q green Collector → 220 green leg 1 (signal)
-14. 220 green leg 2 → RGB LED Green (signal)
-15. ESP32 DevKit IO27 → 1k blue leg 1 (signal)
-16. 1k blue leg 2 → Q blue Base (signal)
-17. Q blue Collector → 220 blue leg 1 (signal)
-18. 220 blue leg 2 → RGB LED Blue (signal)
-
-The on-screen diagram is drawn from the local layout for slug `24`. It is not a separate image file. Wiring steps pass their connection lists to that layout. Earlier wiring blocks are prefixes of this list; the diagram highlights the active step and draws the earlier wires as already present.
-
-Layout slug: `24`
-
-Canvas: 360 × 560
-
-Wire labels: ground `GND`, pwm `PWM`, powerLogic `5V`.
-
-The breadboard element does not set a custom rail caption, so the symbol prints “+ 5V” and “− GND”.
-
-Routed wires from the local layout and the connection list: 18. Kinds: pwm, pwm, pwm, pwm, pwm, pwm, pwm, pwm, ground, pwm, ground, ground, powerLogic, powerLogic, ground, pwm, pwm, pwm.
-
-- ESP32 DevKit (`esp32`, kind `esp32-devkit`)
-  Aliases: esp32, esp32 devkit
-  Position: x 8, y 8, width 120, height 168
-  Port 5V (`v5`): dx 128, dy 28; aliases 5v
-  Port GND (`gnd`): dx 128, dy 58; aliases gnd
-  Port IO25 (`io25`): dx 128, dy 96; aliases io25, gpio25
-  Port IO26 (`io26`): dx 128, dy 128; aliases io26, gpio26
-  Port IO27 (`io27`): dx 128, dy 156; aliases io27, gpio27
-- Breadboard (`breadboard`, kind `breadboard`)
-  Aliases: breadboard
-  Position: x 8, y 184, width 344, height 364
-  Port 5V rail (`plus`): dx 210, dy 19; aliases 5vrail, plusrail
-  Port GND rail (`minus`): dx 142, dy 43; aliases gndrail
-- 1k red (`base-red`, kind `resistor`)
-  Aliases: red 1k, red base resistor
-  Position: x 20, y 268, width 96, height 26
-  resistorOhms: 1000
-  Port leg 1 (`leg1`): dx 0, dy 13; aliases leg1
-  Port leg 2 (`leg2`): dx 96, dy 13; aliases leg2
-- Q red (`q-red`, kind `npn`)
-  Aliases: red transistor, red pn2222a
-  Position: x 128, y 260, width 44, height 46
-  Port Base (`base`): dx 0, dy 20; aliases b
-  Port Collector (`collector`): dx 44, dy 10; aliases c
-  Port Emitter (`emitter`): dx 22, dy 46; aliases e
-- 220 red (`limit-red`, kind `resistor`)
-  Aliases: red 220, red limiter
-  Position: x 184, y 268, width 96, height 26
-  resistorOhms: 220
-  Port leg 1 (`leg1`): dx 0, dy 13; aliases leg1
-  Port leg 2 (`leg2`): dx 96, dy 13; aliases leg2
-- 1k green (`base-green`, kind `resistor`)
-  Aliases: green 1k, green base resistor
-  Position: x 20, y 360, width 96, height 26
-  resistorOhms: 1000
-  Port leg 1 (`leg1`): dx 0, dy 13; aliases leg1
-  Port leg 2 (`leg2`): dx 96, dy 13; aliases leg2
-- Q green (`q-green`, kind `npn`)
-  Aliases: green transistor, green pn2222a
-  Position: x 128, y 352, width 44, height 46
-  Port Base (`base`): dx 0, dy 20; aliases b
-  Port Collector (`collector`): dx 44, dy 10; aliases c
-  Port Emitter (`emitter`): dx 22, dy 46; aliases e
-- 220 green (`limit-green`, kind `resistor`)
-  Aliases: green 220, green limiter
-  Position: x 184, y 360, width 96, height 26
-  resistorOhms: 220
-  Port leg 1 (`leg1`): dx 0, dy 13; aliases leg1
-  Port leg 2 (`leg2`): dx 96, dy 13; aliases leg2
-- 1k blue (`base-blue`, kind `resistor`)
-  Aliases: blue 1k, blue base resistor
-  Position: x 20, y 452, width 96, height 26
-  resistorOhms: 1000
-  Port leg 1 (`leg1`): dx 0, dy 13; aliases leg1
-  Port leg 2 (`leg2`): dx 96, dy 13; aliases leg2
-- Q blue (`q-blue`, kind `npn`)
-  Aliases: blue transistor, blue pn2222a
-  Position: x 128, y 444, width 44, height 46
-  Port Base (`base`): dx 0, dy 20; aliases b
-  Port Collector (`collector`): dx 44, dy 10; aliases c
-  Port Emitter (`emitter`): dx 22, dy 46; aliases e
-- 220 blue (`limit-blue`, kind `resistor`)
-  Aliases: blue 220, blue limiter
-  Position: x 184, y 452, width 96, height 26
-  resistorOhms: 220
-  Port leg 1 (`leg1`): dx 0, dy 13; aliases leg1
-  Port leg 2 (`leg2`): dx 96, dy 13; aliases leg2
-- RGB LED (`led`, kind `rgb-led`)
-  Aliases: rgb led, common anode rgb
-  Position: x 292, y 250, width 56, height 140
-  Port Red (`red`): dx 0, dy 52; aliases redcathode, pin1
-  Port Anode (`anode`): dx 0, dy 74; aliases commonanode, pin2
-  Port Blue (`blue`): dx 0, dy 96; aliases bluecathode, pin3
-  Port Green (`green`): dx 0, dy 118; aliases greencathode, pin4
-
-The written wiring names pin 1 red, pin 2 the common anode, pin 3 blue, and pin 4 green. The diagram labels those same leads Red, Anode, Blue, and Green from top to bottom. The connection table uses the colour names, not the pin numbers. The 220 Ω tip says the bands are red, red, brown, gold. The diagram’s 220 Ω symbols use the default resistor drawing: two red bands and one gold band, without a brown multiplier band. The 1 kΩ symbols draw brown, black, red, and gold, matching that tip.
-
-## 8. Code snippets shown in the walkthrough
-
-Each snippet is printed in full inside its step above. This list is the snippet inventory.
-
-- Step 16, See how PWM sets each colour, block 2: `esp32_ble_rgb_controller.ino` (8 lines)
-- Step 17, See how BLE accepts colour and brightness, block 2: `esp32_ble_rgb_controller.ino` (26 lines)
-- Step 18, Paste the complete sketch and upload it, block 1: `esp32_ble_rgb_controller.ino` (231 lines)
-
-## 9. Complete firmware stored in the tutorial
-
-This is the program stored in step 18 (“Paste the complete sketch and upload it”). It is repeated here so the firmware can be read on its own. The local constant `ESP32_BLE_RGB_FIRMWARE` is compared with it in the discrepancy section.
-
-```arduino
-/*
- * ESP32 Bluetooth RGB LED Controller
- * Board: ESP32 Dev Module
- * LED: Kingbright WP154A4SEJ3VBDZGW/CA, common-anode
- * Pin 1 red cathode, pin 2 common anode, pin 3 blue cathode, pin 4 green cathode
- * DevKit 5V pin -> pin 2
- * IO25 -> 1k -> onsemi PN2222ABU base; collector -> 220 ohm -> pin 1 red cathode
- * IO26 -> 1k -> onsemi PN2222ABU base; collector -> 220 ohm -> pin 4 green cathode
- * IO27 -> 1k -> onsemi PN2222ABU base; collector -> 220 ohm -> pin 3 blue cathode
- * Emitters and DevKit GND share the ground rail
- * A higher PWM duty turns the transistor on for longer
- * Phone app: nRF Connect for Mobile
- * One write format: UTF-8 text
- * Colour: 255,80,0
- * Brightness: 0, 48, or 100
- * Arduino-ESP32 3.x: ledcAttach, BLECharacteristic::PROPERTY_WRITE
- */
-
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-
-const int RED_PIN = 25;
-const int GREEN_PIN = 26;
-const int BLUE_PIN = 27;
-const int PWM_FREQUENCY_HZ = 5000;
-const int PWM_RESOLUTION_BITS = 8;
-const size_t MAX_TEXT_BYTES = 16;
-
-const char *DEVICE_NAME = "Solderi RGB";
-const char *SERVICE_UUID = "8c4a2e10-1b6d-4f3a-9e72-5d0c8a1b6e24";
-const char *COLOR_UUID = "8c4a2e11-1b6d-4f3a-9e72-5d0c8a1b6e24";
-const char *BRIGHTNESS_UUID = "8c4a2e12-1b6d-4f3a-9e72-5d0c8a1b6e24";
-
-int redValue = 255;
-int greenValue = 0;
-int blueValue = 0;
-int brightnessPercent = 30;
-
-bool clientConnected = false;
-
-int channelDuty(int channel) {
-  return (int)(((long)channel * (long)brightnessPercent) / 100L);
-}
-
-void applyColour() {
-  ledcWrite(RED_PIN, channelDuty(redValue));
-  ledcWrite(GREEN_PIN, channelDuty(greenValue));
-  ledcWrite(BLUE_PIN, channelDuty(blueValue));
-}
-
-bool digitsOnly(const String &text) {
-  if (text.length() == 0) {
-    return false;
-  }
-  for (int i = 0; i < text.length(); i++) {
-    char letter = text.charAt(i);
-    if (letter < '0' || letter > '9') {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool copyTextPayload(const uint8_t *data, size_t length, String &text) {
-  text = "";
-  if (data == nullptr || length == 0 || length > MAX_TEXT_BYTES) {
-    return false;
-  }
-  for (size_t i = 0; i < length; i++) {
-    char letter = (char)data[i];
-    bool allowed = (letter >= '0' && letter <= '9') || letter == ',' || letter == ' ';
-    if (!allowed) {
-      return false;
-    }
-    text += letter;
-  }
-  text.trim();
-  return text.length() > 0;
-}
-
-bool parseColourText(const String &text) {
-  if (text.indexOf(',') < 0) {
-    return false;
-  }
-  int first = text.indexOf(',');
-  int second = text.indexOf(',', first + 1);
-  if (first <= 0 || second <= first + 1 || text.indexOf(',', second + 1) >= 0) {
-    return false;
-  }
-
-  String redText = text.substring(0, first);
-  String greenText = text.substring(first + 1, second);
-  String blueText = text.substring(second + 1);
-  redText.trim();
-  greenText.trim();
-  blueText.trim();
-  if (!digitsOnly(redText) || !digitsOnly(greenText) || !digitsOnly(blueText)) {
-    return false;
-  }
-
-  long red = redText.toInt();
-  long green = greenText.toInt();
-  long blue = blueText.toInt();
-  if (red > 255 || green > 255 || blue > 255) {
-    return false;
-  }
-
-  redValue = (int)red;
-  greenValue = (int)green;
-  blueValue = (int)blue;
-  return true;
-}
-
-bool parseBrightnessText(const String &text) {
-  if (text.indexOf(',') >= 0 || !digitsOnly(text)) {
-    return false;
-  }
-  long value = text.toInt();
-  if (value > 100) {
-    return false;
-  }
-  brightnessPercent = (int)value;
-  return true;
-}
-
-String colourText() {
-  return String(redValue) + "," + String(greenValue) + "," + String(blueValue);
-}
-
-String brightnessText() {
-  return String(brightnessPercent);
-}
-
-class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *server) override {
-    (void)server;
-    clientConnected = true;
-    Serial.println("Phone connected.");
-  }
-
-  void onDisconnect(BLEServer *server) override {
-    (void)server;
-    clientConnected = false;
-    Serial.println("Phone disconnected. Advertising again.");
-    BLEDevice::startAdvertising();
-  }
-};
-
-class ColorCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *characteristic) override {
-    String text;
-    bool accepted = copyTextPayload(characteristic->getData(), characteristic->getLength(), text) && parseColourText(text);
-    if (!accepted) {
-      characteristic->setValue(colourText());
-      Serial.print("Colour rejected: ");
-      Serial.println(text);
-      return;
-    }
-
-    applyColour();
-    characteristic->setValue(colourText());
-    Serial.print("Colour ");
-    Serial.println(colourText());
-  }
-};
-
-class BrightnessCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *characteristic) override {
-    String text;
-    bool accepted = copyTextPayload(characteristic->getData(), characteristic->getLength(), text) && parseBrightnessText(text);
-    if (!accepted) {
-      characteristic->setValue(brightnessText());
-      Serial.print("Brightness rejected: ");
-      Serial.println(text);
-      return;
-    }
-
-    applyColour();
-    characteristic->setValue(brightnessText());
-    Serial.print("Brightness ");
-    Serial.println(brightnessPercent);
-  }
-};
-
-void setup() {
-  Serial.begin(115200);
-  delay(300);
-
-  if (!ledcAttach(RED_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS) ||
-      !ledcAttach(GREEN_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS) ||
-      !ledcAttach(BLUE_PIN, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS)) {
-    Serial.println("PWM setup failed.");
-  }
-  applyColour();
-
-  Serial.println("ESP32 Bluetooth RGB LED controller");
-  Serial.println("Power-on colour is red at 30 percent brightness.");
-
-  BLEDevice::init(DEVICE_NAME);
-  BLEServer *server = BLEDevice::createServer();
-  server->setCallbacks(new ServerCallbacks());
-  BLEService *service = server->createService(SERVICE_UUID);
-
-  BLECharacteristic *colorCharacteristic = service->createCharacteristic(
-    COLOR_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
-  );
-  colorCharacteristic->setCallbacks(new ColorCallbacks());
-  colorCharacteristic->setValue(colourText());
-
-  BLECharacteristic *brightnessCharacteristic = service->createCharacteristic(
-    BRIGHTNESS_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
-  );
-  brightnessCharacteristic->setCallbacks(new BrightnessCallbacks());
-  brightnessCharacteristic->setValue(brightnessText());
-
-  service->start();
-
-  BLEAdvertising *advertising = BLEDevice::getAdvertising();
-  advertising->addServiceUUID(SERVICE_UUID);
-  advertising->setScanResponse(true);
-  BLEDevice::startAdvertising();
-  Serial.println("Advertising as Solderi RGB.");
-}
-
-void loop() {
-  delay(200);
-}
-
-```
-
-## 10. BLE identifiers and expected writes
-
-These values are the string literals in the stored sketch:
-
-- Device name: `Solderi RGB`
-- Service UUID: `8c4a2e10-1b6d-4f3a-9e72-5d0c8a1b6e24`
-- Colour characteristic UUID: `8c4a2e11-1b6d-4f3a-9e72-5d0c8a1b6e24`
-- Brightness characteristic UUID: `8c4a2e12-1b6d-4f3a-9e72-5d0c8a1b6e24`
-
-The sketch comments and the phone-control steps state the write format. Colour writes are UTF-8 text such as `255,80,0`, `0,0,255`, and `0,255,0`, with each number from 0 to 255. Brightness writes are UTF-8 text from `0` to `100`, including `0`, `48`, `30`, and `100`. The stored sketch prints `Colour ` plus the stored colour text after an accepted colour write, and `Brightness ` plus the number after an accepted brightness write. Rejected writes print `Colour rejected: ` or `Brightness rejected: ` and restore the previous text. Power-on serial lines in the stored sketch are `ESP32 Bluetooth RGB LED controller`, `Power-on colour is red at 30 percent brightness.`, and `Advertising as Solderi RGB.` Connection lines are `Phone connected.` and `Phone disconnected. Advertising again.`
-
-The phone procedure, including the nRF Connect field names and the UTF-8 hex fallbacks, is copied in full in the phone-control steps.
-
-## 11. Libraries and setup
-
-Libraries named by the local firmware constant, and also named on the stored code blocks:
-
-- BLE (ESP32 Arduino core)
-- LEDC (ESP32 Arduino core)
-
-Setup instructions are the Development environment and Firmware steps. They are copied in full in section 6, including the boards URL `https://espressif.github.io/arduino-esp32/package_esp32_index.json` and the board name ESP32 Dev Module.
-
-## 12. Troubleshooting
-
-Troubleshooting text is in the serial-port step and the two troubleshooting steps. Those steps are copied in full in section 6.
-
-## Database and local-source discrepancies
-
-The stored project row, bill of materials, catalogue descriptions, requirement roles, substitution policies, constraints, and all 25 step titles, descriptions, tips, stages, and blocks match the local authoring files. Pin-role rows: 0. Substitution-review rows: 0. The firmware string stored in the upload step matches `ESP32_BLE_RGB_FIRMWARE`. Every code block in the stored steps is contained in that sketch. The stored “Every electrical connection” table matches the local connection list, and every connection resolves on the local diagram.
-
-Diagram and written instructions:
-
-The written wiring names pin 1 red, pin 2 the common anode, pin 3 blue, and pin 4 green. The diagram labels those same leads Red, Anode, Blue, and Green from top to bottom. The connection table uses the colour names, not the pin numbers. The 220 Ω tip says the bands are red, red, brown, gold. The diagram’s 220 Ω symbols use the default resistor drawing: two red bands and one gold band, without a brown multiplier band. The 1 kΩ symbols draw brown, black, red, and gold, matching that tip.
-
-## Missing content
-
-- No photographic project cover is stored. The cover key `esp32BleRgb` is a placeholder in the app.
-- No rendered picture of the wiring diagram is stored. The diagram data is the layout in section 7.
-- No pin-profile rows are stored for the LED, the transistor, or the ESP32. The pinouts are the catalogue descriptions and the walkthrough text.
-- No approved substitutions, pin roles, or substitution reviews are stored.
-- Explain Code does not contain an explanation. The button opens a coming-soon dialog.
+The local TypeScript steps match these Supabase steps in sort order, stage, title, description, tip, and block content.

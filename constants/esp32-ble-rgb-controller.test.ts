@@ -20,7 +20,7 @@ test('the BLE RGB controller is an unpublished single-program project', () => {
   assert.equal(ESP32_BLE_RGB_PROJECT.isPublished, false)
   assert.equal(ESP32_BLE_RGB_PROJECT.title, 'ESP32 Bluetooth RGB LED Controller')
   assert.equal(ESP32_BLE_RGB_PROJECT.learningObjectives.length, 4)
-  assert.equal(ESP32_BLE_RGB_STEPS.length, 23)
+  assert.equal(ESP32_BLE_RGB_STEPS.length, 22)
   assert.equal(JSON.stringify(ESP32_BLE_RGB_STEPS).includes('this repository'), false)
   assert.equal(JSON.stringify(ESP32_BLE_RGB_STEPS).includes('Not run on hardware'), false)
   assert.equal(ESP32_BLE_RGB_STEPS[ESP32_BLE_RGB_STEPS.length - 1]?.stageTitle, 'Final check')

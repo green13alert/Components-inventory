@@ -214,60 +214,15 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         imageKey: 'motionSensor',
         caption: 'Finished motion alarm reference. Keep this pin map: PIR on D2, LED on D8, buzzer on D9.',
       },
+      { type: 'components', items: COMPONENTS },
       {
-        type: 'text',
-        heading: 'Why this order',
-        body: 'We will understand the sensor first, then wire one subsystem at a time, then grow the sketch in the same order. That way a wiring fault and a code fault are not mixed together.',
+        type: 'warning',
+        body: 'Use the active buzzer from the parts list. A passive piezo will not sound with digitalWrite, and this sketch does not call tone().',
       },
     ],
   },
   {
     sortOrder: 1,
-    stageSortOrder: 0,
-    stageTitle: STAGE_UNDERSTAND,
-    title: 'How the Motion Sensor Works',
-    description: 'A PIR module detects moving infrared sources, not “anything that exists.” Its OUT pin goes HIGH for a burst after it sees motion.',
-    tip: 'Aim the PIR away from HVAC vents. Fast air-temperature changes can look like motion.',
-    blocks: [
-      {
-        type: 'text',
-        heading: 'How PIR sensing works',
-        body: 'PIR means passive infrared. The sensor does not emit a beam. It watches for a change in infrared energy in its field of view — typically a person walking past. When that change is large enough, OUT goes HIGH. When the scene is still, OUT sits LOW.',
-      },
-      {
-        type: 'text',
-        heading: 'Warm-up',
-        body: 'After power-up the module needs about 30 seconds to settle. During that time OUT can chatter. The sketch will wait out this period and print a message so you do not walk in front of it while it is still calibrating.',
-      },
-      {
-        type: 'warning',
-        body: 'Do not treat a HIGH on OUT as “someone is still in the room.” It is a motion event, then it returns LOW. The alarm lasts as long as we hold the outputs in code, not as long as a person remains visible.',
-      },
-    ],
-  },
-  {
-    sortOrder: 2,
-    stageSortOrder: 0,
-    stageTitle: STAGE_UNDERSTAND,
-    title: 'Understand the Components',
-    description: 'Every part in this walkthrough is on the project BOM. Know what each one is for before you plug anything in.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'What each part does',
-        body: 'The Uno is the controller. The PIR is the input. The LED is a silent visual alarm. The 220 Ω resistor limits LED current so D8 is not shorted to ground through the diode. The catalogue buzzer is an active buzzer: a HIGH on its signal pin makes it sound. The breadboard and jumpers are the wiring.',
-      },
-      { type: 'components', items: COMPONENTS },
-      {
-        type: 'expected',
-        heading: 'Check',
-        body: 'You can point to each BOM item on the desk and name its role: input, output, current limit, or interconnect. Do not substitute a passive piezo for the active buzzer unless you are ready to use tone() later — this sketch uses digitalWrite only.',
-      },
-    ],
-  },
-  {
-    sortOrder: 3,
     stageSortOrder: 1,
     stageTitle: STAGE_CIRCUIT,
     title: 'Set Up the Arduino',
@@ -276,18 +231,8 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     blocks: [
       {
         type: 'text',
-        heading: 'Find the breadboard power rails',
-        body: 'Along each long edge of the breadboard there is a + rail (often marked red) and a − rail (often marked blue or black). Every hole in one + rail is electrically connected to the others in that same + rail. The same is true for one − rail. + is not connected to −.',
-      },
-      {
-        type: 'text',
         heading: 'What to set up',
-        body: 'Place the Uno beside the breadboard. Use male-to-male jumpers: Uno 5V into the left + rail at row 1, and Uno GND into the left − rail at row 1. Stay on rows 1–15, above a break in the coloured rail. This build uses 10 male-to-male jumpers from the pack. Leave D2, D8, and D9 empty for now.',
-      },
-      {
-        type: 'text',
-        heading: 'Why the rails matter',
-        body: 'Several parts need 5V and GND. Sharing rails keeps those nets common. If grounds are split, the PIR HIGH will not be a reliable HIGH relative to the Uno.',
+        body: 'Place the Uno beside the breadboard. Use male-to-male jumpers: Uno 5V into the left + rail at row 1, and Uno GND into the left − rail at row 1. The + rail is 5 V and the − rail is ground. They are not connected to each other. Stay on rows 1–15, above a break in the coloured rail. This build uses 10 male-to-male jumpers from the pack. Leave D2, D8, and D9 empty for now.',
       },
       {
         type: 'wiring',
@@ -307,7 +252,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 4,
+    sortOrder: 2,
     stageSortOrder: 1,
     stageTitle: STAGE_CIRCUIT,
     title: 'Connect the PIR Motion Sensor',
@@ -317,7 +262,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'Plug the PIR pins into c3, c4, and c5: VCC, OUT, then GND. A male-to-male jumper joins a3 to the left + rail at row 3. Another joins a5 to the left − rail at row 5. D2 goes to a4. OUT is the motion flag — that is PIR_PIN in the sketch.',
+        body: 'Plug the PIR pins into c3, c4, and c5: VCC, OUT, then GND. A male-to-male jumper joins a3 to the left + rail at row 3. Another joins a5 to the left − rail at row 5. D2 goes to a4. OUT is the motion flag — that is PIR_PIN in the sketch. After power-up, give the module about 30 seconds. OUT can chatter during that time. A HIGH is one motion pulse, then it returns LOW. It does not stay HIGH for as long as a person remains in view. Aim the lens away from heaters and vents.',
       },
       {
         type: 'wiring',
@@ -338,7 +283,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 5,
+    sortOrder: 3,
     stageSortOrder: 1,
     stageTitle: STAGE_CIRCUIT,
     title: 'Connect the LED',
@@ -368,7 +313,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 6,
+    sortOrder: 4,
     stageSortOrder: 1,
     stageTitle: STAGE_CIRCUIT,
     title: 'Connect the Buzzer',
@@ -398,7 +343,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 7,
+    sortOrder: 5,
     stageSortOrder: 1,
     stageTitle: STAGE_CIRCUIT,
     title: 'Check the Complete Circuit',
@@ -430,7 +375,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 8,
+    sortOrder: 6,
     stageSortOrder: 2,
     stageTitle: STAGE_PROGRAM,
     title: 'Create the Arduino Program',
@@ -456,7 +401,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 9,
+    sortOrder: 7,
     stageSortOrder: 2,
     stageTitle: STAGE_PROGRAM,
     title: 'Read the Motion Sensor',
@@ -491,7 +436,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 10,
+    sortOrder: 8,
     stageSortOrder: 2,
     stageTitle: STAGE_PROGRAM,
     title: 'Detect Motion',
@@ -517,7 +462,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 11,
+    sortOrder: 9,
     stageSortOrder: 2,
     stageTitle: STAGE_PROGRAM,
     title: 'Control the LED',
@@ -552,7 +497,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 12,
+    sortOrder: 10,
     stageSortOrder: 2,
     stageTitle: STAGE_PROGRAM,
     title: 'Control the Buzzer',
@@ -578,7 +523,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 13,
+    sortOrder: 11,
     stageSortOrder: 2,
     stageTitle: STAGE_PROGRAM,
     title: 'Combine the System',
@@ -604,7 +549,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 14,
+    sortOrder: 12,
     stageSortOrder: 3,
     stageTitle: STAGE_TEST,
     title: 'Upload the Program',
@@ -647,7 +592,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 15,
+    sortOrder: 13,
     stageSortOrder: 3,
     stageTitle: STAGE_TEST,
     title: 'Test Without Motion',
@@ -680,7 +625,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 16,
+    sortOrder: 14,
     stageSortOrder: 3,
     stageTitle: STAGE_TEST,
     title: 'Test Motion Detection',
@@ -713,7 +658,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 17,
+    sortOrder: 15,
     stageSortOrder: 3,
     stageTitle: STAGE_TEST,
     title: 'Troubleshoot the Circuit',
@@ -750,7 +695,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 18,
+    sortOrder: 16,
     stageSortOrder: 3,
     stageTitle: STAGE_TEST,
     title: 'Final System Test',

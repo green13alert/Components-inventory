@@ -20,8 +20,8 @@ export const ESP32_BLE_RGB_PROJECT = {
   isPublished: false,
   sortOrder: 24,
   learningObjectives: [
-    'Switch a common-anode RGB LED from the DevKit 5 V pin with a PN2222A and a 220 Î© resistor on each colour',
-    'Use LEDC PWM on GPIO25, GPIO26, and GPIO27 to drive those transistor bases through 1 kÎ©',
+    'Switch a common-anode RGB LED from the DevKit 5 V pin with a PN2222A and a 220 Ω resistor on each colour',
+    'Use LEDC PWM on GPIO25, GPIO26, and GPIO27 to drive those transistor bases through 1 kΩ',
     'Advertise a BLE GATT service that accepts colour and brightness writes',
     'Connect with nRF Connect for Mobile and compare the LED with the Serial Monitor',
   ],
@@ -31,8 +31,8 @@ export const ESP32_BLE_RGB_BOM = [
   { slug: 'esp32', name: 'ESP32 DevKit', quantity: 1, role: 'microcontroller', illustrationId: 'esp32' as const },
   { slug: 'rgb-led-ca', name: 'Common-anode RGB LED', quantity: 1, role: 'rgb_led', illustrationId: 'led' as const },
   { slug: 'pn2222a', name: 'PN2222A transistor', quantity: 3, role: 'low_side_switch', illustrationId: 'generic-module' as const },
-  { slug: 'resistor-220', name: '220 Î© resistor', quantity: 3, role: 'led_limiter', illustrationId: 'resistor-band-220' as const },
-  { slug: 'resistor-1k', name: '1 kÎ© resistor', quantity: 3, role: 'base_resistor', illustrationId: 'resistor-band-1k' as const },
+  { slug: 'resistor-220', name: '220 Ω resistor', quantity: 3, role: 'led_limiter', illustrationId: 'resistor-band-220' as const },
+  { slug: 'resistor-1k', name: '1 kΩ resistor', quantity: 3, role: 'base_resistor', illustrationId: 'resistor-band-1k' as const },
   { slug: 'breadboard', name: 'Breadboard', quantity: 1, role: 'breadboard', illustrationId: 'breadboard' as const },
   { slug: 'jumper-male-female', name: 'Male-to-female jumper wires', quantity: 5, role: 'jumper_wires', illustrationId: 'jumper-wires' as const },
   { slug: 'jumper-wires', name: 'Male-to-male jumper wires', quantity: 8, role: 'rail_jumpers', illustrationId: 'jumper-wires' as const },
@@ -179,11 +179,6 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         heading: 'What it will do',
         body: 'After you upload the sketch, the LED comes on red at a low brightness and the board advertises the name Solderi RGB. From the phone you can turn that light orange, purple, white, or off, and you can make it brighter or dimmer.',
       },
-      {
-        type: 'text',
-        heading: 'What you will learn',
-        body: 'How a breadboard row connects parts, why each colour needs a transistor and two resistors, and how a phone writes a colour over Bluetooth Low Energy. Bluetooth Low Energy, often called BLE, is the short-range radio this project uses. It is a different system from the classic Bluetooth link a speaker uses.',
-      },
     ],
   ),
   lesson(
@@ -269,11 +264,6 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         body: 'The 220 Ω resistor sits between the transistor and one LED cathode. It limits the LED current. The 1 kΩ resistor sits between a GPIO pin and the transistor base. It limits the current the ESP32 pin has to supply. Without the 220 Ω resistor the LED can draw more current than it is rated for. Without the 1 kΩ resistor the GPIO pin can be asked for far too much base current.',
       },
       {
-        type: 'text',
-        heading: 'The numbers',
-        body: 'From a USB port near 5 V, the DevKit 5 V pin is about 4.7 V. Allow about 0.2 V across the transistor. Red at its typical 2.2 V then has about (4.7 − 2.2 − 0.2) / 220 = 10.5 mA. From a 5.0 V pin that is about 12 mA, still under the 30 mA red maximum. Blue and green at a typical 3.3 V have about 5.5 mA. A blue chip at its 4.0 V maximum has about 2.3 mA, and a green chip at 4.1 V has about 1.8 mA, so those colours can look dim. A weak USB port near 4.4 V can leave a high-forward-voltage green or blue chip dark. Each base takes about (3.3 − 0.7) / 1000 = 2.6 mA, about 8 mA for all three pins.',
-      },
-      {
         type: 'tip',
         body: 'A 220 Ω resistor reads red, red, brown, gold. A 1 kΩ resistor reads brown, black, red, gold. The parts list draws those bands. Match three of each before you insert them.',
       },
@@ -282,37 +272,13 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   lesson(
     STAGES.wiring,
     5,
-    'Learn the breadboard before you insert a part',
-    'A row connects the holes in it. A different row is a different wire.',
-    [
-      {
-        type: 'text',
-        heading: 'Terminal rows',
-        body: 'The middle of the board is split by a gap. In one half, holes a, b, c, d, and e of the same row number are connected to each other. Holes f, g, h, i, and j of that row are a separate connection. The gap is not a wire. This whole build stays in columns a–e of the top half.',
-      },
-      {
-        type: 'text',
-        heading: 'Power rails',
-        body: 'The long red and blue strips along each edge are the power rails. Holes in one red strip connect along that strip until a break in the coloured line. The left red rail is not connected to the right red rail until you add a wire. This build uses rows 1–15, above the usual mid-board break. Rows 16 and 17 are shown so you can see that break and stay above it.',
-      },
-      {
-        type: 'text',
-        heading: 'Sharing a row',
-        body: 'Two leads connect when they sit in the same numbered row on the same side of the gap. They stay separate when they sit in different rows. A resistor body may pass over a row it must not join. Only the holes that hold its leads are connected.',
-      },
-      {
-        type: 'warning',
-        body: 'Do not put two transistor leads in one row, and do not put two LED leads in one row. That shorts those leads together.',
-      },
-      { type: 'wiring', heading: 'Empty board', connections: [] },
-    ],
-  ),
-  lesson(
-    STAGES.wiring,
-    6,
     'Seat every part on these rows',
     'Use rows 1–15. The physical diagram names the same holes.',
     [
+      {
+        type: 'warning',
+        body: 'Holes a–e in one numbered row are joined. Holes f–j with the same number are a separate connection. Do not put two transistor leads in one row, or two LED leads in one row.',
+      },
       {
         type: 'text',
         heading: 'The LED',
@@ -351,7 +317,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.wiring,
-    7,
+    6,
     'Connect 5 V and ground',
     'Two male-to-female wires feed the rails. Four male-to-male wires reach the parts.',
     [
@@ -378,7 +344,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.wiring,
-    8,
+    7,
     'Build the red channel',
     'GPIO25 switches the red cathode through j2 and f6.',
     [
@@ -397,7 +363,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.wiring,
-    9,
+    8,
     'Build the green channel',
     'GPIO26 switches the green cathode through j11, b15, and f9.',
     [
@@ -416,7 +382,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.wiring,
-    10,
+    9,
     'Build the blue channel',
     'GPIO27 switches the blue cathode through a14, j12, and f8.',
     [
@@ -435,7 +401,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.wiring,
-    11,
+    10,
     'Check the whole circuit, then plug in USB',
     'This is the only full connection list. Use it once, before power.',
     [
@@ -459,7 +425,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.environment,
-    12,
+    11,
     'Install the ESP32 board package',
     'The Arduino IDE needs the Espressif package before it can see this board.',
     [
@@ -475,7 +441,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.environment,
-    13,
+    12,
     'Select the board and the port',
     'The sketch talks to the computer at 115200 baud.',
     [
@@ -492,7 +458,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.firmware,
-    14,
+    13,
     'See how PWM sets the brightness',
     'GPIO25, GPIO26, and GPIO27 were chosen because they can output PWM.',
     [
@@ -535,7 +501,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.firmware,
-    15,
+    14,
     'Watch the write 255,80,0 travel through the sketch',
     'A characteristic is one value the phone can read or write.',
     [
@@ -575,7 +541,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.firmware,
-    16,
+    15,
     'Upload the complete sketch',
     'This is the program to copy. The earlier blocks were excerpts.',
     [
@@ -599,7 +565,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.phone,
-    17,
+    16,
     'Find Solderi RGB in nRF Connect',
     'Use the Bluetooth Low Energy scanner, not a classic Bluetooth device list.',
     [
@@ -621,7 +587,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.phone,
-    18,
+    17,
     'Write a colour as text',
     'The write format is UTF-8 text, three numbers separated by commas.',
     [
@@ -642,7 +608,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.phone,
-    19,
+    18,
     'Change brightness, then disconnect and come back',
     'Brightness is a second text value, from 0 to 100.',
     [
@@ -662,7 +628,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.trouble,
-    20,
+    19,
     'Fix the light before you blame the phone',
     'Match the symptom, then work down the checks.',
     [
@@ -696,7 +662,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.trouble,
-    21,
+    20,
     'Fix the phone connection',
     'The board has to be advertising before the phone can write.',
     [
@@ -730,7 +696,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
   ),
   lesson(
     STAGES.check,
-    22,
+    21,
     'Walk the finished controller',
     'Do these in order and compare the LED with each line.',
     [

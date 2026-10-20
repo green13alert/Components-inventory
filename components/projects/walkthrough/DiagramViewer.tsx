@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SolderiPalette } from '@/constants/colors';
@@ -194,15 +194,6 @@ export function DiagramViewer({
     transform: [{ translateX: translateX.value }, { translateY: translateY.value }, { scale: scale.value }],
   }));
 
-  const reset = () => {
-    scale.value = withTiming(1, { duration: 220 });
-    translateX.value = withTiming(0, { duration: 220 });
-    translateY.value = withTiming(0, { duration: 220 });
-    savedScale.value = 1;
-    savedX.value = 0;
-    savedY.value = 0;
-  };
-
   return (
     <Modal
       visible={visible}
@@ -224,10 +215,9 @@ export function DiagramViewer({
             ) : (
               <View style={styles.modes} />
             )}
-            <Pressable accessibilityRole="button" accessibilityLabel="Reset diagram view" onPress={reset} style={styles.headerButton}>
-              <Text style={styles.headerLabel}>Reset</Text>
-            </Pressable>
+            <View style={styles.headerSpacer} />
           </View>
+          <View style={styles.body}>
           <GestureDetector gesture={gesture}>
             <View
               style={styles.viewport}
@@ -251,6 +241,7 @@ export function DiagramViewer({
               </Animated.View>
             </View>
           </GestureDetector>
+          <View style={styles.overlay} pointerEvents="box-none">
           {detail ? <View style={styles.detail}>{detail}</View> : null}
           <View style={styles.sheet}>
             <View style={styles.segmentRow}>
@@ -262,15 +253,27 @@ export function DiagramViewer({
               </View>
             </View>
             {componentsOpen && components ? (
-              <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetContent}>
+              <ScrollView
+                style={styles.sheetList}
+                contentContainerStyle={styles.sheetContent}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+                maintainVisibleContentPosition={{ minIndexForVisible: 0 }}>
                 {components}
               </ScrollView>
             ) : null}
             {connectionsOpen ? (
-              <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetContent}>
+              <ScrollView
+                style={styles.sheetList}
+                contentContainerStyle={styles.sheetContent}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+                maintainVisibleContentPosition={{ minIndexForVisible: 0 }}>
                 {connections}
               </ScrollView>
             ) : null}
+          </View>
+          </View>
           </View>
         </View>
       </GestureHandlerRootView>
@@ -304,6 +307,7 @@ function createStyles(colors: SolderiPalette) {
       paddingHorizontal: 12,
       paddingVertical: 8,
     },
+    headerSpacer: { minWidth: 64 },
     headerButton: {
       minWidth: 64,
       minHeight: 44,
@@ -331,7 +335,9 @@ function createStyles(colors: SolderiPalette) {
     modeButtonOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
     modeLabel: { color: colors.textSecondary, fontSize: 13, fontWeight: '700' },
     modeLabelOn: { color: colors.textPrimary },
+    body: { flex: 1 },
     viewport: { flex: 1, overflow: 'hidden', backgroundColor: colors.surface },
+    overlay: { position: 'absolute', left: 0, right: 0, bottom: 0 },
     detail: {
       borderTopWidth: 1,
       borderTopColor: colors.border,

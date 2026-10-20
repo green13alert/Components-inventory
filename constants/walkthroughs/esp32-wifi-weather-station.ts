@@ -100,7 +100,6 @@ const STAGE_FIRMWARE = 'Firmware';
 const STAGE_FIRST_RUN = 'First run';
 const STAGE_DASHBOARD = 'Dashboard';
 const STAGE_TROUBLESHOOTING = 'Troubleshooting';
-const STAGE_EXTEND = 'Understanding and extending the project';
 const STAGE_CHECK = 'Final check';
 
 export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
@@ -123,78 +122,14 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
         body: 'The finished station measures temperature in degrees Celsius, relative humidity in percent, and barometric pressure in hectopascals. The ESP32 DevKit joins a Wi-Fi network you choose and hosts a small web page. A phone or computer on that same network opens the page and sees the numbers update about every two seconds. Nothing is sent to a cloud service.',
       },
       {
-        type: 'text',
-        heading: 'Words this guide uses',
-        body: 'A GPIO is a header pin the sketch can name. IO21 is GPIO 21. I2C is a two-wire link: SDA, marked SDI on this sensor, carries data, and SCL, marked SCK, carries the clock. An SSID is the Wi-Fi network name. An IP address is the number the router gives the ESP32, such as 192.168.1.42, so the example dashboard URL is http://192.168.1.42. JSON is the text format used by /readings. It is a list of named fields, not a web page.',
-      },
-      {
         type: 'expected',
         heading: 'What done looks like',
-        body: 'The Serial Monitor prints an IP address such as 192.168.1.42, then repeating temperature, humidity, and pressure lines. A browser on the same local network opens http://192.168.1.42, using the address your board actually printed, and shows the same three readings. These are the results the sketch is written to produce. This repository has not confirmed them on a physical board.',
+        body: 'The Serial Monitor prints an IP address such as 192.168.1.42, then repeating temperature, humidity, and pressure lines. A browser on the same local network opens that address and shows the same three readings.',
       },
     ],
   },
   {
     sortOrder: 1,
-    stageSortOrder: 0,
-    stageTitle: STAGE_INTRO,
-    title: 'What you will learn',
-    description: 'This build is about one sensor bus, one Wi-Fi connection, and one local web page.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'Skills in this project',
-        body: 'You will identify the ESP32 pins 3V3, GND, IO21, and IO22, and the Adafruit BME280 pins Vin, GND, SCK, and SDI. You will install the ESP32 board package and the Adafruit BME280 library, upload a complete sketch, and read both the Serial Monitor and a browser. You will also see how a failed sensor or a failed Wi-Fi join is reported instead of being hidden.',
-      },
-      {
-        type: 'text',
-        heading: 'What this project does not teach',
-        body: 'It does not use a BMP280. A BMP280 can report pressure and temperature, but it has no humidity measurement, and this dashboard needs humidity. It also does not use the ESP32-CAM, an ESP8266, or a Raspberry Pi. Those boards do not share this pin map.',
-      },
-    ],
-  },
-  {
-    sortOrder: 2,
-    stageSortOrder: 0,
-    stageTitle: STAGE_INTRO,
-    title: 'How the hardware and software work together',
-    description: 'Four wires carry power and I2C. The sketch turns those readings into a web page.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'The path of a reading',
-        body: 'USB power feeds the ESP32 DevKit. The board’s 3V3 pin feeds the BME280 Vin pin, and the two GND pins share a ground. IO21 is the I2C data line and goes to SDI. IO22 is the I2C clock and goes to SCK. The sketch asks the sensor at address 0x77 for temperature, humidity, and pressure, then stores the latest values. A browser requests the page at / and, every two seconds, the JSON document at /readings.',
-      },
-      {
-        type: 'text',
-        heading: 'Why the address is 0x77',
-        body: 'Adafruit’s BME280 guide says the default I2C address is 0x77 while SDO is left open. Connecting SDO to GND changes the address to 0x76. This project leaves SDO, CS, and 3Vo unconnected, so the sketch calls begin(0x77).',
-      },
-    ],
-  },
-  {
-    sortOrder: 3,
-    stageSortOrder: 0,
-    stageTitle: STAGE_INTRO,
-    title: 'What a successful build should do',
-    description: 'Success is a local page with live units, plus a clear error when the sensor or Wi-Fi is missing.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'Check these behaviours',
-        body: 'After upload, the Serial Monitor at 115200 baud prints either “BME280 ready at 0x77.” or a not-found message. When the ESP32 joins Wi-Fi, Serial prints “Wi-Fi connected. IP address:” and the address. A browser that can open that address shows “Connected at” and the same address, with temperature in C, humidity in %, and pressure in hPa. If the sensor is missing and the page still loads, the page shows the error text and the cards show a dash. If the browser cannot reach the ESP32, the request fails: a page that was already open changes to “Dashboard not updating” and says it could not read /readings. The words “Wi-Fi disconnected” appear only after a successful /readings response whose wifi_connected field is false. A browser that has lost the ESP32 does not receive that update. No internet connection is required when the phone and the ESP32 can still reach each other on the local network.',
-      },
-      {
-        type: 'warning',
-        body: 'This repository has not run the sketch on a physical ESP32. Treat the Serial and browser results below as the behaviour the code is written to produce, and compare them with what your board actually prints.',
-      },
-    ],
-  },
-  {
-    sortOrder: 4,
     stageSortOrder: 1,
     stageTitle: STAGE_HARDWARE,
     title: 'Identify every required component',
@@ -219,7 +154,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 5,
+    sortOrder: 2,
     stageSortOrder: 1,
     stageTitle: STAGE_HARDWARE,
     title: 'Confirm the ESP32 DevKit labels',
@@ -243,7 +178,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 6,
+    sortOrder: 3,
     stageSortOrder: 1,
     stageTitle: STAGE_HARDWARE,
     title: 'Confirm the BME280 pin labels',
@@ -258,7 +193,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'I2C pins and address',
-        body: 'SCK is the I2C clock and connects to IO22. SDI is the I2C data and connects to IO21. Adafruit’s I2C wiring uses those two signal pins plus Vin and GND, and says to leave the other pins disconnected. The default address is 0x77. A jumper from SDO to GND, or soldering the ADDR jumper on the back, changes the address to 0x76, which this sketch does not scan. Adafruit’s I2C page does not add a separate pull-up resistor, so this project does not put one on the BOM. This repository has not measured the resistor value on the PCB.',
+        body: 'SCK is the I2C clock and connects to IO22. SDI is the I2C data and connects to IO21. Adafruit’s I2C wiring uses those two signal pins plus Vin and GND, and says to leave the other pins disconnected. The default address is 0x77. A jumper from SDO to GND, or soldering the ADDR jumper on the back, changes the address to 0x76, which this sketch does not scan. Adafruit’s I2C page does not add a separate pull-up resistor, so this project does not put one on the BOM.',
       },
       {
         type: 'text',
@@ -273,7 +208,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 7,
+    sortOrder: 4,
     stageSortOrder: 1,
     stageTitle: STAGE_HARDWARE,
     title: 'Seat the board and the sensor',
@@ -299,7 +234,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 8,
+    sortOrder: 5,
     stageSortOrder: 2,
     stageTitle: STAGE_WIRING,
     title: 'Connect power and ground',
@@ -329,7 +264,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 9,
+    sortOrder: 6,
     stageSortOrder: 2,
     stageTitle: STAGE_WIRING,
     title: 'Connect SDA and SCL',
@@ -360,7 +295,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 10,
+    sortOrder: 7,
     stageSortOrder: 2,
     stageTitle: STAGE_WIRING,
     title: 'Read the complete wiring table',
@@ -386,7 +321,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 11,
+    sortOrder: 8,
     stageSortOrder: 2,
     stageTitle: STAGE_WIRING,
     title: 'Check the circuit before you apply power',
@@ -411,7 +346,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 12,
+    sortOrder: 9,
     stageSortOrder: 3,
     stageTitle: STAGE_ENVIRONMENT,
     title: 'Install the ESP32 board package',
@@ -436,7 +371,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 13,
+    sortOrder: 10,
     stageSortOrder: 3,
     stageTitle: STAGE_ENVIRONMENT,
     title: 'Select the board and the serial port',
@@ -470,7 +405,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 14,
+    sortOrder: 11,
     stageSortOrder: 3,
     stageTitle: STAGE_ENVIRONMENT,
     title: 'Install the BME280 libraries',
@@ -495,7 +430,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 15,
+    sortOrder: 12,
     stageSortOrder: 3,
     stageTitle: STAGE_ENVIRONMENT,
     title: 'Set the Serial Monitor to 115200 baud',
@@ -515,7 +450,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 16,
+    sortOrder: 13,
     stageSortOrder: 4,
     stageTitle: STAGE_FIRMWARE,
     title: 'Create the sketch and set the Wi-Fi name',
@@ -542,7 +477,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 17,
+    sortOrder: 14,
     stageSortOrder: 4,
     stageTitle: STAGE_FIRMWARE,
     title: 'Start I2C and the BME280',
@@ -568,7 +503,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 18,
+    sortOrder: 15,
     stageSortOrder: 4,
     stageTitle: STAGE_FIRMWARE,
     title: 'Serve the page and the JSON endpoint',
@@ -594,7 +529,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 19,
+    sortOrder: 16,
     stageSortOrder: 4,
     stageTitle: STAGE_FIRMWARE,
     title: 'Paste the complete sketch and upload it',
@@ -621,7 +556,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 20,
+    sortOrder: 17,
     stageSortOrder: 5,
     stageTitle: STAGE_FIRST_RUN,
     title: 'Read the Serial Monitor',
@@ -655,7 +590,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 21,
+    sortOrder: 18,
     stageSortOrder: 5,
     stageTitle: STAGE_FIRST_RUN,
     title: 'Find the ESP32 IP address',
@@ -675,7 +610,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 22,
+    sortOrder: 19,
     stageSortOrder: 5,
     stageTitle: STAGE_FIRST_RUN,
     title: 'Confirm the sensor readings',
@@ -695,7 +630,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 23,
+    sortOrder: 20,
     stageSortOrder: 6,
     stageTitle: STAGE_DASHBOARD,
     title: 'Open the web interface',
@@ -715,27 +650,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 24,
-    stageSortOrder: 6,
-    stageTitle: STAGE_DASHBOARD,
-    title: 'Understand each measurement',
-    description: 'The page uses the same units as the Serial Monitor.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'The three cards',
-        body: 'Temperature is degrees Celsius from readTemperature(). Humidity is relative humidity in percent from readHumidity(). Pressure is hectopascals, which is the library’s pascal reading divided by 100. The status line is the Wi-Fi state, not a weather forecast. There is no outdoor temperature, rainfall, or wind in this project.',
-      },
-      {
-        type: 'text',
-        heading: 'Automatic updates',
-        body: 'The page calls /readings every 2000 ms, which is the same SENSOR_INTERVAL_MS the sketch uses to take a new sample. You should see the numbers change, or the error box appear, without pressing reload. You can also open http://192.168.1.42/readings, with your own address, to see the JSON document. The status line says “Connected at” and the IP when that JSON has wifi_connected set to true.',
-      },
-    ],
-  },
-  {
-    sortOrder: 25,
+    sortOrder: 21,
     stageSortOrder: 6,
     stageTitle: STAGE_DASHBOARD,
     title: 'Use the page on a phone and a computer',
@@ -755,7 +670,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 26,
+    sortOrder: 22,
     stageSortOrder: 7,
     stageTitle: STAGE_TROUBLESHOOTING,
     title: 'The ESP32 is not detected or the upload fails',
@@ -783,7 +698,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 27,
+    sortOrder: 23,
     stageSortOrder: 7,
     stageTitle: STAGE_TROUBLESHOOTING,
     title: 'The sensor, Wi-Fi, or dashboard fails',
@@ -819,72 +734,12 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     ],
   },
   {
-    sortOrder: 28,
-    stageSortOrder: 8,
-    stageTitle: STAGE_EXTEND,
-    title: 'How this I2C link works',
-    description: 'Two wires and one address are enough because the ESP32 is the only master.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'Clock and data',
-        body: 'I2C uses SCL for the clock and SDA for the data. On this board those pins are IO22 and IO21, which the cable marks yellow and blue. The ESP32 generates the clock and talks to the address in bme.begin. The BME280 does not send readings until that address is used. Arduino-ESP32 notes that SDA and SCL need pull-ups. Adafruit’s I2C wiring for this breakout does not add a separate resistor, and this project does not add one either. The resistor value on the PCB was not measured here.',
-      },
-      {
-        type: 'text',
-        heading: 'Why BMP280 is a different part',
-        body: 'The BME280 measures humidity as well as pressure and temperature. A BMP280 does not provide that humidity reading, so it cannot fill this dashboard even if it shares a similar package. Solderi keeps the two parts as different catalogue rows, and this project does not approve the BMP280 as a substitute.',
-      },
-    ],
-  },
-  {
-    sortOrder: 29,
-    stageSortOrder: 8,
-    stageTitle: STAGE_EXTEND,
-    title: 'How the ESP32 hosts the page',
-    description: 'The board is a small web server on your LAN. Your browser is the client.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'Address and routes',
-        body: 'After WiFi.begin succeeds, the router gives the ESP32 an address. server.begin() listens on port 80. A browser request for / receives the HTML. The script inside that HTML requests /readings. handleReadings sends the latest sample as JSON. The sketch updates that sample on SENSOR_INTERVAL_MS without waiting inside a blocking Wi-Fi loop.',
-      },
-      {
-        type: 'text',
-        heading: 'What is deliberately absent',
-        body: 'There is no API key, no account, and no external weather service. If your internet connection drops but the ESP32 and the browser can still reach each other through the local router, the page can still load. If the ESP32 drops off Wi-Fi, connectWifi() tries again every five seconds and Serial prints “Connecting to Wi-Fi...”. The open browser then fails its next /readings request and shows “Dashboard not updating”. It does not receive a fresh status line from a board it can no longer reach.',
-      },
-    ],
-  },
-  {
-    sortOrder: 30,
-    stageSortOrder: 8,
-    stageTitle: STAGE_EXTEND,
-    title: 'Ideas that are not part of this build',
-    description: 'These extensions need their own wiring or code review. They are not already supported.',
-    tip: null,
-    blocks: [
-      {
-        type: 'text',
-        heading: 'Possible later work',
-        body: 'A second sensor, an outdoor enclosure, a display, or a cloud upload would change the BOM, the power budget, or the firmware. Switching SDO to ground, or closing the ADDR jumper, would require changing BME280_I2C_ADDRESS to 0x76 and saying so in the wiring steps. None of that is included here. The working station is the DevKitC V4, the STEMMA QT BME280, the six electrical connections, the sketch you uploaded, and the local dashboard.',
-      },
-      {
-        type: 'expected',
-        heading: 'What you have now',
-        body: 'An ESP32-DevKitC V4 reads an Adafruit BME280 at 0x77 on IO21 and IO22, joins your Wi-Fi, and shows temperature, humidity, and pressure in a browser that can reach that board.',
-      },
-    ],
-  },
-  {
-    sortOrder: 31,
+    sortOrder: 24,
     stageSortOrder: 9,
     stageTitle: STAGE_CHECK,
     title: 'Check the finished station',
     description: 'Use this list before you treat the build as finished. It matches the learning objectives.',
-    tip: 'A ticked box means you saw that result. It does not mean this repository tested your board.',
+    tip: 'A ticked box means you saw that result on your own board.',
     blocks: [
       {
         type: 'test',
@@ -904,7 +759,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'What this check does not prove',
-        body: 'This repository has not run the sketch on a physical ESP32, and the workbench photograph is still not in the app. Compare your Serial Monitor and browser with the lines above. If they differ, use the troubleshooting steps rather than treating the page as already verified.',
+        body: 'Compare your Serial Monitor and browser with the lines above. If they differ, use the troubleshooting steps.',
       },
     ],
   },

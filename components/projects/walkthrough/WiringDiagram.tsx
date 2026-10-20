@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { ComponentKey, SelectedPartCard } from '@/components/projects/walkthrough/ComponentKey';
 import { ConnectionReference } from '@/components/projects/walkthrough/ConnectionReference';
 import { DiagramViewer } from '@/components/projects/walkthrough/DiagramViewer';
+import { useWalkthroughMarker } from '@/components/projects/walkthrough/WalkthroughScroll';
 import { PhysicalBoard, PhysicalBreadboard } from '@/components/projects/walkthrough/PhysicalBreadboard';
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { HW } from '@/constants/component-illustration-palette';
@@ -92,6 +93,15 @@ export function WiringDiagram({
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<KeySelection | null>(null);
   const [keyOpen, setKeyOpen] = useState(false);
+  const reportMarker = useWalkthroughMarker();
+  const markerRef = useRef<View>(null);
+  const publishMarker = () => {
+    markerRef.current?.measureInWindow((_x, y) => {
+      if (Number.isFinite(y)) {
+        reportMarker?.(y);
+      }
+    });
+  };
   const [connectionsOpen, setConnectionsOpen] = useState(false);
   useEffect(() => {
     setSelection(null);
@@ -211,7 +221,9 @@ export function WiringDiagram({
           </Pressable>
         ) : null}
       </View>
-      {showPhysical && keyOpen ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : null}
+      <View ref={markerRef} collapsable={false} onLayout={publishMarker}>
+        {showPhysical && keyOpen ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : null}
+      </View>
       {layout && connectionsOpen ? <ConnectionReference entries={entries} /> : null}
       {layout ? (
         <DiagramViewer
@@ -927,7 +939,7 @@ function createStyles(colors: SolderiPalette) {
       paddingHorizontal: 12,
       paddingVertical: 8,
     },
-    enlargeLabel: { color: colors.accent, fontSize: 14, fontWeight: '700' },
+    enlargeLabel: { color: colors.textSecondary, fontSize: 14, fontWeight: '700' },
     legend: {
       flexDirection: 'row',
       flexWrap: 'wrap',
