@@ -1,8 +1,8 @@
-import type { WiringLayout } from '../constants/wiring-diagrams/types.ts'
+import type { PhysicalEndpoint, WiringLayout } from '../constants/wiring-diagrams/types.ts'
 import type { AuthoredWalkthroughStep, StepConnection } from '../constants/walkthrough-content.ts'
 import { validateAssemblySequence } from './assembly-progress.ts'
 import { componentKeyProblems } from './component-key.ts'
-import { validatePhysicalLayout } from './breadboard-layout.ts'
+import { jumperInventory, validatePhysicalLayout } from './breadboard-layout.ts'
 import { resolvePort } from './wiring-diagram.ts'
 
 export type AuthoringGate =
@@ -65,6 +65,57 @@ function bodyOf(block: AuthoredWalkthroughStep['blocks'][number]): string | null
     return block.code
   }
   return block.body
+}
+
+function isModuleEnd(end: PhysicalEndpoint): end is { kind: 'module'; elementId: string; portId: string } {
+  return 'kind' in end && end.kind === 'module'
+}
+
+/** Servo motor current has to leave the breadboard and land on a named screw-terminal jack. */
+function externalServoSupplyProblems(input: AuthoredProjectInput): string[] {
+  if (!input.bom.some((item) => item.slug === 'gst18a05-p1j')) {
+    return []
+  }
+  const layout = input.layout
+  const physical = layout?.physical
+  if (!layout || !physical) {
+    return ['An external servo supply is on the BOM and the physical layout is missing.']
+  }
+  const jack = layout.elements.find((element) => element.kind === 'dc-jack')
+  const catalogueId = jack?.identity?.catalogueId
+  if (!jack || !catalogueId || !input.bom.some((item) => item.slug === catalogueId)) {
+    return ['The external 5 V supply needs a screw-terminal jack on the diagram and on the BOM.']
+  }
+  const problems: string[] = []
+  if (layout.elements.some((element) => element.kind === 'breadboard-psu')) {
+    problems.push('The diagram still draws a breadboard power supply.')
+  }
+  let groundTied = false
+  for (const jumper of physical.jumpers) {
+    const ends = [jumper.from, jumper.to]
+    const onJack = (portId: string) => ends.some((end) => isModuleEnd(end) && end.elementId === jack.id && end.portId === portId)
+    const plusRail = ends.some((end) => !isModuleEnd(end) && end.kind === 'rail' && end.polarity === 'plus')
+    const anyRail = ends.some((end) => !isModuleEnd(end) && end.kind === 'rail')
+    const servoPower = ends.some(
+      (end) => isModuleEnd(end) && (end.portId === 'vcc' || end.portId === 'gnd') && layout.elements.some((element) => element.id === end.elementId && element.kind === 'servo'),
+    )
+    if (onJack('5v') && plusRail) {
+      problems.push('The adapter positive screw is tied to a breadboard positive rail.')
+    }
+    if (servoPower && plusRail) {
+      problems.push(`${jumper.id} carries servo power onto a breadboard positive rail.`)
+    }
+    if (onJack('gnd') && anyRail) {
+      groundTied = true
+    }
+    if (servoPower && !ends.some((end) => isModuleEnd(end) && end.elementId === jack.id)) {
+      problems.push(`${jumper.id} does not land on the screw-terminal jack.`)
+    }
+  }
+  if (!groundTied) {
+    problems.push('The adapter ground screw is not tied to the controller ground.')
+  }
+  return problems
 }
 
 export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFinding[] {
@@ -200,6 +251,20 @@ export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFin
       for (const problem of validatePhysicalLayout(input.layout, input.connections)) {
         error('electrical', problem)
       }
+      for (const problem of externalServoSupplyProblems(input)) {
+        error('electrical', problem)
+      }
+      if (input.layout.physical) {
+        const inventory = jumperInventory(input.layout.physical)
+        const maleMale = input.bom.find((item) => item.slug === 'jumper-wires')?.quantity ?? 0
+        const maleFemale = input.bom.find((item) => item.slug === 'jumper-male-female')?.quantity ?? 0
+        if (maleMale !== inventory.maleMale) {
+          error('hardware', `Male-to-male jumper quantity is ${maleMale} and the layout draws ${inventory.maleMale}.`)
+        }
+        if (maleFemale !== inventory.maleFemale) {
+          error('hardware', `Male-to-female jumper quantity is ${maleFemale} and the layout draws ${inventory.maleFemale}.`)
+        }
+      }
       if (input.layout.physical) {
         for (const problem of validateAssemblySequence(input.layout, input.steps)) {
           error('instructions', problem)
@@ -218,14 +283,57 @@ export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFin
     }
   }
   if (input.codeStyle === 'growing-sketches') {
-    const hasCode = input.steps.some((step) => step.blocks.some((block) => block.type === 'code'))
-    if (hasCode) {
-      review('code', 'Sketch steps are separate programs. This check does not compare them to one firmware file.')
+    if (!input.firmware) {
+      error('code', 'A growing-sketch project needs one authoritative final sketch.')
+    } else {
+      const codeBlocks = input.steps.flatMap((step) => step.blocks).filter((block) => block.type === 'code')
+      const matches = codeBlocks.filter((block) => block.type === 'code' && block.code === input.firmware)
+      if (matches.length !== 1) {
+        error('code', 'The authoritative final sketch must appear once, unchanged, in the walkthrough.')
+      }
+      const finalIndex = codeBlocks.findIndex((block) => block.type === 'code' && block.code === input.firmware)
+      codeBlocks.forEach((block, index) => {
+        if (block.type !== 'code' || index <= finalIndex) {
+          return
+        }
+        if (!input.firmware?.includes(block.code)) {
+          error('code', 'A code block after the final sketch is not taken from that sketch.')
+        }
+      })
+      const pins = [...input.firmware.matchAll(/^const int (\w+) = (\d+);/gm)]
+      for (const block of codeBlocks) {
+        if (block.type !== 'code' || block.code === input.firmware) {
+          continue
+        }
+        for (const pin of pins) {
+          const found = block.code.match(new RegExp(`const int ${pin[1]} = (\\d+);`))
+          if (found && found[1] !== pin[2]) {
+            error('code', `${pin[1]} is ${found[1]} in an earlier sketch and ${pin[2]} in the final sketch.`)
+          }
+        }
+      }
     }
   }
 
-  if (input.requirements.length === 0) {
-    review('compatibility', 'No local compatibility requirements were supplied, so this run did not check substitution reviews.')
+  if (input.firmware && /map\s*\(/.test(input.firmware) && /DEADZONE/.test(input.firmware)) {
+    error('behaviour', 'A deadzone around an absolute map() jumps the servo when the stick leaves the deadzone. Use a relative rate, or remove the hold-last-angle deadzone.')
+  }
+  if (JSON.stringify(input.steps).includes('slide the plastic housing')) {
+    review('electrical', 'A Dupont pin clamped under a screw is not a verified servo-power connection.')
+  }
+
+  if (input.layout) {
+    for (const element of input.layout.elements) {
+      for (const catalogueId of [element.identity?.catalogueId, element.accessory?.catalogueId]) {
+        if (catalogueId && !bomSlugs.has(catalogueId)) {
+          error('hardware', `Diagram part ${element.label} uses ${catalogueId}, which is not on the BOM.`)
+        }
+      }
+    }
+  }
+
+  if (input.bom.length > 0 && input.requirements.length !== input.bom.length) {
+    error('compatibility', 'Every BOM line needs one compatibility requirement.')
   }
   for (const requirement of input.requirements) {
     if (requirement.policy === 'exact' && requirement.approvedReviewIds.length > 0) {

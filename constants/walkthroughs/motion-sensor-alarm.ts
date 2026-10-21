@@ -14,18 +14,20 @@ const STAGE_TEST = 'Test the Alarm';
 const COMPONENTS: ProjectComponent[] = [
   { id: 'arduino-uno-r3', name: 'Arduino Uno R3', illustrationId: 'arduino-uno', owned: false, quantity: 1 },
   { id: 'pir-sensor', name: 'PIR motion sensor', illustrationId: 'pir-sensor', owned: false, quantity: 1 },
-  { id: 'buzzer', name: 'Buzzer', illustrationId: 'generic-module', owned: false, quantity: 1 },
+  { id: 'buzzer', name: 'Active buzzer module', illustrationId: 'buzzer', owned: false, quantity: 1 },
   { id: 'led', name: 'LED', illustrationId: 'led', owned: false, quantity: 1 },
   { id: 'resistor-220', name: '220 Ω resistor', illustrationId: 'resistor', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
   { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 10 },
+  { id: 'usb-data-cable', name: 'USB data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
+  { id: 'usb-power-source', name: 'USB power source', illustrationId: 'generic-module', owned: false, quantity: 1 },
 ];
 
 const NODE_ARDUINO: WiringNode = { id: 'arduino', name: 'Arduino Uno', illustrationId: 'arduino-uno' };
 const NODE_PIR: WiringNode = { id: 'pir', name: 'PIR', illustrationId: 'pir-sensor' };
 const NODE_LED: WiringNode = { id: 'led', name: 'LED', illustrationId: 'led' };
 const NODE_RESISTOR: WiringNode = { id: 'resistor', name: '220 Ω resistor', illustrationId: 'resistor' };
-const NODE_BUZZER: WiringNode = { id: 'buzzer', name: 'Buzzer', illustrationId: 'generic-module' };
+const NODE_BUZZER: WiringNode = { id: 'buzzer', name: 'Buzzer', illustrationId: 'buzzer' };
 
 const PIR_CONNECTIONS: StepConnection[] = [
   { fromComponent: 'Arduino Uno', fromPin: '5V', toComponent: 'PIR', toPin: 'VCC', signal: 'power' },
@@ -195,6 +197,8 @@ void loop() {
   delay(50);
 }`;
 
+export const MOTION_SENSOR_ALARM_FIRMWARE = SKETCH_COMBINED;
+
 export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
   {
     sortOrder: 0,
@@ -232,7 +236,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What to set up',
-        body: 'Place the Uno beside the breadboard. Use male-to-male jumpers: Uno 5V into the left + rail at row 1, and Uno GND into the left − rail at row 1. The + rail is 5 V and the − rail is ground. They are not connected to each other. Stay on rows 1–15, above a break in the coloured rail. This build uses 10 male-to-male jumpers from the pack. Leave D2, D8, and D9 empty for now.',
+        body: 'Place the Uno beside the breadboard. Use the USB-B data cable from the parts list when you upload; the computer USB port is the power source for this build. Use male-to-male jumpers: Uno 5V into the left + rail at row 1, and Uno GND into the left − rail at row 1. The + rail is 5 V and the − rail is ground. They are not connected to each other. Stay on rows 1–15, above a break in the coloured rail. This build uses 10 male-to-male jumpers from the pack. Leave D2, D8, and D9 empty for now.',
       },
       {
         type: 'wiring',
@@ -322,8 +326,8 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
     blocks: [
       {
         type: 'text',
-        heading: 'Active vs two-pin buzzers',
-        body: 'Plug the three-pin module into c9, c10, and c11: VCC, I/O, then GND. a9 goes to the left + rail at row 9, D9 goes to a10, and a11 goes to the left − rail at row 11. If your buzzer has only two leads, put the + lead in the D9 row and the other lead in the GND row, and skip the extra 5V wire.',
+        heading: 'Three-pin active module',
+        body: 'Use the three-pin active module from the parts list. Plug it into c9, c10, and c11: VCC, I/O, then GND. a9 goes to the left + rail at row 9, D9 goes to a10, and a11 goes to the left − rail at row 11. The GPIO drives I/O only. The module takes sounder current from the 5 V rail. A two-pin piezo is not this part, and this sketch will not sound one.',
       },
       {
         type: 'wiring',
@@ -518,7 +522,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'code_explanation',
-        body: 'LED and buzzer now share one condition. If the LED works and the buzzer does not, the sketch logic is fine — check D9, GND, and whether the part is actually an active buzzer.',
+        body: 'LED and buzzer now share one condition. This sketch still prints on every sample, including “No motion”, so you can see the pin change. It is not the sketch you upload. The next step holds the alarm and changes the ready line to “Alarm armed.” If the LED works and the buzzer does not, check D9, the module GND, and that the part is the three-pin active module.',
       },
     ],
   },
@@ -533,7 +537,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What we are adding',
-        body: 'The PIR pulse can be brief. delay(800) inside the HIGH branch keeps the LED and buzzer on long enough to notice. Serial prints “Alarm armed.” after warm-up so you know testing can start. delay(50) at the end of loop() is a small idle pause, not a second alarm hold.',
+        body: 'The PIR pulse can be brief. delay(800) inside the HIGH branch keeps the LED and buzzer on long enough to notice. Serial prints “Alarm armed.” after warm-up so you know testing can start. delay(50) at the end of loop() is a small idle pause, not a second alarm hold. While the PIR output stays HIGH, the outputs stay on and “Motion detected” prints about once a second. It does not print “No motion” on every idle pass.',
       },
       {
         type: 'code',
@@ -680,7 +684,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
           },
           {
             problem: 'Buzzer silent',
-            solution: 'Active buzzers need DC HIGH on the signal pin. Confirm D9 and GND. A two-pin buzzer goes D9 and GND only. A passive piezo will not sound with this sketch.',
+            solution: 'This build uses the three-pin active module. Confirm VCC on the 5 V rail, I/O on D9, and GND on the ground rail. A passive piezo will not sound with digitalWrite.',
           },
           {
             problem: 'PIR always HIGH',

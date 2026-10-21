@@ -30,7 +30,7 @@ export const SUPPORTING_NOTES: Record<'8' | '18' | '23' | '24', SupportingNote[]
     },
     {
       sourceTitle: 'Understand the Components',
-      body: 'The Uno is the controller. Two SG90s are the joints. The pan-tilt bracket kit is the mechanical frame and camera plate. The analog joystick is the input. The breadboard PSU supplies 5 V for the servos. A camera is optional payload, and this sketch never talks to a camera module. Use position servos that hold an angle. A continuous-rotation servo will not stop at the angle this sketch writes.',
+      body: 'The Uno is the controller. Two SG90s are the joints. The pan-tilt bracket kit is the mechanical frame and camera plate. The analog joystick is the input. Servo power comes from the GST18A05-P1J through an Adafruit 368 screw-terminal jack, not from a breadboard regulator and not through the breadboard positive rail. A camera is optional payload, and this sketch never talks to a camera module. Use position servos that hold an angle. A continuous-rotation servo will not stop at the angle this sketch writes.',
     },
   ],
   '23': [

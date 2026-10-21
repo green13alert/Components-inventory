@@ -97,6 +97,9 @@ function wireKind(layout: WiringLayout | null, row: StepConnection): string | nu
   if (!jumper) {
     return null
   }
+  if (jumper.gender === 'stemma-female') {
+    return 'STEMMA QT female'
+  }
   return jumper.gender === 'male-female' ? 'Male-to-female' : 'Male-to-male'
 }
 

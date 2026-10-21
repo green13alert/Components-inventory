@@ -10,11 +10,11 @@ import {
 export const ESP32_BLE_RGB_PROJECT = {
   slug: '24',
   title: 'ESP32 Bluetooth RGB LED Controller',
-  description: 'Mix a red, green, and blue LED from a phone over Bluetooth Low Energy.',
+  description: 'Intermediate build. Mix a red, green, and blue LED from a phone over Bluetooth Low Energy, using transistor switches and PWM.',
   overview:
     'Build a breadboard RGB light that a phone sets over Bluetooth Low Energy. The LED takes current from the DevKit 5 V pin. Three PN2222A transistors switch the colours, and PWM sets the mix.',
   category: 'iot' as const,
-  difficulty: 'beginner' as const,
+  difficulty: 'intermediate' as const,
   durationLabel: '3 hrs',
   imageKey: 'esp32BleRgb',
   isPublished: false,
@@ -28,9 +28,9 @@ export const ESP32_BLE_RGB_PROJECT = {
 };
 
 export const ESP32_BLE_RGB_BOM = [
-  { slug: 'esp32', name: 'ESP32 DevKit', quantity: 1, role: 'microcontroller', illustrationId: 'esp32' as const },
-  { slug: 'rgb-led-ca', name: 'Common-anode RGB LED', quantity: 1, role: 'rgb_led', illustrationId: 'led' as const },
-  { slug: 'pn2222a', name: 'PN2222A transistor', quantity: 3, role: 'low_side_switch', illustrationId: 'generic-module' as const },
+  { slug: 'esp32-devkitc-v4', name: 'ESP32-DevKitC V4', quantity: 1, role: 'microcontroller', illustrationId: 'esp32' as const },
+  { slug: 'rgb-led-ca', name: 'Common-anode RGB LED', quantity: 1, role: 'rgb_led', illustrationId: 'rgb-led' as const },
+  { slug: 'pn2222a', name: 'PN2222A transistor', quantity: 3, role: 'low_side_switch', illustrationId: 'transistor' as const },
   { slug: 'resistor-220', name: '220 Ω resistor', quantity: 3, role: 'led_limiter', illustrationId: 'resistor-band-220' as const },
   { slug: 'resistor-1k', name: '1 kΩ resistor', quantity: 3, role: 'base_resistor', illustrationId: 'resistor-band-1k' as const },
   { slug: 'breadboard', name: 'Breadboard', quantity: 1, role: 'breadboard', illustrationId: 'breadboard' as const },
@@ -48,16 +48,16 @@ export const ESP32_BLE_RGB_CAPABILITIES = {
   pn2222a: [
     ['function', 'npn_transistor'],
     ['physical_form', 'to-92'],
+    ['physical_form', 'ebc'],
   ],
 } as const;
 
 export const ESP32_BLE_RGB_CONSTRAINTS = {
-  esp32: [
+  'esp32-devkitc-v4': [
     ['function', 'development_board'],
     ['logic_level_v', '3.3'],
-    ['supply_v', '3.3'],
-    ['programming_environment', 'arduino_ide'],
     ['board_package', 'esp32'],
+    ['physical_form', 'male_header'],
   ],
   'rgb-led-ca': [
     ['function', 'rgb_led'],
@@ -66,6 +66,7 @@ export const ESP32_BLE_RGB_CONSTRAINTS = {
   pn2222a: [
     ['function', 'npn_transistor'],
     ['physical_form', 'to-92'],
+    ['physical_form', 'ebc'],
   ],
 } as const;
 
@@ -261,7 +262,7 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Why each resistor is there',
-        body: 'The 220 Ω resistor sits between the transistor and one LED cathode. It limits the LED current. The 1 kΩ resistor sits between a GPIO pin and the transistor base. It limits the current the ESP32 pin has to supply. Without the 220 Ω resistor the LED can draw more current than it is rated for. Without the 1 kΩ resistor the GPIO pin can be asked for far too much base current.',
+        body: 'The 220 Ω resistor sits between the transistor and one LED cathode. It limits the LED current. The 1 kΩ resistor sits between a GPIO pin and the transistor base. It limits the current the ESP32 pin has to supply. Without the 220 Ω resistor the LED can draw more current than it is rated for. Without the 1 kΩ resistor the GPIO pin can be asked for far too much base current. On USB power, green and blue look dimmer than red because those chips have a higher forward voltage.',
       },
       {
         type: 'tip',

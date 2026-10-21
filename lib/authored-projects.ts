@@ -8,11 +8,13 @@ import { SERVO_PAN_TILT_CAMERA_LAYOUT } from '../constants/wiring-diagrams/layou
 import {
   MOTION_SENSOR_ALARM_COMPONENTS,
   MOTION_SENSOR_ALARM_CONNECTIONS,
+  MOTION_SENSOR_ALARM_FIRMWARE,
   MOTION_SENSOR_ALARM_STEPS,
 } from '../constants/walkthroughs/motion-sensor-alarm.ts'
 import {
   SERVO_PAN_TILT_CAMERA_COMPONENTS,
   SERVO_PAN_TILT_CAMERA_CONNECTIONS,
+  SERVO_PAN_TILT_CAMERA_FIRMWARE,
   SERVO_PAN_TILT_CAMERA_STEPS,
 } from '../constants/walkthroughs/servo-pan-tilt-camera.ts'
 import {
@@ -52,10 +54,13 @@ export function localAuthoredProjects(): AuthoredProjectInput[] {
       steps: MOTION_SENSOR_ALARM_STEPS,
       connections: MOTION_SENSOR_ALARM_CONNECTIONS,
       layout: motionLayout,
-      firmware: null,
-      requirements: [],
+      firmware: MOTION_SENSOR_ALARM_FIRMWARE,
+      requirements: MOTION_SENSOR_ALARM_COMPONENTS.map(() => ({
+        policy: 'exact' as const,
+        approvedReviewIds: [],
+      })),
       codeStyle: 'growing-sketches',
-      compilation: 'not_run',
+      compilation: 'passed',
       hardwareTested: false,
     },
     {
@@ -69,10 +74,13 @@ export function localAuthoredProjects(): AuthoredProjectInput[] {
       steps: SERVO_PAN_TILT_CAMERA_STEPS,
       connections: SERVO_PAN_TILT_CAMERA_CONNECTIONS,
       layout: servoLayout,
-      firmware: null,
-      requirements: [],
+      firmware: SERVO_PAN_TILT_CAMERA_FIRMWARE,
+      requirements: SERVO_PAN_TILT_CAMERA_COMPONENTS.map(() => ({
+        policy: 'exact' as const,
+        approvedReviewIds: [],
+      })),
       codeStyle: 'growing-sketches',
-      compilation: 'not_run',
+      compilation: 'passed',
       hardwareTested: false,
     },
     {
@@ -92,7 +100,7 @@ export function localAuthoredProjects(): AuthoredProjectInput[] {
         approvedReviewIds: [],
       })),
       codeStyle: 'single-program',
-      compilation: 'not_run',
+      compilation: 'passed',
       hardwareTested: false,
     },
     {

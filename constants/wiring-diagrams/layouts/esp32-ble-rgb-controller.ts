@@ -85,7 +85,7 @@ export const ESP32_BLE_RGB_LAYOUT: WiringLayout = {
       label: 'ESP32 DevKit',
       aliases: ['esp32', 'esp32 devkit'],
       identity: {
-        catalogueId: 'esp32',
+        catalogueId: 'esp32-devkitc-v4',
         role: 'Receives the colour from the phone and drives the three transistors.',
       },
       x: 8,

@@ -50,11 +50,9 @@ test('the BOM lists every required physical part once', () => {
   assert.deepEqual(
     ESP32_WIFI_WEATHER_BOM.map((item) => [item.slug, item.quantity]),
     [
-      ['esp32', 1],
+      ['esp32-devkitc-v4', 1],
       ['bme280', 1],
-      ['stemma-qt-cable', 1],
-      ['breadboard', 1],
-      ['jumper-male-female', 4],
+      ['stemma-qt-female', 1],
       ['usb-data-cable', 1],
       ['usb-power-source', 1],
     ],
@@ -72,25 +70,13 @@ test('the wiring diagram, table, and firmware use the same pins', () => {
   assert.equal(ESP32_WIFI_WEATHER_LAYOUT.wireLabels?.powerLogic, '3V3')
   assert.equal(ESP32_WIFI_WEATHER_LAYOUT.wireLabels?.i2cData, 'SDI')
   assert.equal(ESP32_WIFI_WEATHER_LAYOUT.wireLabels?.i2cClock, 'SCK')
-  const breadboard = ESP32_WIFI_WEATHER_LAYOUT.elements.find((element) => element.id === 'breadboard')
   const sensor = ESP32_WIFI_WEATHER_LAYOUT.elements.find((element) => element.id === 'bme280')
-  assert.equal(breadboard?.powerRailLabel, '+ 3V3')
+  assert.equal(ESP32_WIFI_WEATHER_LAYOUT.elements.some((element) => element.id === 'breadboard'), false)
   assert.equal(sensor?.cableLabel, 'STEMMA QT')
-  assert.equal(breadboard != null && sensor != null, true)
-  if (breadboard && sensor) {
-    const sensorRightOfBoard = sensor.x >= breadboard.x + breadboard.width
-    assert.equal(sensorRightOfBoard, true)
+  assert.equal(sensor != null, true)
+  if (sensor) {
     for (const port of sensor.ports) {
-      const pinX = sensor.x + port.dx
-      const pinY = sensor.y + port.dy
-      const inBreadboard =
-        pinX > breadboard.x &&
-        pinX < breadboard.x + breadboard.width &&
-        pinY > breadboard.y &&
-        pinY < breadboard.y + breadboard.height
-      assert.equal(inBreadboard, true, port.id)
-      const onSensorBody = pinX >= sensor.x && pinX <= sensor.x + sensor.width && pinY >= sensor.y && pinY <= sensor.y + sensor.height
-      assert.equal(onSensorBody, false, port.id)
+      assert.equal(sensor.x + port.dx, sensor.x, port.id)
     }
   }
   const wires = routeWiringDiagram(ESP32_WIFI_WEATHER_LAYOUT, ESP32_WIFI_WEATHER_CONNECTIONS, [])
@@ -98,10 +84,8 @@ test('the wiring diagram, table, and firmware use the same pins', () => {
   const kindByPins = Object.fromEntries(
     wires.map((wire) => [`${wire.connection.fromPin}->${wire.connection.toPin}`, wire.kind]),
   )
-  assert.equal(kindByPins['3V3->+ rail'], 'powerLogic')
-  assert.equal(kindByPins['GND->GND rail'], 'ground')
-  assert.equal(kindByPins['+ rail->Vin'], 'powerLogic')
-  assert.equal(kindByPins['GND rail->GND'], 'ground')
+  assert.equal(kindByPins['3V3->Vin'], 'powerLogic')
+  assert.equal(kindByPins['GND->GND'], 'ground')
   assert.equal(kindByPins['IO21->SDI'], 'i2cData')
   assert.equal(kindByPins['IO22->SCK'], 'i2cClock')
   assert.equal(JSON.stringify(ESP32_WIFI_WEATHER_STEPS).includes('watch the status change to Wi-Fi disconnected'), false)
@@ -155,14 +139,14 @@ test('BMP280 and other ESP32 boards are not approved substitutes', () => {
     role: 'microcontroller',
     policy: 'exact' as const,
     quantity: 1,
-    constraints: ESP32_WIFI_WEATHER_CONSTRAINTS.esp32.map(([capability, value]) => ({ capability, value })),
+    constraints: ESP32_WIFI_WEATHER_CONSTRAINTS['esp32-devkitc-v4'].map(([capability, value]) => ({ capability, value })),
     pinRoles: [],
   }
   const cam = evaluateComponentCompatibility({
     requirement: boardRequirement,
     canonical: {
       componentId: 'esp32-id',
-      capabilities: ESP32_WIFI_WEATHER_CONSTRAINTS.esp32.map(([capability, value]) => ({ capability, value })),
+      capabilities: ESP32_WIFI_WEATHER_CAPABILITIES['esp32-devkitc-v4'].map(([capability, value]) => ({ capability, value })),
       pins: [],
     },
     candidate: { componentId: 'esp32-cam-id', capabilities: [{ capability: 'function', value: 'development_board' }], pins: [], quantity: 1 },

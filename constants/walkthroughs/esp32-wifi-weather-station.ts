@@ -28,16 +28,21 @@ export const ESP32_WIFI_WEATHER_PROJECT = {
 };
 
 export const ESP32_WIFI_WEATHER_BOM = [
-  { slug: 'esp32', name: 'ESP32 DevKit', quantity: 1, role: 'microcontroller', illustrationId: 'esp32' as const },
+  { slug: 'esp32-devkitc-v4', name: 'ESP32-DevKitC V4', quantity: 1, role: 'microcontroller', illustrationId: 'esp32' as const },
   { slug: 'bme280', name: 'Adafruit BME280', quantity: 1, role: 'environment_sensor', illustrationId: 'bme280' as const },
-  { slug: 'stemma-qt-cable', name: 'STEMMA QT to male cable', quantity: 1, role: 'sensor_cable', illustrationId: 'jumper-wires' as const },
-  { slug: 'breadboard', name: 'Breadboard', quantity: 1, role: 'breadboard', illustrationId: 'breadboard' as const },
-  { slug: 'jumper-male-female', name: 'Male-to-female jumper wires', quantity: 4, role: 'jumper_wires', illustrationId: 'jumper-wires' as const },
+  { slug: 'stemma-qt-female', name: 'STEMMA QT to female cable', quantity: 1, role: 'sensor_cable', illustrationId: 'stemma-qt' as const },
   { slug: 'usb-data-cable', name: 'USB data cable', quantity: 1, role: 'usb_cable', illustrationId: 'usb-cable' as const },
   { slug: 'usb-power-source', name: 'USB power source', quantity: 1, role: 'usb_power', illustrationId: 'generic-module' as const },
 ] as const;
 
 export const ESP32_WIFI_WEATHER_CAPABILITIES = {
+  'esp32-devkitc-v4': [
+    ['function', 'development_board'],
+    ['logic_level_v', '3.3'],
+    ['programming_environment', 'arduino_ide'],
+    ['board_package', 'esp32'],
+    ['physical_form', 'male_header'],
+  ],
   bme280: [
     ['function', 'bme280'],
     ['interface', 'i2c'],
@@ -46,12 +51,11 @@ export const ESP32_WIFI_WEATHER_CAPABILITIES = {
 } as const;
 
 export const ESP32_WIFI_WEATHER_CONSTRAINTS = {
-  esp32: [
+  'esp32-devkitc-v4': [
     ['function', 'development_board'],
     ['logic_level_v', '3.3'],
-    ['supply_v', '3.3'],
-    ['programming_environment', 'arduino_ide'],
     ['board_package', 'esp32'],
+    ['physical_form', 'male_header'],
   ],
   bme280: [
     ['function', 'bme280'],
@@ -68,16 +72,14 @@ const COMPONENTS: ProjectComponent[] = ESP32_WIFI_WEATHER_BOM.map((item) => ({
 }));
 
 export const ESP32_WIFI_WEATHER_CONNECTIONS: StepConnection[] = [
-  { fromComponent: 'ESP32 DevKit', fromPin: '3V3', toComponent: 'Breadboard', toPin: '+ rail', signal: 'power' },
-  { fromComponent: 'ESP32 DevKit', fromPin: 'GND', toComponent: 'Breadboard', toPin: 'GND rail', signal: 'ground' },
-  { fromComponent: 'Breadboard', fromPin: '+ rail', toComponent: 'Adafruit BME280', toPin: 'Vin', signal: 'power' },
-  { fromComponent: 'Breadboard', fromPin: 'GND rail', toComponent: 'Adafruit BME280', toPin: 'GND', signal: 'ground' },
+  { fromComponent: 'ESP32 DevKit', fromPin: '3V3', toComponent: 'Adafruit BME280', toPin: 'Vin', signal: 'power' },
+  { fromComponent: 'ESP32 DevKit', fromPin: 'GND', toComponent: 'Adafruit BME280', toPin: 'GND', signal: 'ground' },
   { fromComponent: 'ESP32 DevKit', fromPin: 'IO21', toComponent: 'Adafruit BME280', toPin: 'SDI', signal: 'signal' },
   { fromComponent: 'ESP32 DevKit', fromPin: 'IO22', toComponent: 'Adafruit BME280', toPin: 'SCK', signal: 'signal' },
 ];
 
-const POWER_CONNECTIONS = ESP32_WIFI_WEATHER_CONNECTIONS.slice(0, 4);
-const SIGNAL_CONNECTIONS = ESP32_WIFI_WEATHER_CONNECTIONS.slice(4);
+const POWER_CONNECTIONS = ESP32_WIFI_WEATHER_CONNECTIONS.slice(0, 2);
+const SIGNAL_CONNECTIONS = ESP32_WIFI_WEATHER_CONNECTIONS.slice(2);
 
 function excerpt(start: string, end: string): string {
   const from = ESP32_WIFI_WEATHER_FIRMWARE.indexOf(start);
@@ -114,7 +116,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'image',
         imageKey: 'esp32WifiWeather',
-        caption: 'The finished station is an ESP32-DevKitC V4 and an Adafruit BME280 beside a breadboard, powered from USB. The wiring diagram is the connection reference.',
+        caption: 'The finished station is an ESP32-DevKitC V4 and an Adafruit BME280 joined by one STEMMA QT cable, powered from USB. The wiring diagram is the connection reference.',
       },
       {
         type: 'text',
@@ -144,12 +146,12 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What each part is for',
-        body: 'The ESP32 DevKit is the controller and the web server. This build uses an Espressif ESP32-DevKitC V4 with male pin headers. The Adafruit BME280 is the only sensor. Its STEMMA QT socket takes the cable, so you do not solder the breakout. The breadboard joins the cable pins to four male-to-female jumpers. The USB data cable is USB-A to Micro-B and must carry data. The USB power source is the computer port while you program, or a USB charger after the sketch is on the board.',
+        body: 'The ESP32 DevKit is the controller and the web server. This build uses an Espressif ESP32-DevKitC V4 with male pin headers. The Adafruit BME280 is the only sensor. Its STEMMA QT socket takes one cable, so you do not solder the breakout and you do not need a breadboard. The cable is Adafruit 4397: JST-SH on the sensor and four female sockets on the DevKit. The USB data cable is USB-A to Micro-B and must carry data. The USB power source is the computer port while you program, or a USB charger after the sketch is on the board.',
       },
       {
         type: 'expected',
         heading: 'Check',
-        body: 'You can point to one ESP32-DevKitC V4 with male headers, one Adafruit BME280 with a STEMMA QT socket, one STEMMA QT to male cable, one breadboard, four male-to-female jumpers, one USB-A to Micro-B data cable, and a USB port or charger. A BMP280 board is not a substitute on this bench.',
+        body: 'You can point to one ESP32-DevKitC V4 with male headers, one Adafruit BME280 with a STEMMA QT socket, one Adafruit 4397 cable, one USB-A to Micro-B data cable, and a USB port or charger. A BMP280 board is not a substitute on this bench.',
       },
     ],
   },
@@ -169,11 +171,11 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'USB socket and fit',
-        body: 'The DevKitC V4 user guide names a Micro-USB port as the default power supply and says the board can be mounted on a breadboard or wired with jumpers. It also sells male-header and female-header versions, and this repository has not measured the distance between the two pin rows. Do not force the board across a breadboard’s centre gap. Place it beside the breadboard and use male-to-female jumpers: the female socket goes on a male header pin, and the male pin goes into the breadboard. Use a USB-A to Micro-B cable that carries data. A charge-only cable can light the board and still never appear as a serial port. A USB-C cable does not fit this socket.',
+        body: 'The DevKitC V4 user guide names a Micro-USB port as the default power supply and sells male-header and female-header versions. This build uses the male-header board. The four female sockets on the STEMMA QT cable push onto those pins, so the board does not have to straddle a breadboard. Use a USB-A to Micro-B cable that carries data. A charge-only cable can light the board and still never appear as a serial port. A USB-C cable does not fit this socket.',
       },
       {
         type: 'warning',
-        body: 'If the silkscreen does not show 3V3, GND, IO21 or GPIO21, and IO22 or GPIO22, stop. If the headers are female sockets, stop: this BOM’s jumpers will not match them. Do not move the wires onto an ESP32-CAM or another module. Espressif warns that DevKitC V4 power must come from only one of USB, the 5V pin, or the 3V3 pin.',
+        body: 'If the silkscreen does not show 3V3, GND, IO21 or GPIO21, and IO22 or GPIO22, stop. If the headers are female sockets, stop: the cable’s female sockets will not mate with them. Do not move the wires onto an ESP32-CAM or another module. Espressif warns that DevKitC V4 power must come from only one of USB, the 5V pin, or the 3V3 pin.',
       },
     ],
   },
@@ -198,7 +200,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'How you connect it without soldering',
-        body: 'Adafruit’s current product 2652 is the STEMMA QT board. The BME280 chip is already soldered to that PCB. The loose 0.1 inch header is not soldered, and Adafruit’s assembly page tells you to solder it only if you want the holes in a breadboard. This project does not do that. Plug a STEMMA QT to male cable, such as Adafruit 4209, into either STEMMA QT socket. Adafruit’s cable colours are black for GND, red for VIN, blue for SDA, and yellow for SCL. Blue is SDI. Yellow is SCK. An older breakout with no STEMMA QT socket is not this build.',
+        body: 'Adafruit’s current product 2652 is the STEMMA QT board. The BME280 chip is already soldered to that PCB. The loose 0.1 inch header is not soldered, and this project does not solder it. Plug an Adafruit 4397 cable into either STEMMA QT socket. That cable is JST-SH to four female sockets, about 150 mm. Adafruit’s colours are black for GND, red for VIN, blue for SDA, and yellow for SCL. Blue is SDI. Yellow is SCK. An older breakout with no STEMMA QT socket is not this build.',
       },
       {
         type: 'expected',
@@ -212,24 +214,24 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 1,
     stageTitle: STAGE_HARDWARE,
     title: 'Seat the board and the sensor',
-    description: 'Leave both boards off the breadboard holes. USB stays unplugged.',
-    tip: 'A full-size breadboard often splits each coloured rail in the middle. Use one continuous half, or bridge that gap.',
+    description: 'Latch the cable into the sensor. Leave the female sockets off the DevKit until the next steps. USB stays unplugged.',
+    tip: 'The JST-SH plug latches. Do not force a male-ended STEMMA cable onto these male headers.',
     blocks: [
       {
         type: 'text',
         heading: 'What to do',
-        body: 'Set the DevKitC V4 beside the breadboard. Do not press its headers into the holes, and do not push the BME280 board in either. The STEMMA QT cable’s male pins are what enter the breadboard: red in the left + rail at row 6, black in the left − rail at row 6, blue in a10, yellow in a14. Stay above a break in the rail. Leave USB unplugged until the wiring check.',
+        body: 'Set the DevKitC V4 and the BME280 beside each other. Latch the Adafruit 4397 cable into either STEMMA QT socket. Leave the four female sockets free. You should still be able to read 3V3, GND, IO21, and IO22 on the DevKit. Leave USB unplugged until the wiring check.',
       },
       {
         type: 'wiring',
         heading: 'Cable seated',
-        connections: ESP32_WIFI_WEATHER_CONNECTIONS.slice(2, 4),
+        connections: [],
         assembly: { parts: ['bme280'], jumpers: [] },
       },
       {
         type: 'expected',
         heading: 'What you should see',
-        body: 'The DevKit is beside the breadboard, the sensor is beside it, and four male cable pins are in the breadboard: red in the red rail, black in the blue rail, blue and yellow in their own rows. You can still read 3V3, GND, IO21, and IO22 on the DevKit.',
+        body: 'The sensor is beside the DevKit, the JST plug is latched, and the four female sockets are not on a header yet. Red, black, blue, and yellow are still free.',
       },
     ],
   },
@@ -238,19 +240,19 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 2,
     stageTitle: STAGE_WIRING,
     title: 'Connect power and ground',
-    description: '3V3 and GND go to the breadboard rails, then from those rails to Vin and GND.',
-    tip: 'Use the breadboard’s red rail for 3V3 and the blue rail for ground. This project’s positive rail is 3.3 V, not 5 V.',
+    description: 'The red socket goes on 3V3. The black socket goes on GND.',
+    tip: 'Red is VIN. Black is GND. This cable’s red wire is 3.3 V on this board, not 5 V.',
     blocks: [
       {
         type: 'text',
         heading: 'Connection sequence',
-        body: 'Use two male-to-female jumpers. DevKit 3V3 goes to the left + rail at row 9, on the same unbroken rail as the cable’s red pin at row 6. DevKit GND goes to the left − rail at row 9, with the cable’s black pin at row 6. Do not add another wire to the sensor for power. Do not connect ESP32 5V or BME280 3Vo. Leave the blue and yellow pins for the next step.',
+        body: 'Push the red female socket onto the DevKit pin labelled 3V3. Push the black socket onto a GND pin. Adafruit’s colour order is black, red, blue, yellow, and the sockets are separate, so they can land on pins that are not next to each other. Do not connect ESP32 5V or BME280 3Vo. Leave blue and yellow for the next step.',
       },
       {
         type: 'wiring',
         heading: 'Power and ground',
         connections: POWER_CONNECTIONS,
-        assembly: { parts: [], jumpers: ['devkit-3v3', 'devkit-gnd'] },
+        assembly: { parts: [], jumpers: ['cable-vin', 'cable-gnd'] },
       },
       {
         type: 'connections',
@@ -274,13 +276,13 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Connection sequence',
-        body: 'Put a male-to-female jumper on IO21 and its pin in b10, the same row as the cable’s blue SDI pin in a10. Put another on IO22 and its pin in b14, the same row as the yellow SCK pin in a14. That is four male-to-female jumpers in the whole build, plus the STEMMA QT cable. Leave SDO open so the address stays 0x77. Leave CS open and leave the ADDR jumper unsoldered.',
+        body: 'Push the blue socket onto IO21. That is SDI. Push the yellow socket onto IO22. That is SCK. Those two pins are on header J3, not next to 3V3. Leave SDO open so the address stays 0x77. Leave CS open and leave the ADDR jumper unsoldered.',
       },
       {
         type: 'wiring',
         heading: 'I2C signals',
         connections: SIGNAL_CONNECTIONS,
-        assembly: { parts: [], jumpers: ['devkit-io21', 'devkit-io22'] },
+        assembly: { parts: [], jumpers: ['cable-sdi', 'cable-sck'] },
       },
       {
         type: 'connections',
@@ -290,7 +292,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Check',
-        body: 'IO21 shares a row only with the blue pin, and IO22 shares a row only with the yellow pin. Neither signal row touches the red rail or the blue rail.',
+        body: 'Blue is on IO21 only. Yellow is on IO22 only. Red is on 3V3 only. Black is on GND only. No socket is on 5V, 3Vo, SDO, or CS.',
       },
     ],
   },
@@ -299,7 +301,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 2,
     stageTitle: STAGE_WIRING,
     title: 'Read the complete wiring table',
-    description: 'These six connections are the whole circuit. The sketch uses the same GPIO numbers.',
+    description: 'These four cable wires are the whole circuit. The sketch uses the same GPIO numbers.',
     tip: null,
     blocks: [
       {
@@ -316,7 +318,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'How this matches the sketch',
-        body: 'The firmware sets I2C_SDA to 21 and I2C_SCL to 22, then calls Wire.begin(I2C_SDA, I2C_SCL) and bme.begin(0x77). GPIO21 is the header labelled IO21. GPIO22 is the header labelled IO22. There is no other GPIO in this project. The diagram shows the STEMMA QT cable’s male pins in the breadboard and the four jumpers landing on those same rails and rows. The sensor PCB stays beside the breadboard. Blue is SDI and yellow is SCK. The + rail is 3.3 V, shown as + 3V3, not 5 V.',
+        body: 'The firmware sets I2C_SDA to 21 and I2C_SCL to 22, then calls Wire.begin(I2C_SDA, I2C_SCL) and bme.begin(0x77). GPIO21 is the header labelled IO21. GPIO22 is the header labelled IO22. There is no other GPIO in this project. The diagram shows the four cable sockets on those pins. Blue is SDI and yellow is SCK. Red is 3V3, not 5 V.',
       },
     ],
   },
@@ -331,7 +333,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'test',
         heading: 'What to verify',
-        body: 'Count four male-to-female jumpers and one four-wire cable. 3V3 and the red pin share the red rail, and that rail does not touch SCK, SDI, SDO, CS, or 3Vo. GND and the black pin share the blue rail. IO21 shares a row only with the blue pin. IO22 shares a row only with the yellow pin. SDO, CS, and ADDR are untouched. The USB cable is not yet plugged in, and nothing is connected to the 5V pin.',
+        body: 'Count one four-wire cable. Red is on 3V3 only. Black is on GND only. Blue is on IO21 only. Yellow is on IO22 only. SDO, CS, and ADDR are untouched. The USB cable is not yet plugged in, and nothing is connected to the 5V pin.',
       },
       {
         type: 'text',
@@ -711,7 +713,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
         items: [
           {
             problem: 'Serial says the BME280 was not found at 0x77',
-            solution: 'Check red on the 3V3 rail, black on GND, blue on IO21, and yellow on IO22. Leave SDO open and do not solder the ADDR jumper. Either of those selects 0x76, and this sketch only calls begin(0x77). Do not edit the address to force a match unless the wiring steps change too. Confirm the board is a BME280 with a STEMMA QT socket, not a BMP280.',
+            solution: 'Check red on 3V3, black on GND, blue on IO21, and yellow on IO22. Leave SDO open and do not solder the ADDR jumper. Either of those selects 0x76, and this sketch only calls begin(0x77). Do not edit the address to force a match unless the wiring steps change too. Confirm the board is a BME280 with a STEMMA QT socket, not a BMP280.',
           },
           {
             problem: 'Serial says the BME280 returned an invalid reading',
@@ -744,7 +746,7 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'test',
         heading: 'Hardware',
-        body: 'The board is an ESP32-DevKitC V4 with male headers and a Micro-USB socket. The sensor is an Adafruit BME280 with a STEMMA QT cable, and no header was soldered. Four male-to-female jumpers land on 3V3, GND, IO21, and IO22. Red and black share the 3V3 and GND rails. Blue shares IO21. Yellow shares IO22. Only one power source is connected.',
+        body: 'The board is an ESP32-DevKitC V4 with male headers and a Micro-USB socket. The sensor is an Adafruit BME280 with an Adafruit 4397 cable, and no header was soldered. Red is on 3V3, black is on GND, blue is on IO21, and yellow is on IO22. Only one power source is connected.',
       },
       {
         type: 'test',

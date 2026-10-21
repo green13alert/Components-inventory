@@ -33,7 +33,8 @@ test('each physical project has a catalogue-linked component key', () => {
     const groups = buildComponentKey(layout, null)
     const ids = groups.flatMap((group) => group.instances.map((instance) => instance.id))
     assert.equal(new Set(ids).size, ids.length)
-    assert.equal(groups.some((group) => group.catalogueId === 'breadboard'), true)
+    const hasBoard = layout.elements.some((element) => element.kind === 'breadboard')
+    assert.equal(groups.some((group) => group.catalogueId === 'breadboard'), hasBoard)
     for (const group of groups) {
       assert.ok(getCatalogueComponent(group.catalogueId))
       assert.equal(group.instances.length > 0, true)
@@ -95,7 +96,7 @@ test('pan and tilt servos stay separate, and the weather cable follows the senso
   )
   const weather = buildComponentKey(ESP32_WIFI_WEATHER_LAYOUT, new Set(['esp32']))
   const cable = findKeyInstance(weather, 'stemma')
-  assert.equal(cable?.group.catalogueId, 'stemma-qt-cable')
+  assert.equal(cable?.group.catalogueId, 'stemma-qt-female')
   assert.deepEqual(cable?.instance.highlightIds, [])
   const seated = buildComponentKey(ESP32_WIFI_WEATHER_LAYOUT, new Set(['esp32', 'bme280']))
   assert.deepEqual(findKeyInstance(seated, 'stemma')?.instance.highlightIds, ['bme280'])

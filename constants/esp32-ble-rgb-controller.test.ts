@@ -46,7 +46,7 @@ test('the BOM is the common-anode LED, PN2222A switches, and the DevKit', () => 
   assert.deepEqual(
     ESP32_BLE_RGB_BOM.map((item) => [item.slug, item.quantity]),
     [
-      ['esp32', 1],
+      ['esp32-devkitc-v4', 1],
       ['rgb-led-ca', 1],
       ['pn2222a', 3],
       ['resistor-220', 3],
@@ -132,14 +132,14 @@ test('a common-cathode LED is not an approved substitute', () => {
     canonicalComponentId: 'esp32-id',
     policy: 'exact' as const,
     quantity: 1,
-    constraints: ESP32_BLE_RGB_CONSTRAINTS.esp32.map(([capability, value]) => ({ capability, value })),
+    constraints: ESP32_BLE_RGB_CONSTRAINTS['esp32-devkitc-v4'].map(([capability, value]) => ({ capability, value })),
     pinRoles: [],
   }
   const esp8266 = evaluateComponentCompatibility({
     requirement: boardRequirement,
     canonical: {
       componentId: 'esp32-id',
-      capabilities: ESP32_BLE_RGB_CONSTRAINTS.esp32.map(([capability, value]) => ({ capability, value })),
+      capabilities: ESP32_BLE_RGB_CONSTRAINTS['esp32-devkitc-v4'].map(([capability, value]) => ({ capability, value })),
       pins: [],
     },
     candidate: {

@@ -15,34 +15,37 @@ const STAGE_TEST = 'Calibrate and Test';
 const COMPONENTS: ProjectComponent[] = [
   { id: 'arduino-uno-r3', name: 'Arduino Uno R3', illustrationId: 'arduino-uno', owned: false, quantity: 1 },
   { id: 'sg90', name: 'SG90 Micro Servo', illustrationId: 'servo-sg90', owned: false, quantity: 2 },
-  { id: 'joystick', name: 'Analog Joystick Module', illustrationId: 'generic-module', owned: false, quantity: 1 },
+  { id: 'joystick', name: 'Analog Joystick Module', illustrationId: 'joystick', owned: false, quantity: 1 },
   { id: 'pan-tilt-bracket', name: 'Pan-Tilt Bracket Kit', illustrationId: 'electronics-kit', owned: false, quantity: 1 },
-  { id: 'breadboard-psu', name: 'Breadboard Power Supply', illustrationId: 'battery', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
-  { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 16 },
+  { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 14 },
+  { id: 'adafruit-368', name: '2.1 mm jack to screw terminal', illustrationId: 'generic-module', owned: false, quantity: 1 },
+  { id: 'gst18a05-p1j', name: '5 V 3 A DC supply', illustrationId: 'battery', owned: false, quantity: 1 },
+  { id: 'iec-c13-mains-lead', name: 'IEC C13 mains lead', illustrationId: 'usb-cable', owned: false, quantity: 1 },
+  { id: 'usb-data-cable', name: 'USB data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
+  { id: 'usb-power-source', name: 'USB power source', illustrationId: 'generic-module', owned: false, quantity: 1 },
 ];
 
 const NODE_ARDUINO: WiringNode = { id: 'arduino', name: 'Arduino Uno', illustrationId: 'arduino-uno' };
-const NODE_PSU: WiringNode = { id: 'psu', name: 'Breadboard PSU', illustrationId: 'battery' };
+const NODE_JACK: WiringNode = { id: 'psu', name: 'Adafruit 368', illustrationId: 'generic-module' };
 const NODE_PAN: WiringNode = { id: 'pan', name: 'Pan servo', illustrationId: 'servo-sg90' };
 const NODE_TILT: WiringNode = { id: 'tilt', name: 'Tilt servo', illustrationId: 'servo-sg90' };
-const NODE_JOY: WiringNode = { id: 'joystick', name: 'Joystick', illustrationId: 'generic-module' };
+const NODE_JOY: WiringNode = { id: 'joystick', name: 'Joystick', illustrationId: 'joystick' };
 
 const POWER_CONNECTIONS: StepConnection[] = [
   { fromComponent: 'Arduino Uno', fromPin: '5V', toComponent: 'Breadboard', toPin: '+ logic rail', signal: 'power' },
   { fromComponent: 'Arduino Uno', fromPin: 'GND', toComponent: 'Breadboard', toPin: '− rail', signal: 'ground' },
-  { fromComponent: 'Breadboard PSU', fromPin: 'GND', toComponent: 'Breadboard', toPin: '− rail', signal: 'ground' },
-  { fromComponent: 'Breadboard PSU', fromPin: '5V', toComponent: 'Breadboard', toPin: '+ servo rail', signal: 'power' },
+  { fromComponent: 'Adafruit 368', fromPin: 'GND', toComponent: 'Breadboard', toPin: '− rail', signal: 'ground' },
 ];
 
 const PAN_CONNECTIONS: StepConnection[] = [
-  { fromComponent: 'Breadboard PSU', fromPin: '5V', toComponent: 'Pan servo', toPin: 'VCC (red)', signal: 'power' },
+  { fromComponent: 'Adafruit 368', fromPin: '5V', toComponent: 'Pan servo', toPin: 'VCC (red)', signal: 'power' },
   { fromComponent: 'Arduino Uno', fromPin: 'GND', toComponent: 'Pan servo', toPin: 'GND (brown)', signal: 'ground' },
   { fromComponent: 'Arduino Uno', fromPin: 'D9', toComponent: 'Pan servo', toPin: 'SIG (orange)', signal: 'signal' },
 ];
 
 const TILT_CONNECTIONS: StepConnection[] = [
-  { fromComponent: 'Breadboard PSU', fromPin: '5V', toComponent: 'Tilt servo', toPin: 'VCC (red)', signal: 'power' },
+  { fromComponent: 'Adafruit 368', fromPin: '5V', toComponent: 'Tilt servo', toPin: 'VCC (red)', signal: 'power' },
   { fromComponent: 'Arduino Uno', fromPin: 'GND', toComponent: 'Tilt servo', toPin: 'GND (brown)', signal: 'ground' },
   { fromComponent: 'Arduino Uno', fromPin: 'D10', toComponent: 'Tilt servo', toPin: 'SIG (orange)', signal: 'signal' },
 ];
@@ -203,29 +206,83 @@ const int JOY_X_PIN = A0;
 const int JOY_Y_PIN = A1;
 const int JOY_SW_PIN = 2;
 
+const int PAN_MIN = 20;
+const int PAN_MAX = 160;
+const int TILT_MIN = 20;
+const int TILT_MAX = 160;
+const int PAN_CENTER = 90;
+const int TILT_CENTER = 90;
+const int JOY_X_CENTER = 512;
+const int JOY_Y_CENTER = 512;
+const int DEADZONE = 40;
+const float MAX_DEG_PER_SEC = 90;
+
 Servo panServo;
 Servo tiltServo;
+
+float panAngle = PAN_CENTER;
+float tiltAngle = TILT_CENTER;
+unsigned long lastMs = 0;
+
+// Relative joystick control: deflection outside the deadzone sets degrees per second.
+float axisRate(int raw, int center, bool invert) {
+  int delta = raw - center;
+  if (invert) {
+    delta = -delta;
+  }
+  if (abs(delta) <= DEADZONE) {
+    return 0;
+  }
+  int span = delta > 0 ? (1023 - center - DEADZONE) : (center - DEADZONE);
+  if (span < 1) {
+    span = 1;
+  }
+  float magnitude = (abs(delta) - DEADZONE) / (float)span;
+  if (magnitude > 1) {
+    magnitude = 1;
+  }
+  float sign = delta > 0 ? 1 : -1;
+  return sign * magnitude * MAX_DEG_PER_SEC;
+}
 
 void setup() {
   pinMode(JOY_SW_PIN, INPUT_PULLUP);
   panServo.attach(PAN_PIN);
   tiltServo.attach(TILT_PIN);
+  panServo.write((int)(panAngle + 0.5));
+  tiltServo.write((int)(tiltAngle + 0.5));
   Serial.begin(9600);
+  lastMs = millis();
 }
 
 void loop() {
+  unsigned long now = millis();
+  float dt = (now - lastMs) / 1000.0;
+  lastMs = now;
+  if (dt < 0) {
+    dt = 0;
+  }
+  if (dt > 0.2) {
+    dt = 0.2;
+  }
+
   int x = analogRead(JOY_X_PIN);
   int y = analogRead(JOY_Y_PIN);
-  int panAngle = map(x, 0, 1023, 0, 180);
-  int tiltAngle = map(y, 0, 1023, 0, 180);
 
-  panServo.write(panAngle);
-  tiltServo.write(tiltAngle);
+  panAngle += axisRate(x, JOY_X_CENTER, false) * dt;
+  tiltAngle += axisRate(y, JOY_Y_CENTER, false) * dt;
+  if (panAngle < PAN_MIN) panAngle = PAN_MIN;
+  if (panAngle > PAN_MAX) panAngle = PAN_MAX;
+  if (tiltAngle < TILT_MIN) tiltAngle = TILT_MIN;
+  if (tiltAngle > TILT_MAX) tiltAngle = TILT_MAX;
+
+  panServo.write((int)(panAngle + 0.5));
+  tiltServo.write((int)(tiltAngle + 0.5));
 
   Serial.print("Pan ");
-  Serial.print(panAngle);
+  Serial.print((int)(panAngle + 0.5));
   Serial.print("  Tilt ");
-  Serial.println(tiltAngle);
+  Serial.println((int)(tiltAngle + 0.5));
 
   delay(20);
 }`;
@@ -247,24 +304,58 @@ const int TILT_CENTER = 90;
 const int JOY_X_CENTER = 512;
 const int JOY_Y_CENTER = 512;
 const int DEADZONE = 40;
+const float MAX_DEG_PER_SEC = 90;
 
 Servo panServo;
 Servo tiltServo;
 
-int panAngle = PAN_CENTER;
-int tiltAngle = TILT_CENTER;
+float panAngle = PAN_CENTER;
+float tiltAngle = TILT_CENTER;
+unsigned long lastMs = 0;
+
+// Relative joystick control: deflection outside the deadzone sets degrees per second.
+float axisRate(int raw, int center, bool invert) {
+  int delta = raw - center;
+  if (invert) {
+    delta = -delta;
+  }
+  if (abs(delta) <= DEADZONE) {
+    return 0;
+  }
+  int span = delta > 0 ? (1023 - center - DEADZONE) : (center - DEADZONE);
+  if (span < 1) {
+    span = 1;
+  }
+  float magnitude = (abs(delta) - DEADZONE) / (float)span;
+  if (magnitude > 1) {
+    magnitude = 1;
+  }
+  float sign = delta > 0 ? 1 : -1;
+  return sign * magnitude * MAX_DEG_PER_SEC;
+}
 
 void setup() {
   pinMode(JOY_SW_PIN, INPUT_PULLUP);
   panServo.attach(PAN_PIN);
   tiltServo.attach(TILT_PIN);
-  panServo.write(panAngle);
-  tiltServo.write(tiltAngle);
+  panServo.write((int)(panAngle + 0.5));
+  tiltServo.write((int)(tiltAngle + 0.5));
   Serial.begin(9600);
   Serial.println("Pan-tilt ready.");
+  lastMs = millis();
 }
 
 void loop() {
+  unsigned long now = millis();
+  float dt = (now - lastMs) / 1000.0;
+  lastMs = now;
+  if (dt < 0) {
+    dt = 0;
+  }
+  if (dt > 0.2) {
+    dt = 0.2;
+  }
+
   int x = analogRead(JOY_X_PIN);
   int y = analogRead(JOY_Y_PIN);
   int sw = digitalRead(JOY_SW_PIN);
@@ -273,24 +364,26 @@ void loop() {
     panAngle = PAN_CENTER;
     tiltAngle = TILT_CENTER;
   } else {
-    if (abs(x - JOY_X_CENTER) > DEADZONE) {
-      panAngle = map(x, 0, 1023, PAN_MIN, PAN_MAX);
-    }
-    if (abs(y - JOY_Y_CENTER) > DEADZONE) {
-      tiltAngle = map(y, 0, 1023, TILT_MIN, TILT_MAX);
-    }
+    panAngle += axisRate(x, JOY_X_CENTER, false) * dt;
+    tiltAngle += axisRate(y, JOY_Y_CENTER, false) * dt;
+    if (panAngle < PAN_MIN) panAngle = PAN_MIN;
+    if (panAngle > PAN_MAX) panAngle = PAN_MAX;
+    if (tiltAngle < TILT_MIN) tiltAngle = TILT_MIN;
+    if (tiltAngle > TILT_MAX) tiltAngle = TILT_MAX;
   }
 
-  panServo.write(panAngle);
-  tiltServo.write(tiltAngle);
+  panServo.write((int)(panAngle + 0.5));
+  tiltServo.write((int)(tiltAngle + 0.5));
 
   Serial.print("Pan ");
-  Serial.print(panAngle);
+  Serial.print((int)(panAngle + 0.5));
   Serial.print("  Tilt ");
-  Serial.println(tiltAngle);
+  Serial.println((int)(tiltAngle + 0.5));
 
   delay(20);
 }`;
+
+export const SERVO_PAN_TILT_CAMERA_FIRMWARE = SKETCH_COMBINED;
 
 export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
   {
@@ -298,13 +391,13 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 0,
     stageTitle: STAGE_UNDERSTAND,
     title: 'What We\'re Building',
-    description: 'A two-servo pan-tilt mount aims a camera plate. A joystick sets the angles. This project aims the payload — it does not capture video.',
+    description: 'A two-servo pan-tilt mount aims a camera plate. The joystick sets speed and direction, and releasing it holds the aim. This project aims the payload — it does not capture video.',
     tip: null,
     blocks: [
       {
         type: 'text',
         heading: 'What we\'re building',
-        body: 'You will assemble a pan-tilt bracket around two SG90 servos, power the servos from a breadboard PSU, and drive both axes from an analog joystick. Pan is left/right. Tilt is up/down. Mount a lightweight camera or webcam on the plate if you have one — or leave the plate empty while you learn the mechanism.',
+        body: 'You will assemble a pan-tilt bracket around two SG90 servos, power the servos from an Adafruit 368 screw-terminal jack, and drive both axes from an analog joystick. Pan is left/right. Tilt is up/down. Mount a lightweight camera or webcam on the plate if you have one — or leave the plate empty while you learn the mechanism.',
       },
       {
         type: 'image',
@@ -327,12 +420,12 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageTitle: STAGE_UNDERSTAND,
     title: 'Understand Power and Pin Architecture',
     description: 'Servos and the Uno do not share the Arduino 5V pin. They share ground. The pin map stays fixed for the rest of the build.',
-    tip: 'A 9V snap battery is too weak for two stalling SG90s. Use the breadboard PSU with a 6–12V DC barrel-jack adapter.',
+    tip: 'The servo supply is a MEAN WELL GST18A05-P1J: 5 V, 3 A, 5.5×2.1 mm, center positive. It needs the IEC C13 mains lead, fitted as supplied. Do not open the adapter or change the mains plug. A 9V snap is not the servo supply.',
     blocks: [
       {
         type: 'text',
         heading: 'Two 5V domains, one ground',
-        body: 'USB powers the Uno. Uno 5V feeds only the joystick / logic + rail. PSU 5V feeds only the servo + rail. Those two + rails must stay electrically separate — do not join them with a rail-link jumper. Tie PSU GND to Uno GND so the D9/D10 pulses are measured against the same 0V. If grounds are split, the servos jitter or ignore the signal. If the two + rails are linked, the PSU can back-feed the Uno 5V pin.',
+        body: 'USB powers the Uno. Uno 5V feeds only the joystick, through the left + rail. Servo current does not enter the breadboard. The GST18A05-P1J plugs into an Adafruit 368, a preassembled 2.1 mm jack whose screws are marked + and − for a center-positive plug. Both servo red wires clamp under the + screw. Both brown wires, and one ground jumper to the left − rail, clamp under the − screw. Do not connect the + screw to Uno 5V. If the grounds are split, the servos jitter or ignore the signal. If the + screw reaches Uno 5V, the servo supply can back-feed the Uno. Tower Pro’s SG90 sheet lists 4.8 V operation and does not publish stall current, so this build uses a 3 A regulated 5 V supply rather than a small linear breadboard regulator. Adafruit’s page for product 368 does not publish a current rating. A 2019 Adafruit support reply gave that adapter a nominal 2 A.',
       },
       {
         type: 'connections',
@@ -348,7 +441,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'warning',
-        body: 'Do not feed servo VCC from the Uno 5V header. Two SG90s can stall well above what USB 5V should supply, and the board will reset. Do not jumper PSU 5V onto Uno 5V, and do not fit a breadboard rail-link that joins the two + rails.',
+        body: 'Do not feed servo VCC from the Uno 5V header. Two SG90s can stall well above what USB 5V should supply, and the board will reset. Do not connect the adapter + screw to Uno 5V or to a breadboard + rail. Clamping a Dupont pin under the Adafruit 368 screw is not a rated connection: product 368 publishes no current rating, and this tutorial has no replacement connector yet.',
       },
     ],
   },
@@ -477,43 +570,43 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Set Up Arduino, Breadboard, and Power',
-    description: 'USB powers the Uno. The breadboard PSU will power the servos. Build the two 5V rails and the shared ground before any servo signal wire goes in.',
+    description: 'USB powers the Uno. The Adafruit 368 will power the servos. Connect Uno 5V, Uno GND, and the adapter ground before any servo signal wire goes in.',
     tip: 'Use a data-capable USB cable. Charge-only cables never appear as a serial port later.',
     blocks: [
       {
         type: 'text',
         heading: 'Find the breadboard power rails',
-        body: 'Along each long edge there is a + rail (often red) and a − rail (often blue or black). Holes in one + rail are connected to each other. + is not connected to −. Use one side as the logic + rail (Uno 5V only) and the other side as the servo + rail (PSU 5V only). Those two + rails must stay electrically separate. Some breadboards include metal clips or jumpers that join opposite + rails — remove or skip those. Tie both − rails together so ground is common.',
+        body: 'Along each long edge there is a + rail (often red) and a − rail (often blue or black). Holes in one + rail are connected to each other. + is not connected to −. This build uses the left + rail for Uno 5V and the left − rail for ground. Servo positive does not use a breadboard rail. Some breadboards include metal clips that join opposite + rails — remove or skip those. Leave the right-hand rails empty.',
       },
       {
         type: 'text',
-        heading: 'Seat the PSU and jumpers',
-        body: 'The left + rail is Uno 5V. The right + rail is PSU 5V. Do not bridge those two + rails. Bridge the − rails with one male-to-male wire from left − row 1 to right − row 1. Uno 5V goes to left + row 2. Uno GND goes to left − row 2. PSU 5V goes to right + row 3. PSU GND goes to right − row 3. All of these stay on rows 1–15. This build uses 16 male-to-male jumpers from the pack. Leave D9, D10, A0, A1, and D2 empty.',
+        heading: 'Seat the adapter and jumpers',
+        body: 'Place the Adafruit 368 beside the breadboard. Its screws are marked + and − for a center-positive plug. Uno 5V goes to left + row 2. Uno GND goes to left − row 2. One male-to-male jumper goes from left − row 4 to the − screw: slide the plastic housing back on that end and tighten the screw on the metal pin until a gentle tug does not pull it out. Do not put a wire on the + screw yet. Do not connect the + screw to either breadboard + rail. This build uses 14 male-to-male jumpers. Leave D9, D10, A0, A1, and D2 empty.',
       },
       {
         type: 'wiring',
         heading: 'Power only',
-        nodes: [NODE_ARDUINO, NODE_PSU],
+        nodes: [NODE_ARDUINO, NODE_JACK],
         connections: POWER_CONNECTIONS,
-        assembly: { parts: ['psu'], jumpers: ['uno-5v', 'uno-gnd', 'psu-5v', 'psu-gnd', 'bridge-minus'] },
+        assembly: { parts: ['psu'], jumpers: ['uno-5v', 'uno-gnd', 'psu-gnd'] },
       },
       {
         type: 'connections',
-        summary: 'Logic 5V from Uno · servo 5V from PSU · common GND',
+        summary: 'Logic 5V from Uno · adapter ground tied to Uno GND',
         rows: POWER_CONNECTIONS,
       },
       {
         type: 'warning',
-        body: 'Plug the PSU barrel jack into a 6–12V DC adapter. Do not connect servo VCC yet. Do not jumper PSU 5V to Uno 5V, and check that no rail-link joins the two + rails. Grounds stay common.',
+        body: 'Plug the GST18A05-P1J into the Adafruit 368 until the plug seats. The plug is 5.5×2.1 mm and center positive, and this jack is Adafruit’s 2.1 mm jack for that plug. Do not connect servo VCC yet. Do not join the + screw to Uno 5V. The − screw stays tied to Uno GND. The Dupont pin under the screw is not a rated power joint.',
       },
       {
         type: 'test',
-        body: 'Connect USB to the Uno. Confirm the Uno power LED is on. Then apply PSU input and confirm the PSU 5V indicator (if it has one) is on. Check that the two + rails are not linked. Nothing else should be wired.',
+        body: 'Connect USB to the Uno. Confirm the Uno power LED is on. Then plug in the GST18A05-P1J. The adapter + screw must not touch a breadboard + rail. Nothing else should be wired.',
       },
       {
         type: 'expected',
         heading: 'Expected result',
-        body: 'Uno powered from USB, logic + rail is Uno 5V only, servo-side + rail is PSU 5V only, the two + rails are not joined, and − rails are common with Uno GND. D9, D10, A0, A1, and D2 are still empty. Nothing is hot.',
+        body: 'Uno powered from USB. The left + rail is Uno 5V only. The adapter + screw is the servo supply and is not tied to that rail. Left − row 2 and left − row 4 share ground with the adapter − screw. D9, D10, A0, A1, and D2 are still empty. The adapter body is not hot.',
       },
     ],
   },
@@ -522,17 +615,17 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Connect the Pan Servo',
-    description: 'Pan is the lower SG90. Red goes to the PSU 5V rail, brown to common ground, orange to D9.',
+    description: 'Pan is the lower SG90. Red clamps under the adapter + screw, brown under the − screw, orange to D9.',
     tip: 'If the lead has yellow instead of orange, that is still the signal wire.',
     blocks: [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'The pan servo connector is female, so use male-to-male wires. Red goes from the right + rail at row 5 into the servo’s red pin. Brown goes from the right − rail at row 6 into the brown pin. Orange goes from Uno D9 straight into the signal pin. That orange wire does not enter a breadboard hole. Red must not touch the left + rail.',
+        body: 'The pan servo connector is female, so use male-to-male wires. Slide the housing back on the adapter end of the red and brown wires and clamp the metal pins under the screws: red under +, brown under −, sharing the − screw with the ground jumper already there. The other ends plug into the servo’s red and brown sockets. Tighten each screw until a gentle tug does not pull the pin out. Orange goes from Uno D9 straight into the signal pin. That orange wire does not enter a breadboard hole and does not go under a screw. Red must not touch the left + rail.',
       },
       {
         type: 'wiring',
-        nodes: [NODE_ARDUINO, NODE_PSU, NODE_PAN],
+        nodes: [NODE_ARDUINO, NODE_JACK, NODE_PAN],
         connections: PAN_CONNECTIONS,
         assembly: { parts: ['pan'], jumpers: ['pan-vcc', 'pan-gnd', 'pan-sig'] },
       },
@@ -544,7 +637,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Check',
-        body: 'Three pan wires only: PSU 5V, common GND, D9. The tilt servo is still unplugged. Do not swap red and orange — that puts 5V on a GPIO.',
+        body: 'Three pan wires only: servo 5 V, common GND, D9. The tilt servo is still unplugged. Do not swap red and orange — that puts 5V on a GPIO.',
       },
     ],
   },
@@ -559,11 +652,11 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'The tilt connector is female too. Red goes from the right + rail at row 8. Brown goes from the right − rail at row 9. Orange goes from Uno D10 straight to the signal pin. Both servos share the right-hand 5V rail and the common − rail. Only the signal pins differ.',
+        body: 'The tilt connector is female too. Clamp its red pin under the same + screw and its brown pin under the same − screw. Orange goes from Uno D10 straight to the signal pin. Both servos share the adapter screws. Only the signal pins differ.',
       },
       {
         type: 'wiring',
-        nodes: [NODE_ARDUINO, NODE_PSU, NODE_TILT],
+        nodes: [NODE_ARDUINO, NODE_JACK, NODE_TILT],
         connections: TILT_CONNECTIONS,
         assembly: { parts: ['tilt'], jumpers: ['tilt-vcc', 'tilt-gnd', 'tilt-sig'] },
       },
@@ -575,7 +668,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Check',
-        body: 'Pan remains on D9. Tilt is on D10. Both reds are on PSU 5V. Both browns are on common GND. No servo red is in the Uno 5V header.',
+        body: 'Pan remains on D9. Tilt is on D10. Both reds are under the adapter + screw. Both browns are under the adapter − screw. No servo red is in the Uno 5V header.',
       },
     ],
   },
@@ -584,13 +677,13 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Connect the Joystick',
-    description: 'The joystick is a low-current analog module. It uses the Uno 5V logic rail, not the servo PSU rail.',
+    description: 'The joystick is a low-current analog module. It uses the Uno 5V rail, not the adapter + screw.',
     tip: 'KY-023 pins are usually labelled GND, +5V, VRx, VRy, SW in that order. Match labels, not lead colour.',
     blocks: [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'Plug the joystick pins into c8 through c12: +5V, GND, VRx, VRy, SW. a8 goes to the left + rail at row 8, not the right + rail. a9 goes to the left − rail at row 9. A0 goes to a10, A1 to a11, and D2 to a12. The sketch later enables INPUT_PULLUP on D2, so an unpressed stick reads HIGH and a click reads LOW.',
+        body: 'Plug the joystick pins into c8 through c12: +5V, GND, VRx, VRy, SW. a8 goes to the left + rail at row 8. a9 goes to the left − rail at row 9. A0 goes to a10, A1 to a11, and D2 to a12. The sketch later enables INPUT_PULLUP on D2, so an unpressed stick reads HIGH and a click reads LOW.',
       },
       {
         type: 'wiring',
@@ -605,7 +698,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'warning',
-        body: 'Do not power the joystick from the servo PSU rail if that rail is a noisy motor supply with no 5V regulation to the module. The catalogue joystick is a 5V analog part — Uno 5V is the correct source.',
+        body: 'Do not power the joystick from the adapter + screw. The catalogue joystick is a 5V analog part — Uno 5V is the correct source.',
       },
     ],
   },
@@ -614,18 +707,18 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 2,
     stageTitle: STAGE_ELECTRONICS,
     title: 'Check the Complete Circuit',
-    description: 'Before any sketch, the pin map should be complete: D9 pan, D10 tilt, A0/A1/D2 joystick, PSU 5V on servo VCC, common ground.',
+    description: 'Before any sketch, the pin map should be complete: D9 pan, D10 tilt, A0/A1/D2 joystick, servo 5 V on servo VCC, common ground.',
     tip: null,
     blocks: [
       {
         type: 'text',
         heading: 'What “complete” means',
-        body: 'Every net below should exist once. Two browns may share the − rail. Two reds may share the servo + rail. D9 and D10 must not share a pin with each other or with SW.',
+        body: 'Every net below should exist once. Two browns may share the adapter − screw. Two reds may share the adapter + screw. D9 and D10 must not share a pin with each other or with SW.',
       },
       {
         type: 'wiring',
         heading: 'Complete wiring diagram',
-        nodes: [NODE_ARDUINO, NODE_PSU, NODE_PAN, NODE_TILT, NODE_JOY],
+        nodes: [NODE_ARDUINO, NODE_JACK, NODE_PAN, NODE_TILT, NODE_JOY],
         connections: COMPLETE_CONNECTIONS,
       },
       {
@@ -637,7 +730,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Check',
-        body: 'You can trace Uno 5V to the joystick, PSU 5V to both servo reds, common GND to both browns and the joystick, D9 to pan SIG, D10 to tilt SIG, A0 to VRx, A1 to VRy, and D2 to SW. There is no jumper between the logic + rail and the servo + rail.',
+        body: 'You can trace Uno 5V to the joystick, the adapter + screw to both servo reds, the adapter − screw to both browns and to Uno GND, D9 to pan SIG, D10 to tilt SIG, A0 to VRx, A1 to VRy, and D2 to SW. There is no wire from the adapter + screw to Uno 5V.',
       },
     ],
   },
@@ -689,7 +782,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'code_explanation',
-        body: 'Only pan is attached. Tilt is still a named pin with no Servo object. If the pan horn jumps when you later upload, that is the servo seeking the default pulse — not a wiring short.',
+        body: 'Only pan is attached. Tilt is still a named pin with no Servo object. If the pan horn jumps when you later upload, that is the servo seeking the default pulse, not a wiring short. Leave the horn screw loose. After the servo settles, remove power, reseat the horn so the bracket is square, then tighten the screw.',
       },
     ],
   },
@@ -799,14 +892,14 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     sortOrder: 16,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
-    title: 'Map Joystick Values to Servo Angles',
-    description: 'Convert 0–1023 stick readings into 0–180 servo degrees so both axes follow the joystick.',
+    title: 'Move the Servos from the Joystick',
+    description: 'The stick sets direction and speed. It does not set an absolute angle. Releasing it holds the last aim.',
     tip: null,
     blocks: [
       {
         type: 'text',
         heading: 'What we are adding',
-        body: 'map(x, 0, 1023, 0, 180) scales the pan stick onto the servo range. The same mapping on y drives tilt. delay(20) is a short refresh so the servos are not flooded, but the stick still feels live.',
+        body: 'axisRate() turns stick deflection into degrees per second. Inside the deadzone the rate is 0, so the stored angle does not change. Just outside the deadzone the rate is small. Full deflection reaches MAX_DEG_PER_SEC, 90 degrees per second. The loop multiplies that rate by the seconds since the last pass, then keeps the result between PAN_MIN and PAN_MAX. The angle is a float, so a slow rate can move less than one degree per pass. Servo.write() receives the rounded degree.',
       },
       {
         type: 'code',
@@ -817,7 +910,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'code_explanation',
-        body: 'This sketch has no deadzone and no mechanical limits. At rest the stick is rarely exactly 512, so the servos may creep. That is expected — the next step holds the last angle inside a deadzone around JOY_X_CENTER / JOY_Y_CENTER and clamps travel to 20–160.',
+        body: 'This sketch already holds position when the stick is centred. It does not recentre when you click SW. The next step adds that click. To reverse one axis later, change that axisRate() call’s third argument from false to true.',
       },
     ],
   },
@@ -825,14 +918,14 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     sortOrder: 17,
     stageSortOrder: 3,
     stageTitle: STAGE_PROGRAM,
-    title: 'Add Limits and Combine the Program',
-    description: 'Clamp travel, ignore stick noise around centre, and use the joystick click to return both axes to 90°.',
-    tip: 'If an axis is reversed, swap that map() pair: map(x, 0, 1023, PAN_MAX, PAN_MIN).',
+    title: 'Add the Centre Button',
+    description: 'Clicking the joystick returns both axes to their centre angles. Travel stays inside the 20–160 limits.',
+    tip: 'If an axis is reversed, change that axisRate() call from false to true. Do not swap the servo power leads.',
     blocks: [
       {
         type: 'text',
         heading: 'What we are adding',
-        body: 'PAN_MIN/MAX and TILT_MIN/MAX keep write() inside the bracket’s free range. DEADZONE of 40 around JOY_X_CENTER and JOY_Y_CENTER means a resting stick does not update the stored angle. Start those centres at 512; if Serial at rest was different, put those numbers in instead. Clicking SW (LOW) sets both stored angles back to 90. The servos hold the last aimed position when you let the stick go — that is what you want when framing a camera.',
+        body: 'PAN_MIN and PAN_MAX, and the same pair for tilt, are conservative starting limits. Tighten them if your bracket hits the plastic sooner. DEADZONE of 40 around JOY_X_CENTER and JOY_Y_CENTER ignores rest noise. Start those centres at 512; if Serial at rest was different, put those numbers in instead. Clicking SW (LOW) sets both stored angles to PAN_CENTER and TILT_CENTER. Letting the stick go leaves the mount where it is.',
       },
       {
         type: 'code',
@@ -843,7 +936,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       },
       {
         type: 'code_explanation',
-        body: 'This is the complete sketch. Pin map: D9 pan, D10 tilt, A0 VRx, A1 VRy, D2 SW. Behaviour: aim while the stick is deflected, hold when it is inside the deadzone around your joystick centres, recentre on a click. View Code on a finished project shows this same program.',
+        body: 'This is the complete sketch. Pin map: D9 pan, D10 tilt, A0 VRx, A1 VRy, D2 SW. A centred stick holds. A larger deflection moves faster. A click returns both axes to centre. View Code on a finished project shows this same program.',
       },
     ],
   },
@@ -852,7 +945,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 4,
     stageTitle: STAGE_TEST,
     title: 'Upload the Program',
-    description: 'Board: Arduino Uno. Serial Monitor at 9600 baud. Power the PSU before you expect the servos to hold.',
+    description: 'Board: Arduino Uno. Serial Monitor at 9600 baud. Plug in the GST18A05-P1J before you expect the servos to hold.',
     tip: 'If upload fails, try a data-capable USB cable and confirm Tools → Board is Arduino Uno.',
     blocks: [
       {
@@ -863,7 +956,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'How to upload',
-        body: 'Paste the combined sketch from the previous step. Apply PSU power so the servos have 5V. Click Upload, then open Serial Monitor at 9600 baud. Keep clear of the bracket; the servos will seek 90° on attach.',
+        body: 'Paste the combined sketch from the previous step. Plug in the GST18A05-P1J so the servos have 5 V. Click Upload, then open Serial Monitor at 9600 baud. Keep clear of the bracket; the servos will seek 90° on attach.',
       },
       {
         type: 'test',
@@ -888,7 +981,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
           },
           {
             problem: 'Board resets when servos move',
-            solution: 'Servo VCC is on Uno 5V or the PSU is missing. Move both reds to the PSU 5V rail and confirm common GND.',
+            solution: 'Servo VCC is on Uno 5V or the supply is missing. Move both reds under the adapter + screw and confirm the − screw reaches Uno GND.',
           },
         ],
       },
@@ -909,7 +1002,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'expected',
         heading: 'Expected result',
-        body: 'Left/right yaws pan only. Up/down nods tilt only. At rest both hold. A click returns both to about 90°. Serial angles change while the stick is deflected and freeze inside the deadzone.',
+        body: 'Left/right yaws pan only, and a small deflection moves it slowly. Up/down nods tilt only. Letting the stick go holds the new aim. A click returns both to about 90°.',
       },
       {
         type: 'troubleshooting',
@@ -921,11 +1014,11 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
           },
           {
             problem: 'An axis moves the wrong way',
-            solution: 'Invert that map() pair (PAN_MAX then PAN_MIN, or TILT_MAX then TILT_MIN). Do not reverse the 5V/GND leads to “fix” direction.',
+            solution: 'Change that axis’s axisRate() third argument from false to true. Do not reverse the 5V/GND leads to “fix” direction.',
           },
           {
             problem: 'One servo is dead',
-            solution: 'Confirm that servo’s red is on PSU 5V, brown on common GND, and orange on D9 (pan) or D10 (tilt). A swapped red/orange can damage a pin — power off before you reseat.',
+            solution: 'Confirm that servo’s red is on servo 5 V, brown on common GND, and orange on D9 (pan) or D10 (tilt). A swapped red/orange can damage a pin — power off before you reseat.',
           },
         ],
       },
@@ -942,11 +1035,11 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Why the horn comes off',
-        body: 'write(90) is a pulse, not a promise about the plastic. If you tightened the horn at an arbitrary spline, “90” can be a tilted plate. Click SW (or power up into the combined sketch) so both servos hold 90°, then power down before you pull a horn if you are not confident working around a live servo.',
+        body: 'write(90) is a pulse, not a promise about the plastic. If you tightened the horn at an arbitrary spline, 90° can be a tilted plate. Click SW so both servos hold the electronic centre. Then unplug the GST18A05-P1J and the Uno USB before you loosen a horn screw or lift a horn. Do not turn the shaft or the bracket while a servo is powered.',
       },
       {
         type: 'test',
-        body: 'With both servos holding 90°, loosen the pan horn and reseat the U-bracket square over the base. Then loosen the tilt horn and reseat the camera plate level. Retighten the horn screws. Power up and click SW again.',
+        body: 'Click SW and confirm both axes sit at centre. Unplug the servo supply and the Uno USB. Loosen the pan horn and reseat the U-bracket square over the base. Loosen the tilt horn and reseat the camera plate level. Retighten the horn screws. Plug the supply and USB back in, then click SW again.',
       },
       {
         type: 'expected',
@@ -1000,8 +1093,12 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
             solution: 'Increase DEADZONE (try 60), or set JOY_X_CENTER and JOY_Y_CENTER to the X and Y values Serial printed at rest. Confirm the joystick 5V is the Uno rail and GND is common. A floating VRx/VRy will never sit still.',
           },
           {
-            problem: 'Mechanism holds, then jumps',
-            solution: 'A weak PSU or a 9V battery is sagging under load. Use a 6–12V DC adapter on the breadboard PSU and keep servo reds off the Uno 5V pin.',
+            problem: 'A small stick move throws the mount toward the centre',
+            solution: 'The uploaded sketch is still mapping the stick to an absolute angle. Upload the combined sketch. A centred stick must hold, and a small deflection must only creep from that angle.',
+          },
+          {
+            problem: 'Mechanism holds, then jumps when the supply sags',
+            solution: 'The servo supply is sagging or the plug is not seated. Use the GST18A05-P1J in the Adafruit 368, center positive, and keep both servo reds off the Uno 5V pin.',
           },
           {
             problem: 'Click does nothing',
@@ -1009,7 +1106,7 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
           },
           {
             problem: 'USB disconnects when the mount moves',
-            solution: 'The Uno is supplying servo current. Recheck that both VCC (red) wires are on the PSU 5V rail and that PSU GND is tied to Uno GND.',
+            solution: 'The Uno is supplying servo current. Recheck that both VCC (red) wires are under the adapter + screw and that the − screw is tied to Uno GND.',
           },
         ],
       },

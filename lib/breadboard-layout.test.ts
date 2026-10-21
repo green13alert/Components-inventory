@@ -22,8 +22,8 @@ test('the four authored physical layouts match their netlists', () => {
 test('jumper counts distinguish gender and stay within the listed packs', () => {
   assert.deepEqual(jumperInventory(ESP32_BLE_RGB_LAYOUT.physical as PhysicalLayout), { maleMale: 8, maleFemale: 5 })
   assert.deepEqual(jumperInventory(MOTION_SENSOR_ALARM_LAYOUT.physical as PhysicalLayout), { maleMale: 10, maleFemale: 0 })
-  assert.deepEqual(jumperInventory(ESP32_WIFI_WEATHER_LAYOUT.physical as PhysicalLayout), { maleMale: 0, maleFemale: 4 })
-  assert.deepEqual(jumperInventory(SERVO_PAN_TILT_CAMERA_LAYOUT.physical as PhysicalLayout), { maleMale: 16, maleFemale: 0 })
+  assert.deepEqual(jumperInventory(ESP32_WIFI_WEATHER_LAYOUT.physical as PhysicalLayout), { maleMale: 0, maleFemale: 0 })
+  assert.deepEqual(jumperInventory(SERVO_PAN_TILT_CAMERA_LAYOUT.physical as PhysicalLayout), { maleMale: 14, maleFemale: 0 })
 })
 
 test('a duplicated hole and a power short are rejected', () => {
@@ -58,13 +58,13 @@ test('a missing lead and an impossible resistor span are rejected', () => {
   assert.equal(span.some((error) => error.includes('1k red')), true)
 })
 
-test('the lower rail segment is not the upper rail', () => {
+test('a STEMMA wire that misses Vin is rejected', () => {
   const physical = structuredClone(ESP32_WIFI_WEATHER_LAYOUT.physical) as PhysicalLayout
   physical.jumpers = physical.jumpers.map((jumper) =>
-    jumper.id === 'devkit-3v3'
-      ? { ...jumper, to: { kind: 'rail' as const, side: 'left' as const, polarity: 'plus' as const, row: 16 } }
+    jumper.id === 'cable-vin'
+      ? { ...jumper, to: { kind: 'module' as const, elementId: 'bme280', portId: 'sck' } }
       : jumper,
   )
   const errors = validatePhysicalLayout({ ...ESP32_WIFI_WEATHER_LAYOUT, physical }, ESP32_WIFI_WEATHER_CONNECTIONS)
-  assert.equal(errors.some((error) => error.includes('3V3') || error.includes('Vin')), true)
+  assert.equal(errors.some((error) => error.includes('Vin') || error.includes('3V3')), true)
 })

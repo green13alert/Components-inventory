@@ -53,21 +53,26 @@ test('project 18 draws direct servo signal wires and keeps the two positive rail
     assert.equal(wire.gender, 'male-male')
   }
   assert.equal(scene.board.leftPlus.includes('Uno') || scene.board.leftPlus.includes('5V'), true)
-  assert.equal(scene.board.rightPlus.includes('PSU') || scene.board.rightPlus.includes('servo'), true)
-  assert.equal(scene.board.leftPlus === scene.board.rightPlus, false)
+  assert.equal(scene.board.rightPlus, '')
+  const adapter = scene.parts.find((part) => part.kind === 'psu')
+  assert.ok(adapter && adapter.kind === 'psu')
+  assert.equal(adapter.label, 'Adafruit 368')
+  assert.deepEqual(adapter.pins.map((pin) => pin.label), ['+', '−'])
   assert.equal(scene.parts.filter((part) => part.kind === 'servo').length, 2)
 })
 
-test('project 23 draws the STEMMA cable to the breadboard instead of plugging the module in', () => {
+test('project 23 draws the STEMMA cable from the DevKit pins to the sensor', () => {
   const scene = buildPhysicalScene(ESP32_WIFI_WEATHER_LAYOUT, ESP32_WIFI_WEATHER_CONNECTIONS)
   assert.ok(scene)
+  assert.equal(scene.board.rows, 0)
+  assert.equal(scene.holes.length, 0)
   const sensor = scene.parts.find((part) => part.kind === 'bme280')
   assert.ok(sensor && sensor.kind === 'bme280')
-  assert.equal(sensor.cable?.leads.length, 4)
-  for (const port of ['vin', 'gnd', 'sdi', 'sck']) {
-    assert.equal(scene.wires.some((wire) => wire.id === `bme280-${port}`), true)
+  for (const id of ['cable-vin', 'cable-gnd', 'cable-sdi', 'cable-sck']) {
+    const wire = scene.wires.find((item) => item.id === id)
+    assert.ok(wire, id)
+    assert.equal(wire.gender, 'stemma-female')
   }
-  assert.equal(scene.board.leftPlus.includes('3V3') || scene.board.rightPlus.includes('3V3'), true)
 })
 
 test('a focused step highlights the new wires and still keeps the other parts', () => {

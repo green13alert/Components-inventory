@@ -30,7 +30,7 @@ export type SceneWire = {
   d: string
   color: string
   emphasis: Emphasis
-  gender: 'male-male' | 'male-female'
+  gender: 'male-male' | 'male-female' | 'stemma-female'
   role: 'jumper' | 'cable'
   from: Point
   to: Point
@@ -103,6 +103,12 @@ function isModule(endpoint: PhysicalEndpoint) {
 }
 
 export function wireColor(jumper: PhysicalJumper): string {
+  if (jumper.id === 'cable-sdi') {
+    return '#2563EB'
+  }
+  if (jumper.id === 'cable-sck') {
+    return '#CA8A04'
+  }
   const ports = [jumper.from, jumper.to]
     .filter(isModule)
     .map((end) => (end as { portId: string }).portId)
@@ -489,10 +495,10 @@ export function buildPhysicalScene(
   for (const frame of physical.modules ?? []) {
     const element = layout.elements.find((item) => item.id === frame.elementId)
     const kind = element?.kind
-    if (kind !== 'esp32-devkit' && kind !== 'arduino-uno' && kind !== 'servo' && kind !== 'breadboard-psu' && kind !== 'bme280') {
+    if (kind !== 'esp32-devkit' && kind !== 'arduino-uno' && kind !== 'servo' && kind !== 'breadboard-psu' && kind !== 'dc-jack' && kind !== 'bme280') {
       continue
     }
-    const mapped = kind === 'esp32-devkit' ? 'esp32' : kind === 'arduino-uno' ? 'uno' : kind === 'breadboard-psu' ? 'psu' : kind
+    const mapped = kind === 'esp32-devkit' ? 'esp32' : kind === 'arduino-uno' ? 'uno' : kind === 'breadboard-psu' || kind === 'dc-jack' ? 'psu' : kind
     const pinKeys = frame.pins.map((item) => `${frame.elementId}:${item.portId}`)
     const cableLeads = frame.cableFrom
       ? physical.leads
@@ -541,7 +547,7 @@ export function buildPhysicalScene(
       role: 'jumper',
       from,
       to,
-      socketAt: jumper.gender === 'male-female' ? (isModule(jumper.from) ? 'from' : 'to') : 'none',
+      socketAt: jumper.gender === 'male-female' || jumper.gender === 'stemma-female' ? (isModule(jumper.from) ? 'from' : 'to') : 'none',
     })
   }
   for (const part of parts) {

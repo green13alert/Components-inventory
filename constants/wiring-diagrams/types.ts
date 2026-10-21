@@ -2,6 +2,7 @@ export type WiringSymbolKind =
   | 'arduino-uno'
   | 'breadboard'
   | 'breadboard-psu'
+  | 'dc-jack'
   | 'pir'
   | 'led'
   | 'rgb-led'
@@ -81,7 +82,7 @@ export type PhysicalLead = {
 
 export type PhysicalJumper = {
   id: string;
-  gender: 'male-male' | 'male-female';
+  gender: 'male-male' | 'male-female' | 'stemma-female';
   from: PhysicalEndpoint;
   to: PhysicalEndpoint;
 };

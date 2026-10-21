@@ -93,6 +93,8 @@ function BoardSvg({
   return (
     <View style={{ flex: 1 }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${scene.width} ${scene.height}`}>
+        {board.rows > 0 ? (
+        <>
         <Rect
           x={board.x}
           y={board.y}
@@ -141,6 +143,8 @@ function BoardSvg({
             opacity={hole.emphasis === 'active' ? 0.9 : hole.emphasis === 'prior' ? 0.45 : 0.28}
           />
         ))}
+        </>
+        ) : null}
         {scene.wires.map((wire) => (
           <WirePath key={wire.id} wire={wire} dimmed={selecting && !cableSelected(wire, selectedIds)} marked={cableSelected(wire, selectedIds)} />
         ))}

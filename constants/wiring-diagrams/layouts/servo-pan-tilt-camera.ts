@@ -38,7 +38,7 @@ export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
       aliases: ['breadboard'],
       identity: {
         catalogueId: 'breadboard',
-        role: 'Joins the Uno ground to the servo supply ground. The two positive rails stay separate.',
+        role: 'Carries Uno 5 V for the joystick and the shared ground. Servo positive stays on the adapter screws.',
       },
       x: 348,
       y: 44,
@@ -47,7 +47,6 @@ export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
       ports: [
         { id: 'logic-plus', label: 'Uno 5V', dx: 28, dy: 26, aliases: ['pluslogicrail', 'logicrail'] },
         { id: 'gnd', label: 'GND', dx: 28, dy: 56, aliases: ['minusrail', 'gndrail', 'rail'] },
-        { id: 'servo-plus', label: 'PSU 5V', dx: 272, dy: 26, aliases: ['plusservorail', 'servorail'] },
       ],
     },
     {
@@ -58,7 +57,7 @@ export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
       identity: {
         catalogueId: 'sg90',
         role: 'Turns the camera left and right from D9.',
-        orientation: 'Red is PSU 5 V, brown is common ground, and orange is the signal.',
+        orientation: 'Red clamps under the adapter + screw, brown under the − screw, and orange is the signal.',
       },
       x: 740,
       y: 44,
@@ -79,7 +78,7 @@ export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
       identity: {
         catalogueId: 'sg90',
         role: 'Tilts the camera from D10.',
-        orientation: 'Red is PSU 5 V, brown is common ground, and orange is the signal.',
+        orientation: 'Red clamps under the adapter + screw, brown under the − screw, and orange is the signal.',
       },
       x: 740,
       y: 216,
@@ -115,12 +114,12 @@ export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
     },
     {
       id: 'psu',
-      kind: 'breadboard-psu',
-      label: 'Breadboard PSU',
-      aliases: ['breadboard psu'],
+      kind: 'dc-jack',
+      label: 'Adafruit 368',
+      aliases: ['adafruit 368', '5 v jack', 'barrel jack', 'dc jack'],
       identity: {
-        catalogueId: 'breadboard-psu',
-        role: 'Feeds the servo 5 V rail. It stays separate from the Uno 5 V rail.',
+        catalogueId: 'adafruit-368',
+        role: 'Takes the GST18A05-P1J plug. The + screw is servo positive and the − screw is servo ground.',
       },
       x: 740,
       y: 480,
@@ -128,8 +127,8 @@ export const SERVO_PAN_TILT_CAMERA_LAYOUT: WiringLayout = {
       height: 96,
       railDomain: 'servo',
       ports: [
-        { id: '5v', label: '5V', dx: 0, dy: 32, aliases: ['5v'] },
-        { id: 'gnd', label: 'GND', dx: 0, dy: 68, aliases: ['gnd'] },
+        { id: '5v', label: '+', dx: 0, dy: 32, aliases: ['5v', 'positive', 'plus'] },
+        { id: 'gnd', label: '−', dx: 0, dy: 68, aliases: ['gnd', 'negative', 'minus'] },
       ],
     },
   ],

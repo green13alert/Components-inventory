@@ -220,6 +220,8 @@ export function inferWireKind(
       to.element.kind === 'servo' ||
       from.element.kind === 'breadboard-psu' ||
       to.element.kind === 'breadboard-psu' ||
+      from.element.kind === 'dc-jack' ||
+      to.element.kind === 'dc-jack' ||
       from.element.railDomain === 'servo' ||
       to.element.railDomain === 'servo' ||
       fromPin.includes('servo') ||

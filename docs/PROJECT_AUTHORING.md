@@ -14,7 +14,7 @@ Author the project in local TypeScript first. Sync that same content into Supaba
 - The complete program the learner uploads, plus any excerpts taken from that same program.
 - A cover key. Use a 16:9 workbench photograph, or register a pending key. Do not draw a stand-in.
 
-`lib/project-authoring.ts` checks structure and cross-references. `localAuthoredProjects` in `lib/authored-projects.ts` runs that check on every project under `constants/walkthroughs/`. A project with one firmware file must paste that file. A project whose code steps are separate growing sketches is checked for step order, catalogue parts, and wiring, and is not required to match one firmware string. `npm run test:compatibility` runs these checks. They do not prove that the hardware works, that the instructions are clear, or that the diagram looks right.
+`lib/project-authoring.ts` checks structure and cross-references. `localAuthoredProjects` in `lib/authored-projects.ts` runs that check on every project under `constants/walkthroughs/`. A project with one firmware file must paste that file. A growing-sketch project names one authoritative final sketch. That sketch appears once, unchanged. Earlier sketches may be shorter, and any later excerpt must be taken from the final sketch. Pin constants that both sketches declare must match. `npm run test:compatibility` runs these checks. They do not prove that the hardware works, that the instructions are clear, or that the diagram looks right.
 
 ## Quality gates
 
@@ -32,7 +32,7 @@ Keep the schematic available for the circuit, and use the physical view for plac
 
 ### 3. Code completeness
 
-A new single-program project needs one complete program. Excerpts must be slices of that program and must be labelled as excerpts. The upload step is the only place that pastes the whole file. An existing project that already shows a new complete sketch at each code step keeps that format.
+A new single-program project needs one complete program. Excerpts must be slices of that program and must be labelled as excerpts. The upload step is the only place that pastes the whole file. An existing project that already shows a new complete sketch at each code step keeps that format. The last complete sketch is the one the upload step tells the learner to paste. Do not treat the longest code block as the firmware.
 
 ### 4. Firmware verification
 
@@ -105,6 +105,21 @@ Project details **Start Building** opens `/project/build/[slug]`.
 ## Database
 
 Keep the local walkthrough, BOM, requirements, and firmware in agreement with Supabase. Update one slug in a new migration. The slug 23 quality migration was rendered from `constants/walkthroughs/esp32-wifi-weather-station.ts`; change that file and the migration together. Preserve `user_projects.current_step`, which stores a step index, by updating steps in place on `sort_order` and appending new steps. Do not change other projects, draft-preview access, or `is_published`.
+
+## Hardware review that stays manual
+
+These are not wording checks. Record the source when a claim depends on a datasheet.
+
+- The external supply, its connector, polarity, and any mains lead are named parts, not a tip. The structural check rejects an external servo supply whose positive path uses a breadboard rail, or whose jack is missing from the BOM. A Dupont pin clamped under a screw is a review finding, not a signed-off connection. Current ratings, stall current, and a replacement connector stay manual until a manufacturer page states the rating and the mating parts.
+- Joystick aiming is either relative (deflection sets speed and a centred stick holds) or absolute (the stick sets the angle, with no deadzone that skips the update). The upload sketch and the tutorial must describe the same one. A deadzone wrapped around `map()` is an authoring error.
+- Jumper quantities come from the drawn physical jumpers. `jumper-wires` counts male-to-male wires. `jumper-male-female` counts male-to-female wires.
+- Every required part is a catalogue slug. Capability rows and project requirement constraints use those slugs. A migration that joins a missing slug inserts nothing; read the rows back. Do not treat a matching BOM count as proof that constraints exist.
+- `firmware/compile-record.ts` stores the toolchain versions and a checksum of each compiled sketch. A mismatch means that sketch changed after the last compile. The record is not a hardware test. `hardwareTested` stays false until a physical build is recorded.
+- Connector genders mate: female sockets on male headers, and the plug size matches the jack.
+- A generic catalogue row is not used when the build needs one board outline, header gender, or USB socket.
+- The upload sketch, the diagram pins, and the netlist name the same GPIO.
+- Progressive assembly introduces each physical part and jumper once, on the step that asks for it.
+- Publication still requires a recorded compile and a recorded build on the specified hardware. Do not mark either as done from a structural test.
 
 ## Before the project is called complete
 

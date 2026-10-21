@@ -76,8 +76,11 @@ const BATCH_ONE_IDS = [
 
 test('batch 1 adds 18 components and keeps the original ids', () => {
   const ids = COMPONENT_CATALOGUE.map((entry) => entry.id)
-  assert.equal(ids.length, 68)
-  assert.equal(new Set(ids).size, 68)
+  assert.equal(ids.length, 73)
+  assert.equal(new Set(ids).size, 73)
+  for (const id of ['esp32-devkitc-v4', 'stemma-qt-female', 'gst18a05-p1j', 'iec-c13-mains-lead', 'adafruit-368']) {
+    assert.equal(ids.includes(id), true)
+  }
   assert.equal(ids.includes('stemma-qt-cable'), true)
   assert.equal(ids.includes('rgb-led-cc'), true)
   assert.equal(ids.includes('rgb-led-ca'), true)
@@ -135,7 +138,7 @@ test('the catalogue buzzer is the active buzzer named by the motion-alarm steps'
   assert.equal(buzzer?.category, 'actuators')
   assert.equal(
     buzzer?.description,
-    'Active buzzer. A HIGH on the signal pin makes it sound.',
+    'Three-pin active buzzer module: VCC, I/O, and GND. HIGH on I/O turns the sounder on. The module switches the sounder from VCC, so the GPIO is a control pin. A two-pin piezo is a different part.',
   )
   assert.equal(idsFor('active buzzer')[0], 'buzzer')
   assert.equal(idsFor('buzzer')[0], 'buzzer')

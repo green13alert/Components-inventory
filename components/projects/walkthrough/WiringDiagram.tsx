@@ -364,6 +364,8 @@ function DiagramSymbol({ element }: { element: WiringElementDef }) {
       return <BreadboardSymbol element={element} />;
     case 'breadboard-psu':
       return <PsuSymbol element={element} />;
+    case 'dc-jack':
+      return <DcJackSymbol element={element} />;
     case 'pir':
       return <ModuleSymbol element={element} body={HW.sensorBlue} />;
     case 'buzzer':
@@ -613,6 +615,28 @@ function PsuSymbol({ element }: { element: WiringElementDef }) {
           </SvgText>
         );
       })}
+    </G>
+  );
+}
+
+function DcJackSymbol({ element }: { element: WiringElementDef }) {
+  const { x, y, width, height } = element;
+  return (
+    <G>
+      <Rect x={x} y={y} width={width} height={height} rx={8} fill="#1E293B" />
+      <Rect x={x + width - 58} y={y + 16} width={40} height={22} rx={11} fill="#CBD5E1" />
+      <Circle cx={x + width - 38} cy={y + 27} r={5} fill="#0F172A" />
+      <SvgText x={x + 12} y={y + 28} fill="#F8FAFC" fontSize={12} fontWeight="700">
+        Adafruit 368
+      </SvgText>
+      <SvgText x={x + 12} y={y + 46} fill="#FDE68A" fontSize={10} fontWeight="700">
+        2.1 mm jack
+      </SvgText>
+      {element.ports.map((port) => (
+        <SvgText key={port.id} x={x + 12} y={y + port.dy + 4} fill="#E2E8F0" fontSize={11} fontWeight="700">
+          {port.label}
+        </SvgText>
+      ))}
     </G>
   );
 }

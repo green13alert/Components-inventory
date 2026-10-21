@@ -357,7 +357,12 @@ function jumperGenderErrors(layout: WiringLayout, jumpers: PhysicalJumper[]): st
     if (holeEnds === 2 && jumper.gender !== 'male-male') {
       errors.push(`${jumper.id} joins two breadboard holes and must be male-to-male.`)
     }
-    if (moduleEnds.length === 2 && jumper.gender !== 'male-male') {
+    if (moduleEnds.length === 2 && jumper.gender === 'stemma-female') {
+      const kinds = moduleEnds.map((end) => layout.elements.find((item) => item.id === end.elementId)?.kind)
+      if (!kinds.includes('esp32-devkit') || !kinds.includes('bme280')) {
+        errors.push(`${jumper.id} is a STEMMA QT female cable and must run from the DevKit to the BME280.`)
+      }
+    } else if (moduleEnds.length === 2 && jumper.gender !== 'male-male') {
       errors.push(`${jumper.id} joins two module pins and must be male-to-male.`)
     }
     if (moduleEnds.length === 1 && holeEnds === 1) {

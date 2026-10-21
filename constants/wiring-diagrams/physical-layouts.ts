@@ -192,39 +192,36 @@ export const MOTION_PHYSICAL: PhysicalLayout = {
 }
 
 export const WEATHER_PHYSICAL: PhysicalLayout = {
-  ...upperBoard,
+  rows: 0,
+  railSplitAfter: null,
   fixtures: ['esp32'],
-  leads: [
-    { elementId: 'bme280', portId: 'vin', hole: rail('left', 'plus', 6) },
-    { elementId: 'bme280', portId: 'gnd', hole: rail('left', 'minus', 6) },
-    { elementId: 'bme280', portId: 'sdi', hole: strip('a', 10) },
-    { elementId: 'bme280', portId: 'sck', hole: strip('a', 14) },
-  ],
+  leads: [],
   jumpers: [
-    { id: 'devkit-3v3', gender: 'male-female', from: pin('esp32', '3v3'), to: rail('left', 'plus', 9) },
-    { id: 'devkit-gnd', gender: 'male-female', from: pin('esp32', 'gnd'), to: rail('left', 'minus', 9) },
-    { id: 'devkit-io21', gender: 'male-female', from: pin('esp32', 'io21'), to: strip('b', 10) },
-    { id: 'devkit-io22', gender: 'male-female', from: pin('esp32', 'io22'), to: strip('b', 14) },
+    { id: 'cable-vin', gender: 'stemma-female', from: pin('esp32', '3v3'), to: pin('bme280', 'vin') },
+    { id: 'cable-gnd', gender: 'stemma-female', from: pin('esp32', 'gnd'), to: pin('bme280', 'gnd') },
+    { id: 'cable-sdi', gender: 'stemma-female', from: pin('esp32', 'io21'), to: pin('bme280', 'sdi') },
+    { id: 'cable-sck', gender: 'stemma-female', from: pin('esp32', 'io22'), to: pin('bme280', 'sck') },
   ],
-  railBindings: [
-    { elementId: 'breadboard', portId: 'plus', side: 'left', polarity: 'plus', segment: 'upper' },
-    { elementId: 'breadboard', portId: 'minus', side: 'left', polarity: 'minus', segment: 'upper' },
-  ],
+  railBindings: [],
   modules: [
     devkitFrame([
       { portId: '3v3', header: 'j2', index: 0, label: '3V3' },
       { portId: 'gnd', header: 'j2', index: 13, label: 'GND' },
       { portId: 'io22', header: 'j3', index: 2, label: 'IO22' },
       { portId: 'io21', header: 'j3', index: 5, label: 'IO21' },
-    ]),
+    ], 24),
     {
       elementId: 'bme280',
-      x: 430,
-      y: 48,
-      width: 132,
-      height: 96,
-      pins: [],
-      cableFrom: { x: 438, y: 118 },
+      x: 280,
+      y: 80,
+      width: 140,
+      height: 110,
+      pins: [
+        { portId: 'vin', label: 'Vin', x: 280, y: 100 },
+        { portId: 'gnd', label: 'GND', x: 280, y: 124 },
+        { portId: 'sdi', label: 'SDI', x: 280, y: 148 },
+        { portId: 'sck', label: 'SCK', x: 280, y: 172 },
+      ],
     },
   ],
 }
@@ -242,14 +239,12 @@ export const SERVO_PHYSICAL: PhysicalLayout = {
   jumpers: [
     { id: 'uno-5v', gender: 'male-male', from: pin('arduino', '5v'), to: rail('left', 'plus', 2) },
     { id: 'uno-gnd', gender: 'male-male', from: pin('arduino', 'gnd'), to: rail('left', 'minus', 2) },
-    { id: 'psu-gnd', gender: 'male-male', from: pin('psu', 'gnd'), to: rail('right', 'minus', 3) },
-    { id: 'psu-5v', gender: 'male-male', from: pin('psu', '5v'), to: rail('right', 'plus', 3) },
-    { id: 'bridge-minus', gender: 'male-male', from: rail('left', 'minus', 1), to: rail('right', 'minus', 1) },
-    { id: 'pan-vcc', gender: 'male-male', from: rail('right', 'plus', 5), to: pin('pan', 'vcc') },
-    { id: 'pan-gnd', gender: 'male-male', from: rail('right', 'minus', 6), to: pin('pan', 'gnd') },
+    { id: 'psu-gnd', gender: 'male-male', from: pin('psu', 'gnd'), to: rail('left', 'minus', 4) },
+    { id: 'pan-vcc', gender: 'male-male', from: pin('psu', '5v'), to: pin('pan', 'vcc') },
+    { id: 'pan-gnd', gender: 'male-male', from: pin('psu', 'gnd'), to: pin('pan', 'gnd') },
     { id: 'pan-sig', gender: 'male-male', from: pin('arduino', 'd9'), to: pin('pan', 'sig') },
-    { id: 'tilt-vcc', gender: 'male-male', from: rail('right', 'plus', 8), to: pin('tilt', 'vcc') },
-    { id: 'tilt-gnd', gender: 'male-male', from: rail('right', 'minus', 9), to: pin('tilt', 'gnd') },
+    { id: 'tilt-vcc', gender: 'male-male', from: pin('psu', '5v'), to: pin('tilt', 'vcc') },
+    { id: 'tilt-gnd', gender: 'male-male', from: pin('psu', 'gnd'), to: pin('tilt', 'gnd') },
     { id: 'tilt-sig', gender: 'male-male', from: pin('arduino', 'd10'), to: pin('tilt', 'sig') },
     { id: 'joy-5v', gender: 'male-male', from: rail('left', 'plus', 8), to: strip('a', 8) },
     { id: 'joy-gnd', gender: 'male-male', from: rail('left', 'minus', 9), to: strip('a', 9) },
@@ -260,7 +255,6 @@ export const SERVO_PHYSICAL: PhysicalLayout = {
   railBindings: [
     { elementId: 'breadboard', portId: 'logic-plus', side: 'left', polarity: 'plus', segment: 'upper' },
     { elementId: 'breadboard', portId: 'gnd', side: 'left', polarity: 'minus', segment: 'upper' },
-    { elementId: 'breadboard', portId: 'servo-plus', side: 'right', polarity: 'plus', segment: 'upper' },
   ],
   modules: [
     unoFrame([
@@ -281,8 +275,8 @@ export const SERVO_PHYSICAL: PhysicalLayout = {
       width: 108,
       height: 72,
       pins: [
-        { portId: '5v', label: '5V', x: 438, y: 224 },
-        { portId: 'gnd', label: 'GND', x: 438, y: 248 },
+        { portId: '5v', label: '+', x: 438, y: 224 },
+        { portId: 'gnd', label: '−', x: 438, y: 248 },
       ],
     },
   ],
