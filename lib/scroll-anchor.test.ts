@@ -11,6 +11,10 @@ import { scrollAnchorDelta } from './scroll-anchor.ts'
 
 const mojibakeOhm = String.fromCharCode(0x00ce, 0x00a9)
 
+test('clearing a selection below the anchor does not move the page', () => {
+  assert.equal(scrollAnchorDelta(640, 640, false), 0)
+})
+
 test('content inserted above a component group is anchored, and expansion below is not', () => {
   assert.equal(scrollAnchorDelta(null, 420, false), 0)
   assert.equal(scrollAnchorDelta(420, 420, false), 0)

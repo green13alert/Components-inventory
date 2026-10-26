@@ -1,5 +1,5 @@
 /**
- * Compile the four authoritative sketches with Arduino CLI on PATH.
+ * Compile the authoritative sketches with Arduino CLI on PATH.
  * Pins the board cores and libraries. Exits non-zero when a compile fails.
  * Does not record a hardware test.
  */
@@ -21,6 +21,7 @@ const LIBRARIES = [
   { name: 'Adafruit Unified Sensor', version: '1.1.15' },
   { name: 'Adafruit BusIO', version: '1.17.4' },
   { name: 'Servo', version: '1.3.0' },
+  { name: 'MD_MAX72XX', version: '3.5.1' },
 ]
 
 const SKETCHES = [
@@ -41,6 +42,12 @@ const SKETCHES = [
     folder: 'esp32-wifi-weather-station',
     fqbn: 'esp32:esp32:esp32',
     board: 'ESP32 Dev Module (ESP32-DevKitC V4)',
+  },
+  {
+    slug: '25',
+    folder: 'led-matrix-maze',
+    fqbn: 'arduino:avr:uno',
+    board: 'Arduino Uno R3',
   },
   {
     slug: '24',
@@ -87,12 +94,14 @@ import { MOTION_SENSOR_ALARM_FIRMWARE } from './constants/walkthroughs/motion-se
 import { SERVO_PAN_TILT_CAMERA_FIRMWARE } from './constants/walkthroughs/servo-pan-tilt-camera.ts'
 import { ESP32_WIFI_WEATHER_FIRMWARE } from './constants/firmware/esp32-wifi-weather-station.ts'
 import { ESP32_BLE_RGB_FIRMWARE } from './constants/firmware/esp32-ble-rgb-controller.ts'
+import { LED_MATRIX_MAZE_FIRMWARE } from './constants/firmware/led-matrix-maze.ts'
 import { sketchChecksum } from './lib/sketch-checksum.ts'
 const rows = [
   ['8', MOTION_SENSOR_ALARM_FIRMWARE],
   ['18', SERVO_PAN_TILT_CAMERA_FIRMWARE],
   ['23', ESP32_WIFI_WEATHER_FIRMWARE],
   ['24', ESP32_BLE_RGB_FIRMWARE],
+  ['25', LED_MATRIX_MAZE_FIRMWARE],
 ]
 process.stdout.write(JSON.stringify(Object.fromEntries(rows.map(([slug, source]) => [slug, { source, checksum: sketchChecksum(source) }]))))
 `,

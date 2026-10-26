@@ -27,16 +27,85 @@ export function partHitBox(part: ScenePart): HitBox {
     const bottom = Math.max(...ys)
     return box(part.id, part.leads[0].at.x - 48, top, 56, bottom - top, 6)
   }
-  if (part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick') {
+  if ('width' in part && 'x' in part) {
+    return box(part.id, part.x, part.y, part.width, part.height, 6)
+  }
+  if (part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick' || part.kind === 'led-matrix') {
     const ys = part.leads.map((lead) => lead.at.y)
     const top = Math.min(...ys)
     const bottom = Math.max(...ys)
-    return box(part.id, part.leads[0].at.x, top - 8, part.kind === 'joystick' ? 84 : 72, bottom - top + 16, 6)
-  }
-  if (part.kind === 'esp32' || part.kind === 'uno' || part.kind === 'servo' || part.kind === 'psu' || part.kind === 'bme280') {
-    return box(part.id, part.x, part.y, part.width, part.height, 6)
+    const width = part.kind === 'led-matrix' ? 112 : part.kind === 'joystick' ? 84 : 72
+    return box(part.id, part.leads[0].at.x, top - 8, width, bottom - top + 16, 6)
   }
   return box(part.id, 0, 0, 28, 28)
+}
+
+export const WIRE_HIT_RADIUS = 16
+
+function pointSegmentDistance(point: Point, start: Point, end: Point) {
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  const lengthSq = dx * dx + dy * dy || 1
+  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSq))
+  return Math.hypot(point.x - (start.x + dx * t), point.y - (start.y + dy * t))
+}
+
+export function distanceToWire(wire: { d: string }, point: Point) {
+  const numbers = wire.d.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? []
+  let best = Number.POSITIVE_INFINITY
+  for (let index = 0; index + 3 < numbers.length; index += 2) {
+    best = Math.min(
+      best,
+      pointSegmentDistance(point, { x: numbers[index], y: numbers[index + 1] }, { x: numbers[index + 2], y: numbers[index + 3] }),
+    )
+  }
+  return best
+}
+
+/** Closest wire whose path passes within the touch radius. A near-tie keeps the earlier wire. */
+export function hitTestWire(scene: PhysicalScene, point: Point, radius = WIRE_HIT_RADIUS): string | null {
+  let best: { id: string; distance: number } | null = null
+  for (const wire of scene.wires) {
+    const distance = distanceToWire(wire, point)
+    if (distance > radius) {
+      continue
+    }
+    if (!best || distance < best.distance - 0.5) {
+      best = { id: wire.id, distance }
+    }
+  }
+  return best?.id ?? null
+}
+
+function pointInPartBody(part: ScenePart, point: Point) {
+  if ('width' in part && 'x' in part) {
+    return point.x >= part.x && point.x <= part.x + part.width && point.y >= part.y && point.y <= part.y + part.height
+  }
+  return false
+}
+
+export type SceneHit = { kind: 'wire'; id: string } | { kind: 'part'; id: string }
+
+/**
+ * A tap on a wire corridor selects that wire. A tap inside a module body selects the module,
+ * unless the finger is sitting on the wire itself. The breadboard does not steal a wire tap.
+ */
+export function hitTestSceneTarget(scene: PhysicalScene, point: Point): SceneHit | null {
+  const wireId = hitTestWire(scene, point)
+  const partId = hitTestScene(scene, point)
+  if (wireId) {
+    const wire = scene.wires.find((item) => item.id === wireId)
+    const distance = wire ? distanceToWire(wire, point) : Number.POSITIVE_INFINITY
+    const part = partId ? scene.parts.find((item) => item.id === partId) : undefined
+    if (part && pointInPartBody(part, point) && distance > 10) {
+      return { kind: 'part', id: part.id }
+    }
+    return { kind: 'wire', id: wireId }
+  }
+  if (partId) {
+    return { kind: 'part', id: partId }
+  }
+  return null
 }
 
 export function hitTestScene(scene: PhysicalScene, point: Point): string | null {

@@ -73,7 +73,30 @@ test('local authoring validation covers every walkthrough project', () => {
       { slug: '18', errors: [] },
       { slug: '23', errors: [] },
       { slug: '24', errors: [] },
+      { slug: '25', errors: [] },
     ],
+  )
+})
+
+test('a single-program excerpt must say that it is not the sketch to upload', () => {
+  const steps = weatherInput().steps.map((item) => ({ ...item, blocks: item.blocks.map((block) => ({ ...block })) }))
+  const partial = steps.find((item) => item.blocks.some((block) => block.type === 'code' && block.code !== ESP32_WIFI_WEATHER_FIRMWARE))
+  assert.ok(partial)
+  partial.description = 'Paste this and upload it.'
+  partial.tip = null
+  partial.blocks = partial.blocks.map((block) => {
+    if (block.type === 'code') {
+      return { ...block, filename: 'weather.ino' }
+    }
+    if (block.type === 'text' || block.type === 'code_explanation') {
+      return { ...block, body: 'This is the program.' }
+    }
+    return block
+  })
+  const findings = reviewAuthoredProject(weatherInput({ steps }))
+  assert.equal(
+    authoringErrors(findings).some((finding) => finding.message.includes('not labelled as part of the finished sketch')),
+    true,
   )
 })
 

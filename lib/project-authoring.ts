@@ -54,6 +54,20 @@ function connectionKey(row: StepConnection): string {
   return [row.fromComponent, row.fromPin, row.toComponent, row.toPin, row.signal ?? ''].join('|')
 }
 
+function excerptIsLabelled(step: AuthoredWalkthroughStep): boolean {
+  const parts = [step.description, step.tip ?? '']
+  for (const block of step.blocks) {
+    if (block.type === 'code' && block.filename) {
+      parts.push(block.filename)
+    }
+    const body = bodyOf(block)
+    if (body && block.type !== 'code') {
+      parts.push(body)
+    }
+  }
+  return /excerpt/i.test(parts.join('\n'))
+}
+
 function bodyOf(block: AuthoredWalkthroughStep['blocks'][number]): string | null {
   if (block.type === 'components' || block.type === 'wiring' || block.type === 'connections' || block.type === 'image') {
     return null
@@ -277,9 +291,15 @@ export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFin
   }
 
   if (input.codeStyle === 'single-program' && input.firmware) {
-    const pasted = input.steps.some((step) => step.blocks.some((block) => block.type === 'code' && block.code === input.firmware))
-    if (!pasted) {
-      error('code', 'The complete firmware is not pasted into a walkthrough step.')
+    const fullCopies = input.steps.flatMap((step) => step.blocks).filter((block) => block.type === 'code' && block.code === input.firmware)
+    if (fullCopies.length !== 1) {
+      error('code', 'The complete firmware must appear once, as the sketch to upload.')
+    }
+    for (const step of input.steps) {
+      const partial = step.blocks.some((block) => block.type === 'code' && block.code !== input.firmware)
+      if (partial && !excerptIsLabelled(step)) {
+        error('code', `Step “${step.title}” shows an excerpt that is not labelled as part of the finished sketch.`)
+      }
     }
   }
   if (input.codeStyle === 'growing-sketches') {

@@ -3,10 +3,12 @@ import { test } from 'node:test'
 
 import { ESP32_BLE_RGB_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32-ble-rgb-controller.ts'
 import { ESP32_WIFI_WEATHER_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32-wifi-weather-station.ts'
+import { LED_MATRIX_MAZE_LAYOUT } from '../constants/wiring-diagrams/layouts/led-matrix-maze.ts'
 import { MOTION_SENSOR_ALARM_LAYOUT } from '../constants/wiring-diagrams/layouts/motion-sensor-alarm.ts'
 import { SERVO_PAN_TILT_CAMERA_LAYOUT } from '../constants/wiring-diagrams/layouts/servo-pan-tilt-camera.ts'
 import { ESP32_BLE_RGB_CONNECTIONS } from '../constants/walkthroughs/esp32-ble-rgb-controller.ts'
 import { ESP32_WIFI_WEATHER_CONNECTIONS } from '../constants/walkthroughs/esp32-wifi-weather-station.ts'
+import { LED_MATRIX_MAZE_CONNECTIONS } from '../constants/walkthroughs/led-matrix-maze.ts'
 import { MOTION_SENSOR_ALARM_CONNECTIONS } from '../constants/walkthroughs/motion-sensor-alarm.ts'
 import { SERVO_PAN_TILT_CAMERA_CONNECTIONS } from '../constants/walkthroughs/servo-pan-tilt-camera.ts'
 import { jumperInventory, validatePhysicalLayout } from './breadboard-layout.ts'
@@ -17,6 +19,7 @@ test('the four authored physical layouts match their netlists', () => {
   assert.deepEqual(validatePhysicalLayout(MOTION_SENSOR_ALARM_LAYOUT, MOTION_SENSOR_ALARM_CONNECTIONS), [])
   assert.deepEqual(validatePhysicalLayout(ESP32_WIFI_WEATHER_LAYOUT, ESP32_WIFI_WEATHER_CONNECTIONS), [])
   assert.deepEqual(validatePhysicalLayout(SERVO_PAN_TILT_CAMERA_LAYOUT, SERVO_PAN_TILT_CAMERA_CONNECTIONS), [])
+  assert.deepEqual(validatePhysicalLayout(LED_MATRIX_MAZE_LAYOUT, LED_MATRIX_MAZE_CONNECTIONS), [])
 })
 
 test('jumper counts distinguish gender and stay within the listed packs', () => {
@@ -24,6 +27,7 @@ test('jumper counts distinguish gender and stay within the listed packs', () => 
   assert.deepEqual(jumperInventory(MOTION_SENSOR_ALARM_LAYOUT.physical as PhysicalLayout), { maleMale: 10, maleFemale: 0 })
   assert.deepEqual(jumperInventory(ESP32_WIFI_WEATHER_LAYOUT.physical as PhysicalLayout), { maleMale: 0, maleFemale: 0 })
   assert.deepEqual(jumperInventory(SERVO_PAN_TILT_CAMERA_LAYOUT.physical as PhysicalLayout), { maleMale: 14, maleFemale: 0 })
+  assert.deepEqual(jumperInventory(LED_MATRIX_MAZE_LAYOUT.physical as PhysicalLayout), { maleMale: 2, maleFemale: 10 })
 })
 
 test('a duplicated hole and a power short are rejected', () => {

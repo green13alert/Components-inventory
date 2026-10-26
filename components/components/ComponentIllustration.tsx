@@ -8,6 +8,7 @@ import {
   resolveComponentIllustration,
   type ComponentIllustrationId,
 } from '@/constants/component-illustrations';
+import { RESISTOR_COLORS, resistorColorCode, resistorOhmsFromId, type ResistorColor } from '@/lib/resistor-bands';
 
 type ComponentIllustrationProps = {
   id?: string;
@@ -26,6 +27,7 @@ export function ComponentIllustration({
   showGroundShadow = true,
 }: ComponentIllustrationProps) {
   const illustrationId = resolveComponentIllustration({ id, name });
+  const ohms = resistorOhmsFromId(id) ?? (illustrationId === 'resistor-band-220' ? 220 : illustrationId === 'resistor-band-1k' ? 1000 : null);
   const inner = size * 0.88;
 
   return (
@@ -43,7 +45,7 @@ export function ComponentIllustration({
         />
       ) : null}
       <View style={styles.art}>
-        <IllustrationArt id={illustrationId} size={inner} showGroundShadow={showGroundShadow} />
+        <IllustrationArt id={illustrationId} size={inner} showGroundShadow={showGroundShadow} ohms={ohms} />
       </View>
     </View>
   );
@@ -53,10 +55,12 @@ function IllustrationArt({
   id,
   size,
   showGroundShadow,
+  ohms,
 }: {
   id: ComponentIllustrationId;
   size: number;
   showGroundShadow: boolean;
+  ohms: number | null;
 }) {
   switch (id) {
     case 'arduino-uno':
@@ -74,23 +78,9 @@ function IllustrationArt({
     case 'led':
       return <Led size={size} showGroundShadow={showGroundShadow} />;
     case 'resistor':
-      return <Resistor size={size} showGroundShadow={showGroundShadow} />;
     case 'resistor-band-220':
-      return (
-        <Resistor
-          size={size}
-          showGroundShadow={showGroundShadow}
-          bands={[HW.bandRed, HW.bandRed, HW.bandBrown, HW.bandGold]}
-        />
-      );
     case 'resistor-band-1k':
-      return (
-        <Resistor
-          size={size}
-          showGroundShadow={showGroundShadow}
-          bands={[HW.bandBrown, '#111827', HW.bandRed, HW.bandGold]}
-        />
-      );
+      return <Resistor size={size} showGroundShadow={showGroundShadow} ohms={ohms} />;
     case 'ceramic-capacitor':
       return <CeramicCapacitor size={size} showGroundShadow={showGroundShadow} />;
     case 'electrolytic-capacitor':
@@ -123,6 +113,8 @@ function IllustrationArt({
       return <Buzzer size={size} showGroundShadow={showGroundShadow} />;
     case 'joystick':
       return <Joystick size={size} showGroundShadow={showGroundShadow} />;
+    case 'led-matrix':
+      return <LedMatrix size={size} showGroundShadow={showGroundShadow} />;
     case 'breadboard-psu':
       return <BreadboardPsu size={size} showGroundShadow={showGroundShadow} />;
     case 'stemma-qt':
@@ -223,25 +215,19 @@ function PinRow({
 function ArduinoUno({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      {/* Main board — familiar Arduino teal-blue */}
-      <Rect x={10} y={20} width={44} height={28} rx={2.5} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.8} />
-      <TopSheen x={12} y={21} w={28} h={6} rx={1} />
-      {/* USB connector */}
-      <Rect x={6} y={28} width={7} height={12} rx={1} fill={HW.usbSilver} stroke={HW.metalDark} strokeWidth={0.5} />
-      <Rect x={7} y={30} width={5} height={8} rx={0.5} fill={HW.metalLight} />
-      {/* IC chip */}
-      <Rect x={24} y={28} width={16} height={12} rx={1} fill={HW.icBlack} stroke={HW.icPin} strokeWidth={0.5} />
-      <TopSheen x={25} y={29} w={10} h={3} rx={0.5} />
-      {/* Power LED */}
-      <Circle cx={46} cy={26} r={2.2} fill={HW.ledGreen} />
-      <Circle cx={46} cy={26} r={1} fill={HW.highlightSoft} />
-      {/* Pin headers */}
-      <PinRow x={14} y={14} count={12} spacing={3.2} />
-      <PinRow x={14} y={50} count={12} spacing={3.2} />
-      {/* Silkscreen traces */}
-      {[22, 26, 30, 34, 38].map((y) => (
-        <Line key={y} x1={16} y1={y} x2={48} y2={y} stroke={HW.pcbBlueHighlight} strokeWidth={0.5} opacity={0.35} />
-      ))}
+      <Rect x={12} y={16} width={44} height={32} rx={3} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.8} />
+      <Circle cx={16} cy={20} r={1.4} fill={HW.metalLight} />
+      <Circle cx={52} cy={20} r={1.4} fill={HW.metalLight} />
+      <Circle cx={16} cy={44} r={1.4} fill={HW.metalLight} />
+      <Circle cx={52} cy={44} r={1.4} fill={HW.metalLight} />
+      <Rect x={4} y={26} width={10} height={12} rx={1} fill={HW.usbSilver} stroke={HW.metalDark} strokeWidth={0.5} />
+      <Rect x={6} y={28} width={6} height={8} rx={0.6} fill="#292524" />
+      <Rect x={14} y={34} width={8} height={8} rx={1} fill={HW.icBlack} />
+      <Circle cx={18} cy={38} r={2} fill="#0C0A09" />
+      <Rect x={26} y={26} width={16} height={12} rx={1} fill={HW.icBlack} />
+      <Circle cx={48} cy={22} r={2} fill={HW.ledGreen} />
+      <PinRow x={16} y={12} count={10} spacing={3.2} />
+      <PinRow x={16} y={50} count={10} spacing={3.2} />
     </IllustrationSvg>
   );
 }
@@ -249,21 +235,13 @@ function ArduinoUno({ size, showGroundShadow = true }: IllustrationProps) {
 function Esp32({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      {/* USB connector on the short edge, then the dark green DevKit PCB */}
-      <Rect x={4} y={26} width={10} height={12} rx={1} fill={HW.usbSilver} stroke={HW.metalDark} strokeWidth={0.5} />
-      <Rect x={12} y={18} width={40} height={28} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.8} />
-      <TopSheen x={14} y={19} w={24} h={5} rx={1} />
-      {/* Metal RF shield — bright silver, high contrast */}
-      <Rect x={20} y={24} width={18} height={14} rx={1.5} fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.6} />
-      <Rect x={22} y={26} width={14} height={10} rx={1} fill={HW.metalLight} opacity={0.5} />
-      <TopSheen x={21} y={25} w={10} h={4} rx={0.5} />
-      {/* Antenna area */}
-      <Path d="M 44 22 L 54 16 L 54 20 L 44 24 Z" fill={HW.pcbGreenLight} stroke={HW.pcbGreen} strokeWidth={0.4} />
-      {/* Pin rows */}
-      <PinRow x={14} y={14} count={10} spacing={3.6} />
-      <PinRow x={14} y={50} count={10} spacing={3.6} />
-      {/* Status LED */}
-      <Circle cx={38} cy={22} r={1.5} fill={HW.ledRed} />
+      <Rect x={14} y={14} width={40} height={36} rx={2} fill="#18181B" stroke="#27272A" strokeWidth={0.8} />
+      <Rect x={4} y={26} width={12} height={12} rx={1} fill={HW.usbSilver} stroke={HW.metalDark} strokeWidth={0.5} />
+      <Rect x={6} y={29} width={7} height={6} rx={0.6} fill="#292524" />
+      <Rect x={24} y={20} width={22} height={16} rx={2} fill={HW.metalLight} stroke={HW.metalDark} strokeWidth={0.6} />
+      <PinRow x={18} y={10} count={8} spacing={3.6} />
+      <PinRow x={18} y={52} count={8} spacing={3.6} />
+      <Circle cx={46} cy={42} r={1.6} fill={HW.ledRed} />
     </IllustrationSvg>
   );
 }
@@ -364,21 +342,19 @@ function Led({ size, showGroundShadow = true }: IllustrationProps) {
 function Resistor({
   size,
   showGroundShadow = true,
-  bands = [HW.bandBrown, HW.bandRed, HW.bandGold, HW.bandGold],
-}: IllustrationProps & { bands?: readonly string[] }) {
+  ohms = null,
+}: IllustrationProps & { ohms?: number | null }) {
+  const code = ohms == null ? null : resistorColorCode(ohms);
+  const bands = code?.colors.map((color: ResistorColor) => RESISTOR_COLORS[color]) ?? [];
+  const body = code?.body === 'blue' ? '#1D4ED8' : HW.resistorBody;
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      {/* Leads */}
-      <Line x1={10} y1={32} x2={18} y2={32} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
-      <Line x1={46} y1={32} x2={54} y2={32} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
-      {/* Beige body */}
-      <Rect x={18} y={26} width={28} height={12} rx={6} fill={HW.resistorBody} stroke="#B8A888" strokeWidth={0.7} />
-      <TopSheen x={20} y={27} w={16} h={4} rx={2} />
-      {/* Colour bands. The default drawing stays the shared generic resistor. */}
-      <Rect x={22} y={27} width={3.5} height={10} rx={1} fill={bands[0]} />
-      <Rect x={28} y={27} width={3.5} height={10} rx={1} fill={bands[1]} />
-      <Rect x={34} y={27} width={3.5} height={10} rx={1} fill={bands[2]} />
-      <Rect x={40} y={27} width={3.5} height={10} rx={1} fill={bands[3]} />
+      <Line x1={8} y1={32} x2={16} y2={32} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1={48} y1={32} x2={56} y2={32} stroke={HW.pinSilver} strokeWidth={1.6} strokeLinecap="round" />
+      <Rect x={16} y={25} width={32} height={14} rx={7} fill={body} stroke="#B8A888" strokeWidth={0.7} />
+      {bands.map((fill, index) => (
+        <Rect key={`${fill}-${index}`} x={19 + index * (28 / bands.length)} y={26} width={2.4} height={12} fill={fill} />
+      ))}
     </IllustrationSvg>
   );
 }
@@ -524,19 +500,13 @@ function DcMotor({ size, showGroundShadow = true }: IllustrationProps) {
 function Breadboard({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      {/* White body */}
-      <Rect x={8} y={22} width={48} height={24} rx={2} fill={HW.breadWhite} stroke={HW.breadCream} strokeWidth={0.8} />
-      <TopSheen x={10} y={23} w={32} h={6} rx={1} />
-      {/* Power rails */}
-      <Rect x={10} y={24} width={44} height={2.5} rx={0.5} fill={HW.railRed} opacity={0.85} />
-      <Rect x={10} y={41} width={44} height={2.5} rx={0.5} fill={HW.railBlue} opacity={0.85} />
-      {/* Tie points */}
-      {[16, 22, 28, 34, 40, 46].map((x) =>
-        [30, 36].map((y) => (
-          <Circle key={`${x}-${y}`} cx={x} cy={y} r={1.3} fill={HW.breadHole} />
-        )),
+      <Rect x={6} y={16} width={52} height={32} rx={3} fill={HW.breadWhite} stroke="#D6D3D1" strokeWidth={0.8} />
+      <Rect x={8} y={18} width={48} height={3} rx={1} fill={HW.railRed} />
+      <Rect x={8} y={43} width={48} height={3} rx={1} fill={HW.railBlue} />
+      <Rect x={8} y={30} width={48} height={4} rx={1} fill="#E7E5E4" />
+      {[14, 20, 26, 32, 38, 44, 50].map((x) =>
+        [24, 28, 36, 40].map((y) => <Circle key={`${x}-${y}`} cx={x} cy={y} r={1.15} fill="#292524" />),
       )}
-      <Line x1={10} y1={33} x2={54} y2={33} stroke={HW.breadCream} strokeWidth={0.6} />
     </IllustrationSvg>
   );
 }
@@ -544,12 +514,13 @@ function Breadboard({ size, showGroundShadow = true }: IllustrationProps) {
 function PirSensor({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      <Rect x={14} y={28} width={36} height={16} rx={2} fill={HW.pcbBlue} stroke={HW.pcbBlueDark} strokeWidth={0.7} />
-      <TopSheen x={16} y={29} w={22} h={4} rx={1} />
-      {/* White dome */}
-      <Circle cx={32} cy={30} r={9} fill="#FAFAF5" stroke={HW.breadCream} strokeWidth={0.7} />
-      <Ellipse cx={32} cy={27} rx={5} ry={3} fill={HW.highlightSoft} />
-      <PinRow x={26} y={18} count={3} spacing={6} />
+      <Rect x={10} y={14} width={44} height={32} rx={3} fill="#166534" stroke="#052E16" strokeWidth={0.7} />
+      <Circle cx={32} cy={26} r={13} fill="#F8FAFC" stroke="#CBD5E1" strokeWidth={0.8} />
+      <Circle cx={32} cy={26} r={8} fill="#F8FAFC" stroke="#E2E8F0" strokeWidth={0.7} />
+      <Circle cx={32} cy={26} r={4} fill="#F1F5F9" stroke="#CBD5E1" strokeWidth={0.6} />
+      <Circle cx={18} cy={40} r={2.4} fill="#EA580C" />
+      <Circle cx={46} cy={40} r={2.4} fill="#EA580C" />
+      <PinRow x={22} y={50} count={3} spacing={8} />
     </IllustrationSvg>
   );
 }
@@ -745,11 +716,26 @@ function RgbLed({ size, showGroundShadow = true }: IllustrationProps) {
 function Buzzer({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      <Rect x={14} y={28} width={36} height={16} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.6} />
-      <Circle cx={32} cy={24} r={12} fill={HW.icBlack} stroke={HW.metalDark} strokeWidth={0.7} />
-      <Circle cx={32} cy={24} r={5} fill={HW.metal} />
-      <Circle cx={32} cy={24} r={1.6} fill={HW.metalLight} />
-      <PinRow x={22} y={48} count={3} spacing={8} />
+      <Rect x={12} y={18} width={40} height={26} rx={3} fill="#14532D" stroke="#052E16" strokeWidth={0.7} />
+      <Circle cx={32} cy={28} r={13} fill="#0C0A09" stroke={HW.metal} strokeWidth={0.8} />
+      <Circle cx={32} cy={28} r={7} fill="#18181B" stroke="#57534E" strokeWidth={0.6} />
+      <Circle cx={32} cy={28} r={2.6} fill="#0C0A09" />
+      <PinRow x={22} y={50} count={3} spacing={8} />
+    </IllustrationSvg>
+  );
+}
+
+function LedMatrix({ size, showGroundShadow = true }: IllustrationProps) {
+  return (
+    <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
+      <Rect x={10} y={8} width={44} height={40} rx={3} fill="#14532D" stroke="#052E16" strokeWidth={0.7} />
+      <Rect x={14} y={12} width={36} height={32} rx={2} fill="#0C0A09" />
+      {Array.from({ length: 64 }, (_, index) => {
+        const column = index % 8;
+        const row = Math.floor(index / 8);
+        return <Circle key={index} cx={18 + column * 4.2} cy={16 + row * 3.6} r={1.15} fill={HW.ledRed} />;
+      })}
+      <PinRow x={16} y={52} count={5} spacing={6} />
     </IllustrationSvg>
   );
 }
@@ -757,11 +743,15 @@ function Buzzer({ size, showGroundShadow = true }: IllustrationProps) {
 function Joystick({ size, showGroundShadow = true }: IllustrationProps) {
   return (
     <IllustrationSvg size={size} showGroundShadow={showGroundShadow}>
-      <Rect x={12} y={22} width={40} height={26} rx={2} fill={HW.pcbGreenMid} stroke={HW.pcbGreen} strokeWidth={0.7} />
-      <Circle cx={32} cy={28} r={8} fill={HW.icBlack} />
-      <Line x1={32} y1={28} x2={40} y2={14} stroke={HW.metalDark} strokeWidth={3} strokeLinecap="round" />
-      <Circle cx={42} cy={12} r={5} fill={HW.icBlack} stroke={HW.metal} strokeWidth={0.6} />
-      <PinRow x={18} y={52} count={5} spacing={6} />
+      <Rect x={10} y={22} width={44} height={24} rx={2} fill="#18181B" stroke="#27272A" strokeWidth={0.7} />
+      <Circle cx={16} cy={26} r={1.6} fill={HW.metalLight} />
+      <Circle cx={48} cy={26} r={1.6} fill={HW.metalLight} />
+      <Circle cx={16} cy={42} r={1.6} fill={HW.metalLight} />
+      <Circle cx={48} cy={42} r={1.6} fill={HW.metalLight} />
+      <Circle cx={30} cy={34} r={7} fill="#27272A" stroke={HW.metal} strokeWidth={0.6} />
+      <Circle cx={36} cy={18} r={7} fill="#3F3F46" stroke={HW.metalLight} strokeWidth={0.7} />
+      <Line x1={30} y1={30} x2={36} y2={20} stroke="#52525B" strokeWidth={3} strokeLinecap="round" />
+      <PinRow x={16} y={50} count={5} spacing={6} />
     </IllustrationSvg>
   );
 }

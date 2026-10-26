@@ -12,7 +12,7 @@ export type SupportingNote = {
   body: string
 }
 
-export const SUPPORTING_NOTES: Record<'8' | '18' | '23' | '24', SupportingNote[]> = {
+export const SUPPORTING_NOTES: Record<'8' | '18' | '23' | '24' | '25', SupportingNote[]> = {
   '8': [
     {
       sourceTitle: 'How the Motion Sensor Works',
@@ -71,6 +71,16 @@ export const SUPPORTING_NOTES: Record<'8' | '18' | '23' | '24', SupportingNote[]
     {
       sourceTitle: 'What you will learn',
       body: 'Each colour needs a transistor and two resistors. A phone writes a colour over Bluetooth Low Energy. BLE is the short-range radio this project uses. It is a different system from the classic Bluetooth link a speaker uses.',
+    },
+  ],
+  '25': [
+    {
+      sourceTitle: 'FC-16 current and orientation',
+      body: 'The MAX7219 datasheet allows 4.0 V to 5.5 V and sets segment current from RSET. The minimum RSET of 9.53 kΩ is about 40 mA peak per segment. A common FC-16 module uses a resistor near 10 kΩ. The chip multiplexes the display: it lights one row at a time, so eight LEDs in that row can approach a few hundred milliamps before the Uno’s own draw. Intensity is a duty cycle on a 0 to 15 scale. Intensity 2 is a low duty cycle, so the average current of this maze stays far below that peak. USB at 500 mA is a reasonable supply only while intensity stays at 2 and the maze does not light all 64 LEDs. MajicDesigns documents the FC-16 with the DIN side on the right and the pin order CLK, CS, DIN, GND, VCC from the top. PCB text may look upside down in that orientation. Row 0 of MD_MAX72XX::FC16_HW is the top of that view. Another MAX7219 board can use a different header order, so this project names the FC-16 module rather than every board sold as a matrix.',
+    },
+    {
+      sourceTitle: 'Button debounce and millis() rollover',
+      body: 'SW reads LOW when pressed because the pin uses INPUT_PULLUP. readPress stores the last accepted level in buttonDown and the time of the last change in buttonChanged. While the raw reading matches that stored level, it refreshes buttonChanged, so a noisy edge has to stay in the new state for BUTTON_DEBOUNCE_MS, 40 ms, before it counts. The function returns true only when the stored state changes to pressed, so holding the button does not repeat. takeMove, completeLevel, and readPress subtract unsigned long values. When millis() wraps past 2^32 − 1, that subtraction still yields the elapsed time. delay() inside loop would stall the blink and the button. The boot flash uses delay(300) before runStarted is stored, so that pause is outside the run timer.',
     },
   ],
 }

@@ -1,8 +1,10 @@
 import { COMPONENT_CATALOGUE } from '../constants/component-catalogue.ts'
 import { ESP32_BLE_RGB_FIRMWARE } from '../constants/firmware/esp32-ble-rgb-controller.ts'
 import { ESP32_WIFI_WEATHER_FIRMWARE } from '../constants/firmware/esp32-wifi-weather-station.ts'
+import { LED_MATRIX_MAZE_FIRMWARE } from '../constants/firmware/led-matrix-maze.ts'
 import { ESP32_BLE_RGB_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32-ble-rgb-controller.ts'
 import { ESP32_WIFI_WEATHER_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32-wifi-weather-station.ts'
+import { LED_MATRIX_MAZE_LAYOUT } from '../constants/wiring-diagrams/layouts/led-matrix-maze.ts'
 import { MOTION_SENSOR_ALARM_LAYOUT } from '../constants/wiring-diagrams/layouts/motion-sensor-alarm.ts'
 import { SERVO_PAN_TILT_CAMERA_LAYOUT } from '../constants/wiring-diagrams/layouts/servo-pan-tilt-camera.ts'
 import {
@@ -23,6 +25,12 @@ import {
   ESP32_BLE_RGB_PROJECT,
   ESP32_BLE_RGB_STEPS,
 } from '../constants/walkthroughs/esp32-ble-rgb-controller.ts'
+import {
+  LED_MATRIX_MAZE_COMPONENTS,
+  LED_MATRIX_MAZE_CONNECTIONS,
+  LED_MATRIX_MAZE_PROJECT,
+  LED_MATRIX_MAZE_STEPS,
+} from '../constants/walkthroughs/led-matrix-maze.ts'
 import {
   ESP32_WIFI_WEATHER_BOM,
   ESP32_WIFI_WEATHER_CONNECTIONS,
@@ -116,6 +124,26 @@ export function localAuthoredProjects(): AuthoredProjectInput[] {
       layout: ESP32_BLE_RGB_LAYOUT,
       firmware: ESP32_BLE_RGB_FIRMWARE,
       requirements: ESP32_BLE_RGB_BOM.map(() => ({
+        policy: 'exact' as const,
+        approvedReviewIds: [],
+      })),
+      codeStyle: 'single-program',
+      compilation: 'passed',
+      hardwareTested: false,
+    },
+    {
+      slug: LED_MATRIX_MAZE_PROJECT.slug,
+      title: LED_MATRIX_MAZE_PROJECT.title,
+      isPublished: LED_MATRIX_MAZE_PROJECT.isPublished,
+      learningObjectives: LED_MATRIX_MAZE_PROJECT.learningObjectives,
+      coverPending: projectCoverIsPending(LED_MATRIX_MAZE_PROJECT.imageKey),
+      bom: LED_MATRIX_MAZE_COMPONENTS.map((item) => ({ slug: item.id, quantity: item.quantity })),
+      catalogueIds: ids,
+      steps: LED_MATRIX_MAZE_STEPS,
+      connections: LED_MATRIX_MAZE_CONNECTIONS,
+      layout: LED_MATRIX_MAZE_LAYOUT,
+      firmware: LED_MATRIX_MAZE_FIRMWARE,
+      requirements: LED_MATRIX_MAZE_COMPONENTS.map(() => ({
         policy: 'exact' as const,
         approvedReviewIds: [],
       })),

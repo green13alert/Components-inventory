@@ -17,6 +17,7 @@ import { tabBarBottomPadding } from '@/constants/layout';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { Spacing } from '@/constants/tokens';
 import { useAtlas } from '@/context/atlas-context';
+import { shownInRecommendations } from '@/lib/catalogue-visibility';
 import { useSolderiColors } from '@/context/theme-context';
 
 const RECOMMENDED_PROJECT_LIMIT = 3;
@@ -37,6 +38,7 @@ export default function HomeScreen() {
       return bUpdated.localeCompare(aUpdated);
     });
   const recommendedProjects = projects
+    .filter((project) => shownInRecommendations(project.slug))
     .filter((project) => project.requiredComponentCount > 0 || project.authoredSteps.length > 0)
     .slice(0, RECOMMENDED_PROJECT_LIMIT);
   const recentComponents = [...inventory]

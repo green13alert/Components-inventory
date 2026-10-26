@@ -145,3 +145,83 @@ test('the exact required part matches and a contradictory part does not', () => 
   })
   assert.equal(maleCable.matchKind, 'incompatible')
 })
+
+test('project 25 accepts the FC-16 and KY-023 rows and rejects other builds', () => {
+  const matrix = evaluateComponentCompatibility({
+    requirement: { ...requirement('25', 'max7219'), quantity: 1 },
+    canonical: candidate('max7219', facts('max7219')),
+    candidate: { ...candidate('max7219', facts('max7219')), quantity: 1 },
+    review: null,
+  })
+  assert.equal(matrix.matchKind, 'exact')
+  assert.equal(matrix.reasonCode, 'canonical_component')
+
+  const missingMatrix = evaluateComponentCompatibility({
+    requirement: { ...requirement('25', 'max7219'), quantity: 1 },
+    canonical: candidate('max7219', facts('max7219')),
+    candidate: { ...candidate('max7219', facts('max7219')), quantity: 0 },
+    review: null,
+  })
+  assert.equal(missingMatrix.matchKind, 'insufficient_quantity')
+
+  const bareChip = evaluateComponentCompatibility({
+    requirement: requirement('25', 'max7219'),
+    canonical: candidate('max7219', facts('max7219')),
+    candidate: candidate('max7219-chip', [
+      { capability: 'function', value: 'led_matrix' },
+      { capability: 'supply_v', value: '5' },
+      { capability: 'interface', value: 'spi' },
+      { capability: 'physical_form', value: 'bare_chip' },
+    ]),
+    review: null,
+  })
+  assert.equal(bareChip.matchKind, 'incompatible')
+  assert.equal(bareChip.reasonCode, 'constraint_failed')
+
+  const sameShapeOtherPart = evaluateComponentCompatibility({
+    requirement: requirement('25', 'max7219'),
+    canonical: candidate('max7219', facts('max7219')),
+    candidate: candidate('other-fc16', facts('max7219')),
+    review: null,
+  })
+  assert.equal(sameShapeOtherPart.matchKind, 'not_supported')
+  assert.equal(sameShapeOtherPart.reasonCode, 'policy_exact')
+
+  const stick = evaluateComponentCompatibility({
+    requirement: requirement('25', 'joystick'),
+    canonical: candidate('joystick', facts('joystick')),
+    candidate: candidate('joystick', facts('joystick')),
+    review: null,
+  })
+  assert.equal(stick.matchKind, 'exact')
+
+  const solderPadStick = evaluateComponentCompatibility({
+    requirement: requirement('25', 'joystick'),
+    canonical: candidate('joystick', facts('joystick')),
+    candidate: candidate('joystick-pads', [
+      { capability: 'function', value: 'joystick' },
+      { capability: 'supply_v', value: '5' },
+      { capability: 'physical_form', value: 'solder_pads' },
+    ]),
+    review: null,
+  })
+  assert.equal(solderPadStick.matchKind, 'incompatible')
+  assert.equal(solderPadStick.reasonCode, 'constraint_failed')
+
+  const femaleJumper = evaluateComponentCompatibility({
+    requirement: requirement('25', 'jumper-male-female'),
+    canonical: candidate('jumper-male-female', facts('jumper-male-female')),
+    candidate: candidate('jumper-male-female', facts('jumper-male-female')),
+    review: null,
+  })
+  assert.equal(femaleJumper.matchKind, 'exact')
+
+  const maleJumperOnFemaleRow = evaluateComponentCompatibility({
+    requirement: requirement('25', 'jumper-male-female'),
+    canonical: candidate('jumper-male-female', facts('jumper-male-female')),
+    candidate: candidate('jumper-wires', facts('jumper-wires')),
+    review: null,
+  })
+  assert.equal(maleJumperOnFemaleRow.matchKind, 'incompatible')
+  assert.equal(maleJumperOnFemaleRow.reasonCode, 'constraint_failed')
+})

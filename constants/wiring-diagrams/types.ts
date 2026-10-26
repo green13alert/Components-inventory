@@ -11,6 +11,7 @@ export type WiringSymbolKind =
   | 'buzzer'
   | 'servo'
   | 'joystick'
+  | 'led-matrix'
   | 'esp32-devkit'
   | 'bme280';
 

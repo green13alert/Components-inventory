@@ -1,0 +1,100 @@
+import type { WiringLayout } from '../types'
+import { MAZE_PHYSICAL } from '../physical-layouts.ts'
+
+export const LED_MATRIX_MAZE_LAYOUT: WiringLayout = {
+  slug: '25',
+  physical: MAZE_PHYSICAL,
+  width: 720,
+  height: 520,
+  elements: [
+    {
+      id: 'arduino',
+      kind: 'arduino-uno',
+      label: 'Arduino Uno',
+      aliases: ['arduino uno', 'arduino', 'arduino uno r3'],
+      identity: {
+        catalogueId: 'arduino-uno-r3',
+        role: 'Reads the joystick and drives the LED matrix.',
+      },
+      x: 16,
+      y: 36,
+      width: 210,
+      height: 440,
+      ports: [
+        { id: '5v', label: '5V', dx: 210, dy: 48, aliases: ['5v'] },
+        { id: 'gnd', label: 'GND', dx: 210, dy: 84, aliases: ['gnd'] },
+        { id: 'd13', label: 'D13', dx: 210, dy: 132, aliases: ['d13'] },
+        { id: 'd11', label: 'D11', dx: 210, dy: 168, aliases: ['d11'] },
+        { id: 'd10', label: 'D10', dx: 210, dy: 204, aliases: ['d10'] },
+        { id: 'd2', label: 'D2', dx: 210, dy: 252, aliases: ['d2'] },
+        { id: 'a0', label: 'A0', dx: 210, dy: 312, aliases: ['a0'] },
+        { id: 'a1', label: 'A1', dx: 210, dy: 348, aliases: ['a1'] },
+      ],
+    },
+    {
+      id: 'breadboard',
+      kind: 'breadboard',
+      label: 'Breadboard',
+      aliases: ['breadboard'],
+      identity: {
+        catalogueId: 'breadboard',
+        role: 'Shares Uno 5 V and GND with the matrix and the joystick.',
+      },
+      x: 250,
+      y: 36,
+      width: 200,
+      height: 440,
+      railDomain: 'logic',
+      powerRailLabel: 'Uno 5V',
+      ports: [
+        { id: 'plus', label: '+', dx: 28, dy: 36, aliases: ['plusrail', 'pluslogicrail', 'logicrail'] },
+        { id: 'minus', label: '−', dx: 28, dy: 72, aliases: ['minusrail', 'gndrail', 'rail'] },
+      ],
+    },
+    {
+      id: 'matrix',
+      kind: 'led-matrix',
+      label: 'LED Matrix',
+      aliases: ['led matrix', 'max7219', 'matrix', 'fc-16'],
+      identity: {
+        catalogueId: 'max7219',
+        role: 'Shows the maze, the player, and the goal.',
+        orientation:
+          'Lies flat off the breadboard, LED face up. Input header on the right, top to bottom CLK, CS, DIN, GND, VCC.',
+      },
+      x: 480,
+      y: 40,
+      width: 210,
+      height: 200,
+      ports: [
+        { id: 'clk', label: 'CLK', dx: 0, dy: 36, aliases: ['clk', 'clock'] },
+        { id: 'cs', label: 'CS', dx: 0, dy: 68, aliases: ['cs', 'load', 'csload'] },
+        { id: 'din', label: 'DIN', dx: 0, dy: 100, aliases: ['din', 'data'] },
+        { id: 'gnd', label: 'GND', dx: 0, dy: 132, aliases: ['gnd'] },
+        { id: 'vcc', label: 'VCC', dx: 0, dy: 164, aliases: ['vcc', '5v'] },
+      ],
+    },
+    {
+      id: 'joystick',
+      kind: 'joystick',
+      label: 'Joystick',
+      aliases: ['joystick', 'ky-023'],
+      identity: {
+        catalogueId: 'joystick',
+        role: 'Moves the player. The stick button restarts the level.',
+        orientation: 'Lies flat off the breadboard, nearer than the matrix. Male header GND, +5V, VRx, VRy, SW. Follow the silk if a clone prints a different order.',
+      },
+      x: 480,
+      y: 280,
+      width: 210,
+      height: 180,
+      ports: [
+        { id: 'gnd', label: 'GND', dx: 0, dy: 28, aliases: ['gnd'] },
+        { id: 'vcc', label: '+5V', dx: 0, dy: 58, aliases: ['vcc', '5v', 'plus5v'] },
+        { id: 'vrx', label: 'VRx', dx: 0, dy: 88, aliases: ['vrx', 'x'] },
+        { id: 'vry', label: 'VRy', dx: 0, dy: 118, aliases: ['vry', 'y'] },
+        { id: 'sw', label: 'SW', dx: 0, dy: 148, aliases: ['sw', 'button'] },
+      ],
+    },
+  ],
+}

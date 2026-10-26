@@ -35,6 +35,7 @@ export type SceneWire = {
   from: Point
   to: Point
   socketAt: 'from' | 'to' | 'none'
+  touches: string[]
 }
 
 export type SceneLead = { portId: string; label: string; at: Point; color: string }
@@ -44,9 +45,9 @@ export type ScenePart =
   | { kind: 'npn'; id: string; label: string; emitter: Point; base: Point; collector: Point; emphasis: Emphasis }
   | { kind: 'led'; id: string; label: string; anode: Point; cathode: Point; emphasis: Emphasis }
   | { kind: 'rgb-led'; id: string; label: string; leads: SceneLead[]; emphasis: Emphasis }
-  | { kind: 'pir' | 'buzzer' | 'joystick'; id: string; label: string; leads: SceneLead[]; emphasis: Emphasis }
+  | { kind: 'pir' | 'buzzer' | 'joystick' | 'led-matrix'; id: string; label: string; leads: SceneLead[]; emphasis: Emphasis }
   | {
-      kind: 'esp32' | 'uno' | 'servo' | 'psu' | 'bme280'
+      kind: 'esp32' | 'uno' | 'servo' | 'psu' | 'bme280' | 'led-matrix' | 'joystick'
       id: string
       label: string
       x: number
@@ -98,7 +99,7 @@ function resolveEndpoint(layout: WiringLayout, endpoint: PhysicalEndpoint): Poin
   return holePosition(endpoint as BreadboardHole)
 }
 
-function isModule(endpoint: PhysicalEndpoint) {
+function isModule(endpoint: PhysicalEndpoint): endpoint is { kind: 'module'; elementId: string; portId: string } {
   return 'kind' in endpoint && endpoint.kind === 'module'
 }
 
@@ -137,7 +138,22 @@ export function wireColor(jumper: PhysicalJumper): string {
   if (/27|blue|d10|sck|scl/.test(id)) {
     return '#1D4ED8'
   }
-  if (/d2|out|vrx|vry|sw/.test(id)) {
+  if (/matrix-clk|\bclk\b/.test(id)) {
+    return '#0369A1'
+  }
+  if (/matrix-din|\bdin\b/.test(id)) {
+    return '#0F766E'
+  }
+  if (/\bvrx\b/.test(id)) {
+    return '#7C3AED'
+  }
+  if (/\bvry\b/.test(id)) {
+    return '#DB2777'
+  }
+  if (/\bsw\b/.test(id)) {
+    return '#C2410C'
+  }
+  if (/d2|out/.test(id)) {
     return '#7C3AED'
   }
   return '#334155'
@@ -211,59 +227,6 @@ function railCaptions(layout: WiringLayout) {
   }
 }
 
-function departX(point: Point, obstacles: SceneObstacle[], lane: number) {
-  const host = obstacles.find((item) => item.kind === 'rect' && pointHits(point, item))
-  if (!host || host.kind !== 'rect') {
-    return point.x
-  }
-  const spread = (lane % 4) * 5
-  const nearerLeft = point.x - host.x <= host.x + host.width - point.x
-  return nearerLeft ? host.x - 16 - spread : host.x + host.width + 16 + spread
-}
-
-function approachX(point: Point, obstacles: SceneObstacle[], lane: number) {
-  const host = obstacles.find((item) => item.kind === 'rect' && pointHits(point, item))
-  if (host) {
-    return departX(point, obstacles, lane)
-  }
-  const stagger = (lane % 3) * 4
-  if (point.x < 28) {
-    return 2 - stagger
-  }
-  if (point.x < 100) {
-    return 49 + stagger
-  }
-  if (point.x > 240) {
-    return 330 + stagger
-  }
-  if (point.x > 200) {
-    return 236 + stagger
-  }
-  return point.x
-}
-
-function floorChannel(from: Point, to: Point, obstacles: SceneObstacle[], lane: number) {
-  let maxY = Math.max(from.y, to.y)
-  for (const item of obstacles) {
-    maxY = Math.max(maxY, item.kind === 'rect' ? item.y + item.height : Math.max(item.y1, item.y2) + item.radius)
-  }
-  const floor = maxY + 22 + lane * 14
-  const fromX = approachX(from, obstacles, lane)
-  const toX = approachX(to, obstacles, lane + 1)
-  return `M ${from.x} ${from.y} L ${fromX} ${from.y} L ${fromX} ${floor} L ${toX} ${floor} L ${toX} ${to.y} L ${to.x} ${to.y}`
-}
-
-function crossesBody(from: Point, to: Point, obstacles: SceneObstacle[], selfId: string) {
-  for (let step = 1; step < 8; step += 1) {
-    const t = step / 8
-    const point = { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t }
-    if (obstacles.some((item) => item.id !== selfId && pointHits(point, item))) {
-      return true
-    }
-  }
-  return false
-}
-
 function pathHitsBodies(path: string, from: Point, to: Point, obstacles: SceneObstacle[]) {
   for (const point of pathSamples(path)) {
     const nearEnd = Math.hypot(point.x - from.x, point.y - from.y) < 22 || Math.hypot(point.x - to.x, point.y - to.y) < 22
@@ -277,37 +240,272 @@ function pathHitsBodies(path: string, from: Point, to: Point, obstacles: SceneOb
   return false
 }
 
-function gutterPath(from: Point, to: Point, obstacles: SceneObstacle[], lane: number) {
-  const fromX = approachX(from, obstacles, lane)
-  const toX = approachX(to, obstacles, lane + 1)
-  const path = `M ${from.x} ${from.y} L ${fromX} ${from.y} L ${fromX} ${to.y} L ${toX} ${to.y} L ${to.x} ${to.y}`
-  return pathHitsBodies(path, from, to, obstacles) ? null : path
+function polyline(points: Point[]) {
+  const kept: Point[] = []
+  for (const point of points) {
+    const next = { x: Math.round(point.x), y: Math.round(point.y) }
+    const last = kept[kept.length - 1]
+    if (last && Math.hypot(next.x - last.x, next.y - last.y) <= 0.5) {
+      continue
+    }
+    const before = kept[kept.length - 2]
+    const straight =
+      before && last && ((before.x === last.x && last.x === next.x) || (before.y === last.y && last.y === next.y))
+    if (straight) {
+      kept.pop()
+    }
+    kept.push(next)
+  }
+  return `M ${kept.map((point) => `${point.x} ${point.y}`).join(' L ')}`
 }
 
-function routeWire(from: Point, to: Point, id: string, obstacles: SceneObstacle[], lane: number): string {
-  const distance = Math.hypot(to.x - from.x, to.y - from.y)
-  const insideBoard = (point: Point) => obstacles.some((item) => item.kind === 'rect' && pointHits(point, item))
-  const alongTop = from.y < 70 && to.y < 70 && Math.abs(from.x - to.x) > 80 && !insideBoard(from) && !insideBoard(to)
-  if (alongTop) {
-    const lift = Math.min(from.y, to.y) - 28
-    return `M ${from.x} ${from.y} Q ${(from.x + to.x) / 2} ${lift} ${to.x} ${to.y}`
+function pathVertexLength(path: string) {
+  const numbers = path.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? []
+  let length = 0
+  for (let index = 2; index + 1 < numbers.length; index += 2) {
+    length += Math.hypot(numbers[index] - numbers[index - 2], numbers[index + 1] - numbers[index - 1])
   }
-  const gutter = gutterPath(from, to, obstacles, lane)
-  if (gutter) {
-    return gutter
+  return length
+}
+
+function hostOf(point: Point, obstacles: SceneObstacle[]) {
+  let best: { item: Extract<SceneObstacle, { kind: 'rect' }>; distance: number } | null = null
+  for (const item of obstacles) {
+    if (item.kind !== 'rect') {
+      continue
+    }
+    const inside = pointHits(point, item)
+    const dx = point.x < item.x ? item.x - point.x : point.x > item.x + item.width ? point.x - (item.x + item.width) : 0
+    const dy = point.y < item.y ? item.y - point.y : point.y > item.y + item.height ? point.y - (item.y + item.height) : 0
+    const distance = inside ? 0 : Math.hypot(dx, dy)
+    if (distance <= 24 && (!best || distance < best.distance)) {
+      best = { item, distance }
+    }
   }
-  const sameColumn = Math.abs(from.x - to.x) < 20
-  const long = !sameColumn && (distance > 150 || /cathode|bridge/.test(id))
-  if (long || crossesBody(from, to, obstacles, id)) {
-    return floorChannel(from, to, obstacles, lane)
+  return best?.item ?? null
+}
+
+/** Step just outside the part the terminal belongs to, on the side the terminal already faces. */
+function leaveHost(point: Point, obstacles: SceneObstacle[], lane: number): Point {
+  const host = hostOf(point, obstacles)
+  if (!host) {
+    return point
   }
-  const dx = to.x - from.x
-  const dy = to.y - from.y
-  const length = distance || 1
-  const bow = (length > 70 ? 26 : 14) * (lane % 2 === 0 ? 1 : -1)
-  const mx = (from.x + to.x) / 2 + (-dy / length) * bow
-  const my = (from.y + to.y) / 2 + (dx / length) * bow
-  return `M ${from.x} ${from.y} Q ${mx} ${my} ${to.x} ${to.y}`
+  const pad = 20 + (lane % 4) * 8
+  if (pointHits(point, host)) {
+    const left = point.x - host.x
+    const right = host.x + host.width - point.x
+    const top = point.y - host.y
+    const bottom = host.y + host.height - point.y
+    const nearest = Math.min(left, right, top, bottom)
+    if (nearest === left) {
+      return { x: host.x - pad, y: point.y }
+    }
+    if (nearest === right) {
+      return { x: host.x + host.width + pad, y: point.y }
+    }
+    if (nearest === top) {
+      return { x: point.x, y: host.y - pad }
+    }
+    return { x: point.x, y: host.y + host.height + pad }
+  }
+  const dx = point.x - (host.x + host.width / 2)
+  const dy = point.y - (host.y + host.height / 2)
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return { x: point.x + Math.sign(dx || 1) * pad, y: point.y }
+  }
+  return { x: point.x, y: point.y + Math.sign(dy || 1) * pad }
+}
+
+function obstacleBox(item: SceneObstacle) {
+  if (item.kind === 'rect') {
+    return { left: item.x, top: item.y, right: item.x + item.width, bottom: item.y + item.height }
+  }
+  return {
+    left: Math.min(item.x1, item.x2) - item.radius,
+    right: Math.max(item.x1, item.x2) + item.radius,
+    top: Math.min(item.y1, item.y2) - item.radius,
+    bottom: Math.max(item.y1, item.y2) + item.radius,
+  }
+}
+
+function obstaclesNear(points: Point[], obstacles: SceneObstacle[]) {
+  const minX = Math.min(...points.map((point) => point.x)) - 20
+  const maxX = Math.max(...points.map((point) => point.x)) + 20
+  const minY = Math.min(...points.map((point) => point.y)) - 20
+  const maxY = Math.max(...points.map((point) => point.y)) + 20
+  return obstacles.filter((item) => {
+    const box = obstacleBox(item)
+    return box.left < maxX && box.right > minX && box.top < maxY && box.bottom > minY
+  })
+}
+
+type WireRun = { x1: number; y1: number; x2: number; y2: number }
+
+function pathRuns(path: string): WireRun[] {
+  const numbers = path.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? []
+  const runs: WireRun[] = []
+  for (let index = 0; index + 3 < numbers.length; index += 2) {
+    runs.push({ x1: numbers[index], y1: numbers[index + 1], x2: numbers[index + 2], y2: numbers[index + 3] })
+  }
+  return runs
+}
+
+function runLength(run: WireRun) {
+  return Math.hypot(run.x2 - run.x1, run.y2 - run.y1)
+}
+
+/** Shorten both ends so a shared arrival at a pin does not count as a crowded corridor. */
+function trimmedRun(run: WireRun, trim: number): WireRun | null {
+  const length = runLength(run)
+  if (length <= trim * 2) {
+    return null
+  }
+  const scale = trim / length
+  return {
+    x1: run.x1 + (run.x2 - run.x1) * scale,
+    y1: run.y1 + (run.y2 - run.y1) * scale,
+    x2: run.x2 - (run.x2 - run.x1) * scale,
+    y2: run.y2 - (run.y2 - run.y1) * scale,
+  }
+}
+
+function parallelApproach(a: WireRun, b: WireRun) {
+  const aHorizontal = Math.abs(a.y2 - a.y1) <= 1.5
+  const bHorizontal = Math.abs(b.y2 - b.y1) <= 1.5
+  const aVertical = Math.abs(a.x2 - a.x1) <= 1.5
+  const bVertical = Math.abs(b.x2 - b.x1) <= 1.5
+  if (aHorizontal && bHorizontal) {
+    const start = Math.max(Math.min(a.x1, a.x2), Math.min(b.x1, b.x2))
+    const end = Math.min(Math.max(a.x1, a.x2), Math.max(b.x1, b.x2))
+    return { span: Math.max(0, end - start), distance: Math.abs(a.y1 - b.y1) }
+  }
+  if (aVertical && bVertical) {
+    const start = Math.max(Math.min(a.y1, a.y2), Math.min(b.y1, b.y2))
+    const end = Math.min(Math.max(a.y1, a.y2), Math.max(b.y1, b.y2))
+    return { span: Math.max(0, end - start), distance: Math.abs(a.x1 - b.x1) }
+  }
+  return { span: 0, distance: Number.POSITIVE_INFINITY }
+}
+
+function collinearOverlap(a: WireRun, b: WireRun, gap: number) {
+  const approach = parallelApproach(a, b)
+  return approach.distance <= gap ? approach.span : 0
+}
+
+function runsCross(a: WireRun, b: WireRun) {
+  const cross = (x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) => (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
+  const d1 = cross(a.x1, a.y1, a.x2, a.y2, b.x1, b.y1)
+  const d2 = cross(a.x1, a.y1, a.x2, a.y2, b.x2, b.y2)
+  const d3 = cross(b.x1, b.y1, b.x2, b.y2, a.x1, a.y1)
+  const d4 = cross(b.x1, b.y1, b.x2, b.y2, a.x2, a.y2)
+  if (Math.abs(d1) < 0.5 && Math.abs(d2) < 0.5) {
+    return false
+  }
+  return d1 * d2 < 0 && d3 * d4 < 0
+}
+
+function corridorCost(path: string, occupied: readonly WireRun[]) {
+  let shared = 0
+  let crossings = 0
+  for (const run of pathRuns(path)) {
+    const trimmed = trimmedRun(run, 26)
+    for (const other of occupied) {
+      const otherTrimmed = trimmedRun(other, 26)
+      if (trimmed && otherTrimmed) {
+        const approach = parallelApproach(trimmed, otherTrimmed)
+        if (approach.distance <= 12 && approach.span > 0) {
+          const weight = approach.distance < 3 ? 5 : approach.distance < 8 ? 2 : 0.4
+          shared += approach.span * weight
+        }
+      }
+      if (runsCross(run, other)) {
+        crossings += 1
+      }
+    }
+  }
+  return shared * 3 + crossings * 12
+}
+
+/** Longest near-parallel overlap between two different wires, ignoring the last approach to each pin. */
+export function longestSharedRun(scene: PhysicalScene, gap = 8) {
+  let longest = 0
+  const runs = scene.wires.map((wire) => pathRuns(wire.d))
+  for (let left = 0; left < runs.length; left += 1) {
+    for (let right = left + 1; right < runs.length; right += 1) {
+      for (const a of runs[left]) {
+        for (const b of runs[right]) {
+          const trimmedA = trimmedRun(a, 26)
+          const trimmedB = trimmedRun(b, 26)
+          if (trimmedA && trimmedB) {
+            longest = Math.max(longest, collinearOverlap(trimmedA, trimmedB, gap))
+          }
+        }
+      }
+    }
+  }
+  return longest
+}
+
+function routeCandidates(from: Point, to: Point, obstacles: SceneObstacle[], lane: number, margin: number) {
+  const spread = Math.min(lane, 4) * 9
+  const start = leaveHost(from, obstacles, lane)
+  const end = leaveHost(to, obstacles, lane + 1)
+  const candidates = [
+    polyline([from, to]),
+    polyline([from, start, { x: end.x, y: start.y }, end, to]),
+    polyline([from, start, { x: start.x, y: end.y }, end, to]),
+  ]
+  const portalsX: number[] = []
+  const portalsY: number[] = []
+  const spreads = spread === 0 ? [0] : [0, spread]
+  for (const item of obstaclesNear([from, to, start, end], obstacles)) {
+    const box = obstacleBox(item)
+    for (const extra of spreads) {
+      portalsY.push(box.top - margin - extra, box.bottom + margin + extra)
+      portalsX.push(box.left - margin - extra, box.right + margin + extra)
+    }
+  }
+  for (const y of portalsY) {
+    candidates.push(polyline([from, start, { x: start.x, y }, { x: end.x, y }, end, to]))
+  }
+  for (const x of portalsX) {
+    candidates.push(polyline([from, start, { x, y: start.y }, { x, y: end.y }, end, to]))
+  }
+  for (const y of portalsY) {
+    for (const x of portalsX) {
+      candidates.push(polyline([from, start, { x: start.x, y }, { x, y }, { x, y: end.y }, end, to]))
+    }
+  }
+  return candidates
+}
+
+function boardCrossings(path: string, from: Point, to: Point, board: SceneObstacle) {
+  let crossings = 0
+  for (const point of pathSamples(path)) {
+    const nearEnd = Math.hypot(point.x - from.x, point.y - from.y) < 36 || Math.hypot(point.x - to.x, point.y - to.y) < 36
+    if (!nearEnd && pointHits(point, board)) {
+      crossings += 1
+    }
+  }
+  return crossings
+}
+
+function routeWire(
+  from: Point,
+  to: Point,
+  obstacles: SceneObstacle[],
+  lane: number,
+  board: SceneObstacle | null,
+  occupied: readonly WireRun[],
+): string {
+  const candidates = [16, 28].flatMap((margin) => routeCandidates(from, to, obstacles, lane, margin))
+  const clear = candidates.filter((path) => !pathHitsBodies(path, from, to, obstacles))
+  const pool = clear.length > 0 ? clear : candidates
+  const shortest = Math.min(...pool.map((path) => pathVertexLength(path)))
+  const near = pool.filter((path) => pathVertexLength(path) <= shortest + 120)
+  const score = (path: string) => pathVertexLength(path) + (board ? boardCrossings(path, from, to, board) * 40 : 0) + corridorCost(path, occupied)
+  return near.reduce((best, path) => (score(path) < score(best) ? path : best))
 }
 
 function pointHits(point: Point, obstacle: SceneObstacle) {
@@ -478,7 +676,7 @@ export function buildPhysicalScene(
         const mid = drawn.reduce((sum, lead) => sum + lead.at.y, 0) / drawn.length
         obstacles.push({ id: element.id, kind: 'rect', x: drawn[0].at.x - 34, y: mid - 16, width: 28, height: 32 })
       }
-    } else if ((element.kind === 'pir' || element.kind === 'buzzer' || element.kind === 'joystick') && leads.length > 0) {
+    } else if ((element.kind === 'pir' || element.kind === 'buzzer' || element.kind === 'joystick' || element.kind === 'led-matrix') && leads.length > 0) {
       const drawn = leads.map((lead) => ({
         portId: lead.portId,
         label: portLabel(element, lead.portId),
@@ -488,17 +686,34 @@ export function buildPhysicalScene(
       parts.push({ kind: element.kind, id: element.id, label: element.label, leads: drawn, emphasis })
       const top = Math.min(...drawn.map((lead) => lead.at.y))
       const left = drawn[0].at.x + 10
-      obstacles.push({ id: element.id, kind: 'rect', x: left, y: top - 8, width: element.kind === 'joystick' ? 70 : 58, height: drawn.length * BREADBOARD_PITCH + 8 })
+      const bodyWidth = element.kind === 'led-matrix' ? 96 : element.kind === 'joystick' ? 70 : 58
+      obstacles.push({ id: element.id, kind: 'rect', x: left, y: top - 8, width: bodyWidth, height: drawn.length * BREADBOARD_PITCH + 8 })
     }
   }
 
   for (const frame of physical.modules ?? []) {
     const element = layout.elements.find((item) => item.id === frame.elementId)
     const kind = element?.kind
-    if (kind !== 'esp32-devkit' && kind !== 'arduino-uno' && kind !== 'servo' && kind !== 'breadboard-psu' && kind !== 'dc-jack' && kind !== 'bme280') {
+    if (
+      kind !== 'esp32-devkit' &&
+      kind !== 'arduino-uno' &&
+      kind !== 'servo' &&
+      kind !== 'breadboard-psu' &&
+      kind !== 'dc-jack' &&
+      kind !== 'bme280' &&
+      kind !== 'led-matrix' &&
+      kind !== 'joystick'
+    ) {
       continue
     }
-    const mapped = kind === 'esp32-devkit' ? 'esp32' : kind === 'arduino-uno' ? 'uno' : kind === 'breadboard-psu' || kind === 'dc-jack' ? 'psu' : kind
+    const mapped =
+      kind === 'esp32-devkit'
+        ? 'esp32'
+        : kind === 'arduino-uno'
+          ? 'uno'
+          : kind === 'breadboard-psu' || kind === 'dc-jack'
+            ? 'psu'
+            : kind
     const pinKeys = frame.pins.map((item) => `${frame.elementId}:${item.portId}`)
     const cableLeads = frame.cableFrom
       ? physical.leads
@@ -529,9 +744,20 @@ export function buildPhysicalScene(
 
   const wires: SceneWire[] = []
   let lane = 0
-  const addWire = (wire: Omit<SceneWire, 'd'> & { id: string }) => {
+  const occupied: WireRun[] = []
+  const boardBody: SceneObstacle | null =
+    physical.rows > 0
+      ? { id: 'breadboard-body', kind: 'rect', x: 8, y: 24, width: 276, height: physicalBoardHeight(physical.rows) - 36 }
+      : null
+  const addWire = (wire: Omit<SceneWire, 'd'> & { id: string }, avoidBoard: boolean) => {
     const long = Math.hypot(wire.to.x - wire.from.x, wire.to.y - wire.from.y) > 150 || /cathode/.test(wire.id)
-    wires.push({ ...wire, d: routeWire(wire.from, wire.to, wire.id, obstacles, long ? lane++ : lane) })
+    const d = routeWire(wire.from, wire.to, obstacles, long ? lane++ : lane, avoidBoard ? boardBody : null, occupied)
+    wires.push({ ...wire, d })
+    for (const run of pathRuns(d)) {
+      if (runLength(run) > 36) {
+        occupied.push(run)
+      }
+    }
   }
   for (const jumper of physical.jumpers) {
     const from = resolveEndpoint(layout, jumper.from)
@@ -548,7 +774,8 @@ export function buildPhysicalScene(
       from,
       to,
       socketAt: jumper.gender === 'male-female' || jumper.gender === 'stemma-female' ? (isModule(jumper.from) ? 'from' : 'to') : 'none',
-    })
+      touches: [...new Set([isModule(jumper.from) ? jumper.from.elementId : 'breadboard', isModule(jumper.to) ? jumper.to.elementId : 'breadboard'])],
+    }, isModule(jumper.from) || isModule(jumper.to))
   }
   for (const part of parts) {
     if (!('cable' in part) || !part.cable) {
@@ -564,7 +791,8 @@ export function buildPhysicalScene(
         from: part.cable.from,
         to: lead.at,
         socketAt: 'none',
-      })
+        touches: [part.id],
+      }, true)
     }
   }
 
@@ -646,7 +874,8 @@ export function applyAssemblyFrame(scene: PhysicalScene, frame: AssemblyFrame): 
       .map((wire) => {
         const owner = wire.role === 'cable' ? cableOwner(wire.id, frame.newParts) : null
         const introduced = frame.newJumpers.has(wire.id) || owner != null
-        return { ...wire, emphasis: introduced ? 'active' : 'prior' }
+        const overview = frame.newJumpers.size === 0 && frame.newParts.size === 0
+        return { ...wire, emphasis: introduced || overview ? 'active' : 'prior' }
       }),
   }
 }
@@ -689,10 +918,7 @@ function partPoints(part: ScenePart): Point[] {
   if (part.kind === 'led') {
     return [part.anode, part.cathode]
   }
-  if (part.kind === 'rgb-led' || part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick') {
-    return part.leads.map((lead) => lead.at)
-  }
-  if (part.kind === 'esp32' || part.kind === 'uno' || part.kind === 'servo' || part.kind === 'psu' || part.kind === 'bme280') {
+  if ('width' in part && 'x' in part) {
     return [
       { x: part.x, y: part.y },
       { x: part.x + part.width, y: part.y + part.height },
@@ -700,6 +926,9 @@ function partPoints(part: ScenePart): Point[] {
       ...part.dots,
       ...(part.cable ? [part.cable.from, ...part.cable.leads.map((lead) => lead.at)] : []),
     ]
+  }
+  if (part.kind === 'rgb-led' || part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick' || part.kind === 'led-matrix') {
+    return part.leads.map((lead) => lead.at)
   }
   return []
 }
@@ -715,10 +944,7 @@ function shiftPart(part: ScenePart, dx: number, dy: number): ScenePart {
   if (part.kind === 'led') {
     return { ...part, anode: move(part.anode), cathode: move(part.cathode) }
   }
-  if (part.kind === 'rgb-led' || part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick') {
-    return { ...part, leads: part.leads.map((lead) => ({ ...lead, at: move(lead.at) })) }
-  }
-  if (part.kind === 'esp32' || part.kind === 'uno' || part.kind === 'servo' || part.kind === 'psu' || part.kind === 'bme280') {
+  if ('width' in part && 'x' in part) {
     return {
       ...part,
       x: part.x + dx,
@@ -729,6 +955,9 @@ function shiftPart(part: ScenePart, dx: number, dy: number): ScenePart {
         ? { from: move(part.cable.from), leads: part.cable.leads.map((lead) => ({ ...lead, at: move(lead.at) })) }
         : undefined,
     }
+  }
+  if (part.kind === 'rgb-led' || part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick' || part.kind === 'led-matrix') {
+    return { ...part, leads: part.leads.map((lead) => ({ ...lead, at: move(lead.at) })) }
   }
   return part
 }

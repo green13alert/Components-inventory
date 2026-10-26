@@ -1,5 +1,5 @@
 /**
- * Capability and requirement rows for the four authored projects.
+ * Capability and requirement rows for the authored projects.
  * A slug that is not a catalogue id joins to nothing. The 20261020210000
  * insert used the slug 'undefined' and stored no rows.
  */
@@ -34,6 +34,12 @@ export const CAPABILITY_BACKFILL: CapabilityRow[] = [
   { slug: 'sg90', capability: 'function', value: 'servo' },
   { slug: 'sg90', capability: 'servo_kind', value: 'position' },
   { slug: 'joystick', capability: 'function', value: 'joystick' },
+  { slug: 'joystick', capability: 'supply_v', value: '5' },
+  { slug: 'joystick', capability: 'physical_form', value: 'five_pin_male' },
+  { slug: 'max7219', capability: 'function', value: 'led_matrix' },
+  { slug: 'max7219', capability: 'supply_v', value: '5' },
+  { slug: 'max7219', capability: 'interface', value: 'spi' },
+  { slug: 'max7219', capability: 'physical_form', value: 'fc16_male_header' },
   { slug: 'gst18a05-p1j', capability: 'function', value: 'power_supply' },
   { slug: 'gst18a05-p1j', capability: 'supply_v', value: '5' },
   { slug: 'adafruit-368', capability: 'physical_form', value: 'screw_terminal_jack' },
@@ -91,6 +97,18 @@ export const REQUIREMENT_CONSTRAINT_BACKFILL: RequirementConstraintRow[] = [
   { projectSlug: '24', componentSlug: 'resistor-1k', capability: 'resistance_ohms', value: '1000' },
   { projectSlug: '24', componentSlug: 'jumper-wires', capability: 'physical_form', value: 'male_male' },
   { projectSlug: '24', componentSlug: 'jumper-male-female', capability: 'physical_form', value: 'male_female' },
+  { projectSlug: '25', componentSlug: 'arduino-uno-r3', capability: 'function', value: 'development_board' },
+  { projectSlug: '25', componentSlug: 'arduino-uno-r3', capability: 'logic_level_v', value: '5' },
+  { projectSlug: '25', componentSlug: 'arduino-uno-r3', capability: 'header_profile', value: 'uno_r3' },
+  { projectSlug: '25', componentSlug: 'max7219', capability: 'function', value: 'led_matrix' },
+  { projectSlug: '25', componentSlug: 'max7219', capability: 'supply_v', value: '5' },
+  { projectSlug: '25', componentSlug: 'max7219', capability: 'interface', value: 'spi' },
+  { projectSlug: '25', componentSlug: 'max7219', capability: 'physical_form', value: 'fc16_male_header' },
+  { projectSlug: '25', componentSlug: 'joystick', capability: 'function', value: 'joystick' },
+  { projectSlug: '25', componentSlug: 'joystick', capability: 'supply_v', value: '5' },
+  { projectSlug: '25', componentSlug: 'joystick', capability: 'physical_form', value: 'five_pin_male' },
+  { projectSlug: '25', componentSlug: 'jumper-wires', capability: 'physical_form', value: 'male_male' },
+  { projectSlug: '25', componentSlug: 'jumper-male-female', capability: 'physical_form', value: 'male_female' },
 ]
 
 export function rowsJoinedToCatalogue<T extends { slug?: string; componentSlug?: string }>(

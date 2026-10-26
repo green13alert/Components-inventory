@@ -11,7 +11,7 @@ export type BuildDestination = 'coming_soon' | 'walkthrough' | 'complete' | 'rev
 const PROJECT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Catalogue covers that still need a 16:9 workbench photograph. A diagram is not a substitute. */
-export const PENDING_PROJECT_COVER_KEYS = ['esp32BleRgb'] as const;
+export const PENDING_PROJECT_COVER_KEYS = ['esp32BleRgb', 'ledMatrixMaze'] as const;
 
 export const WALKTHROUGH_BUTTON_MIN_HEIGHT = 52;
 export const WALKTHROUGH_FOOTER_MIN_PADDING = 16;

@@ -20,6 +20,7 @@ import {
 } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
 import { draftProjectsAreRequested } from '@/lib/draft-preview';
+import { shownInProjectCatalogue } from '@/lib/catalogue-visibility';
 import { discoverySections } from '@/lib/project-discovery';
 import {
   fetchDraftProjects,
@@ -156,7 +157,12 @@ export default function ProjectsScreen() {
         (viewFilter === 'favourites' && userProject?.isFavourite === true) ||
         (viewFilter === 'completed' && status === 'completed');
       const matchesDifficulty = difficultyFilter === 'all' || project.difficulty === difficultyFilter;
-      return matchesView && matchesDifficulty;
+      const matchesCatalogue = shownInProjectCatalogue({
+        slug: project.slug,
+        status,
+        isFavourite: userProject?.isFavourite === true,
+      });
+      return matchesView && matchesDifficulty && matchesCatalogue;
     });
   }, [difficultyFilter, getUserProject, publishedProjects, viewFilter]);
 

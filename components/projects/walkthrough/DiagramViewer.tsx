@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { SolderiPalette } from '@/constants/colors';
 import { useSolderiColors } from '@/context/theme-context';
 import { viewerPointToScene } from '@/lib/diagram-hit';
-import { fitContentSize, panDiagram, zoomAroundFocal } from '@/lib/diagram-viewport';
+import { toggleDiagramPanel, type DiagramPanel } from '@/lib/diagram-panel';
+import { diagramChromeFit, panDiagram, shouldRefitViewport, zoomAroundFocal } from '@/lib/diagram-viewport';
 
 type DiagramMode = 'physical' | 'schematic';
 
@@ -20,11 +21,7 @@ type DiagramViewerProps = {
   contentWidth: number;
   contentHeight: number;
   connections?: ReactNode;
-  connectionsOpen?: boolean;
-  onToggleConnections?: () => void;
   components?: ReactNode;
-  componentsOpen?: boolean;
-  onToggleComponents?: () => void;
   detail?: ReactNode;
   onSceneTap?: (point: { x: number; y: number }) => void;
   children: ReactNode;
@@ -39,11 +36,7 @@ export function DiagramViewer({
   contentWidth,
   contentHeight,
   connections,
-  connectionsOpen = false,
-  onToggleConnections,
   components,
-  componentsOpen = false,
-  onToggleComponents,
   detail,
   onSceneTap,
   children,
@@ -52,6 +45,8 @@ export function DiagramViewer({
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [chromeHeight, setChromeHeight] = useState(0);
+  const [panel, setPanel] = useState<DiagramPanel>('none');
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -64,8 +59,13 @@ export function DiagramViewer({
   const diagramHeight = useSharedValue(contentHeight);
   const pinchStartFocalX = useSharedValue(0);
   const pinchStartFocalY = useSharedValue(0);
-  const frameToken = useSharedValue('');
-  const lockedHeight = useSharedValue(0);
+  const frameKey = `${mode}:${contentWidth}:${contentHeight}`;
+  const measuredFrame = useRef('');
+  const lockedHeight = useRef(0);
+  if (measuredFrame.current !== '' && measuredFrame.current !== frameKey) {
+    measuredFrame.current = '';
+    lockedHeight.current = 0;
+  }
 
   useEffect(() => {
     diagramWidth.value = contentWidth;
@@ -76,16 +76,20 @@ export function DiagramViewer({
     savedScale.value = 1;
     savedX.value = 0;
     savedY.value = 0;
-    frameToken.value = '';
-    lockedHeight.value = 0;
-  }, [contentHeight, contentWidth, diagramHeight, diagramWidth, frameToken, lockedHeight, mode, savedScale, savedX, savedY, scale, translateX, translateY, visible]);
+  }, [contentHeight, contentWidth, diagramHeight, diagramWidth, frameKey, savedScale, savedX, savedY, scale, translateX, translateY, visible]);
+
+  useEffect(() => {
+    if (visible) {
+      setPanel('none');
+    }
+  }, [visible]);
 
   const reportSceneTap = useCallback(
     (x: number, y: number, nextScale: number, tx: number, ty: number, vw: number, vh: number) => {
       if (!onSceneTap) {
         return;
       }
-      const fittedSize = fitContentSize(vw, vh, contentWidth, contentHeight);
+      const fittedSize = diagramChromeFit(vw, vh, contentWidth, contentHeight, chromeHeight);
       if (fittedSize.width <= 0 || fittedSize.height <= 0) {
         return;
       }
@@ -105,10 +109,10 @@ export function DiagramViewer({
         }),
       );
     },
-    [contentHeight, contentWidth, onSceneTap],
+    [chromeHeight, contentHeight, contentWidth, onSceneTap],
   );
 
-  const fitted = fitContentSize(viewport.width, viewport.height, contentWidth, contentHeight);
+  const fitted = diagramChromeFit(viewport.width, viewport.height, contentWidth, contentHeight, chromeHeight);
 
   const pinch = useMemo(
     () =>
@@ -186,7 +190,6 @@ export function DiagramViewer({
   );
 
   const gesture = useMemo(() => Gesture.Exclusive(Gesture.Simultaneous(pinch, pan), tap), [pan, pinch, tap]);
-  const frameKey = `${mode}:${contentWidth}:${contentHeight}`;
 
   const animated = useAnimatedStyle(() => ({
     // iOS and Android post-multiply each operation, so the last item reaches the
@@ -223,18 +226,14 @@ export function DiagramViewer({
               style={styles.viewport}
               onLayout={(event) => {
                 const { width, height } = event.nativeEvent.layout;
-                if (width <= 0 || height <= 0) {
+                if (!shouldRefitViewport(width, height, lockedHeight.current, measuredFrame.current === frameKey, scale.value)) {
                   return;
                 }
-                const sameFrame = frameToken.value === frameKey;
-                if (sameFrame && (height <= lockedHeight.value || scale.value > 1)) {
-                  return;
-                }
-                frameToken.value = frameKey;
-                lockedHeight.value = height;
+                measuredFrame.current = frameKey;
+                lockedHeight.current = height;
                 viewportWidth.value = width;
                 viewportHeight.value = height;
-                setViewport({ width, height });
+                setViewport((current) => (current.width === width && current.height === height ? current : { width, height }));
               }}>
               <Animated.View style={[styles.stage, animated]} pointerEvents="none">
                 <View style={{ width: fitted.width, height: fitted.height }}>{children}</View>
@@ -244,15 +243,31 @@ export function DiagramViewer({
           <View style={styles.overlay} pointerEvents="box-none">
           {detail ? <View style={styles.detail}>{detail}</View> : null}
           <View style={styles.sheet}>
-            <View style={styles.segmentRow}>
+            <View
+              style={styles.segmentRow}
+              onLayout={(event) => {
+                const next = event.nativeEvent.layout.height;
+                if (next < 20) {
+                  return;
+                }
+                setChromeHeight((current) => (current === 0 ? next : current));
+              }}>
               <View style={styles.segment}>
                 {components ? (
-                  <ModeButton label="Components" selected={componentsOpen} onPress={() => onToggleComponents?.()} />
+                  <ModeButton
+                    label="Components"
+                    selected={panel === 'components'}
+                    onPress={() => setPanel((current) => toggleDiagramPanel(current, 'components'))}
+                  />
                 ) : null}
-                <ModeButton label="Connections" selected={connectionsOpen} onPress={() => onToggleConnections?.()} />
+                <ModeButton
+                  label="Connections"
+                  selected={panel === 'connections'}
+                  onPress={() => setPanel((current) => toggleDiagramPanel(current, 'connections'))}
+                />
               </View>
             </View>
-            {componentsOpen && components ? (
+            {panel === 'components' && components ? (
               <ScrollView
                 style={styles.sheetList}
                 contentContainerStyle={styles.sheetContent}
@@ -262,7 +277,7 @@ export function DiagramViewer({
                 {components}
               </ScrollView>
             ) : null}
-            {connectionsOpen ? (
+            {panel === 'connections' ? (
               <ScrollView
                 style={styles.sheetList}
                 contentContainerStyle={styles.sheetContent}

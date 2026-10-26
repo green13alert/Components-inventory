@@ -15,6 +15,7 @@ const FILES = {
   '18': 'servo-pan-tilt-camera-review.md',
   '23': 'esp32-wifi-weather-review.md',
   '24': 'esp32-ble-rgb-controller-review.md',
+  '25': 'led-matrix-maze-review.md',
 }
 
 const LIMITATIONS = {
@@ -41,6 +42,11 @@ const LIMITATIONS = {
     'The Kingbright common-anode lead order used by the layout was not re-read from the package drawing in this pass.',
     'Green and blue are expected to look dimmer than red on USB power. The circuit and firmware were not changed for this export.',
   ],
+  '25': [
+    'This export does not record a physical build. The FC-16 header order and the joystick silk order were taken from the MD_MAX72XX FC-16 note and the usual KY-023 silk, not from a module on the bench.',
+    'USB current is argued from the MAX7219 datasheet segment current and a low display intensity. It was not measured.',
+    'INVERT_Y starts true so a rising VRy reading moves toward row 0. That direction is a starting assumption.',
+  ],
 }
 
 function localBundle() {
@@ -62,6 +68,9 @@ import { MOTION_SENSOR_ALARM_LAYOUT } from './constants/wiring-diagrams/layouts/
 import { SERVO_PAN_TILT_CAMERA_LAYOUT } from './constants/wiring-diagrams/layouts/servo-pan-tilt-camera.ts'
 import { ESP32_WIFI_WEATHER_LAYOUT } from './constants/wiring-diagrams/layouts/esp32-wifi-weather-station.ts'
 import { ESP32_BLE_RGB_LAYOUT } from './constants/wiring-diagrams/layouts/esp32-ble-rgb-controller.ts'
+import { LED_MATRIX_MAZE_STEPS } from './constants/walkthroughs/led-matrix-maze.ts'
+import { LED_MATRIX_MAZE_FIRMWARE } from './constants/firmware/led-matrix-maze.ts'
+import { LED_MATRIX_MAZE_LAYOUT } from './constants/wiring-diagrams/layouts/led-matrix-maze.ts'
 import { FIRMWARE_COMPILE_RECORD } from './firmware/compile-record.ts'
 const pack = (steps, firmware, layout) => ({
   steps: steps.map((step) => ({
@@ -97,6 +106,7 @@ process.stdout.write(JSON.stringify({
     '18': pack(SERVO_PAN_TILT_CAMERA_STEPS, SERVO_PAN_TILT_CAMERA_FIRMWARE, SERVO_PAN_TILT_CAMERA_LAYOUT),
     '23': pack(ESP32_WIFI_WEATHER_STEPS, ESP32_WIFI_WEATHER_FIRMWARE, ESP32_WIFI_WEATHER_LAYOUT),
     '24': pack(ESP32_BLE_RGB_STEPS, ESP32_BLE_RGB_FIRMWARE, ESP32_BLE_RGB_LAYOUT),
+    '25': pack(LED_MATRIX_MAZE_STEPS, LED_MATRIX_MAZE_FIRMWARE, LED_MATRIX_MAZE_LAYOUT),
   },
 }))
 `,

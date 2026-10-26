@@ -19,6 +19,45 @@ export function clampDiagramScale(scale: number) {
   return clampNumber(scale, MIN_DIAGRAM_ZOOM, MAX_DIAGRAM_ZOOM)
 }
 
+/**
+ * Height available for a centred diagram when a control bar covers the bottom of the viewport.
+ * The diagram stays centred, so the covered strip needs the same clearance above the centre.
+ */
+export function diagramFitHeight(viewportHeight: number, coveredBottom: number) {
+  'worklet'
+  return Math.max(0, viewportHeight - Math.max(0, coveredBottom) * 2)
+}
+
+/**
+ * Fit used when the enlarged viewer opens. Only the always-visible button row counts.
+ * An expanded Components or Connections list is an overlay and must not be passed here.
+ */
+export function diagramChromeFit(
+  viewportWidth: number,
+  viewportHeight: number,
+  contentWidth: number,
+  contentHeight: number,
+  chromeHeight: number,
+) {
+  return fitContentSize(viewportWidth, diagramFitHeight(viewportHeight, chromeHeight), contentWidth, contentHeight)
+}
+
+/**
+ * A later layout may replace the fitted viewport only while the diagram is still at
+ * the initial scale and the viewing area has grown. A smaller area, or any change
+ * after the user has zoomed, leaves the transform alone.
+ */
+export function shouldRefitViewport(width: number, height: number, lockedHeight: number, measured: boolean, scale: number) {
+  'worklet'
+  if (width <= 0 || height <= 0) {
+    return false
+  }
+  if (measured && (height <= lockedHeight || scale > 1)) {
+    return false
+  }
+  return true
+}
+
 /** Size of the diagram when it is fitted inside the viewport at zoom 1. */
 export function fitContentSize(viewportWidth: number, viewportHeight: number, contentWidth: number, contentHeight: number) {
   'worklet'

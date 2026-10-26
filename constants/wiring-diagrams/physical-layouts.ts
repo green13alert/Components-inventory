@@ -42,7 +42,14 @@ function devkitFrame(used: { portId: string; header: 'j2' | 'j3'; index: number;
   }
 }
 
-/** Arduino Uno R3, USB at the bottom of the drawing. Digital header faces the breadboard. */
+/**
+ * Arduino Uno R3, component side up, USB at the bottom of the drawing.
+ * Header order is the A000066 datasheet, reversed so pin 1 (the USB end) is the high index.
+ * Digital, from the top: SCL, SDA, AREF, GND, D13–D8, gap, D7–D0.
+ * Power, from the top: A5–A0, gap, VIN, GND, GND, 5V, 3V3, RESET, IOREF, NC.
+ * The drawn board is narrower than a 53.4 mm Uno so the headers can sit beside the breadboard.
+ * Pin pitch stays 0.1 inch. Do not retune an index without checking every jumper that uses it.
+ */
 function unoFrame(used: { portId: string; header: 'digital' | 'power'; index: number; label: string }[]) {
   const pitch = 16
   const x = -210
@@ -54,7 +61,7 @@ function unoFrame(used: { portId: string; header: 'digital' | 'power'; index: nu
   const powerX = x + 16
   const at = (header: 'digital' | 'power', index: number) => ({
     x: header === 'digital' ? digitalX : powerX,
-    y: yOf(index, header === 'digital' ? 9 : 7),
+    y: yOf(index, header === 'digital' ? 9 : 5),
   })
   const height = yOf(17, 9) - y + 24
   return {
@@ -182,11 +189,95 @@ export const MOTION_PHYSICAL: PhysicalLayout = {
   ],
   modules: [
     unoFrame([
-      { portId: '5v', header: 'power', index: 4, label: '5V' },
-      { portId: 'gnd', header: 'power', index: 5, label: 'GND' },
+      { portId: '5v', header: 'power', index: 9, label: '5V' },
+      { portId: 'gnd', header: 'power', index: 8, label: 'GND' },
       { portId: 'd8', header: 'digital', index: 9, label: 'D8' },
       { portId: 'd9', header: 'digital', index: 8, label: 'D9' },
       { portId: 'd2', header: 'digital', index: 15, label: 'D2' },
+    ]),
+  ],
+}
+
+/**
+ * Off-board modules, drawn at breadboard scale: 16 px is 2.54 mm.
+ * An assembled FC-16 is about 32 mm square. A KY-023 board is about 34 mm by 26 mm.
+ * Each lies flat off the breadboard with a clear gap of about 13 mm.
+ * The female jumper socket is on the male header. The male jumper pin enters the Uno or a rail.
+ */
+const MM = 16 / 2.54
+const BOARD_TOP = 24
+const BOARD_BOTTOM = 312
+const MODULE_GAP = 80
+const UNO_RIGHT = -42
+
+function sideHeader(
+  elementId: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  names: { portId: string; label: string }[],
+) {
+  const pitch = 16
+  const pinX = x + width + 10
+  const pinY = y + Math.round((height - (names.length - 1) * pitch) / 2)
+  return {
+    elementId,
+    x,
+    y,
+    width,
+    height,
+    pins: names.map((item, index) => ({ portId: item.portId, label: item.label, x: pinX, y: pinY + index * pitch })),
+    dots: [] as { x: number; y: number }[],
+  }
+}
+
+export const MAZE_PHYSICAL: PhysicalLayout = {
+  ...upperBoard,
+  fixtures: ['arduino'],
+  leads: [],
+  jumpers: [
+    { id: 'uno-5v', gender: 'male-male', from: pin('arduino', '5v'), to: rail('left', 'plus', 1) },
+    { id: 'uno-gnd', gender: 'male-male', from: pin('arduino', 'gnd'), to: rail('left', 'minus', 1) },
+    { id: 'matrix-gnd', gender: 'male-female', from: pin('matrix', 'gnd'), to: rail('left', 'minus', 5) },
+    { id: 'matrix-vcc', gender: 'male-female', from: pin('matrix', 'vcc'), to: rail('left', 'plus', 5) },
+    { id: 'matrix-clk', gender: 'male-female', from: pin('matrix', 'clk'), to: pin('arduino', 'd13') },
+    { id: 'matrix-cs', gender: 'male-female', from: pin('matrix', 'cs'), to: pin('arduino', 'd10') },
+    { id: 'matrix-din', gender: 'male-female', from: pin('matrix', 'din'), to: pin('arduino', 'd11') },
+    { id: 'joy-gnd', gender: 'male-female', from: pin('joystick', 'gnd'), to: rail('left', 'minus', 8) },
+    { id: 'joy-5v', gender: 'male-female', from: pin('joystick', 'vcc'), to: rail('left', 'plus', 8) },
+    { id: 'joy-x', gender: 'male-female', from: pin('joystick', 'vrx'), to: pin('arduino', 'a0') },
+    { id: 'joy-y', gender: 'male-female', from: pin('joystick', 'vry'), to: pin('arduino', 'a1') },
+    { id: 'joy-sw', gender: 'male-female', from: pin('joystick', 'sw'), to: pin('arduino', 'd2') },
+  ],
+  railBindings: [
+    { elementId: 'breadboard', portId: 'plus', side: 'left', polarity: 'plus', segment: 'upper' },
+    { elementId: 'breadboard', portId: 'minus', side: 'left', polarity: 'minus', segment: 'upper' },
+  ],
+  modules: [
+    unoFrame([
+      { portId: '5v', header: 'power', index: 9, label: '5V' },
+      { portId: 'gnd', header: 'power', index: 8, label: 'GND' },
+      { portId: 'a0', header: 'power', index: 5, label: 'A0' },
+      { portId: 'a1', header: 'power', index: 4, label: 'A1' },
+      { portId: 'd13', header: 'digital', index: 4, label: 'D13' },
+      { portId: 'd11', header: 'digital', index: 6, label: 'D11' },
+      { portId: 'd10', header: 'digital', index: 7, label: 'D10' },
+      { portId: 'd2', header: 'digital', index: 15, label: 'D2' },
+    ]),
+    sideHeader('matrix', 48, BOARD_TOP - MODULE_GAP - Math.round(32 * MM), Math.round(32 * MM), Math.round(32 * MM), [
+      { portId: 'clk', label: 'CLK' },
+      { portId: 'cs', label: 'CS' },
+      { portId: 'din', label: 'DIN' },
+      { portId: 'gnd', label: 'GND' },
+      { portId: 'vcc', label: 'VCC' },
+    ]),
+    sideHeader('joystick', UNO_RIGHT + MODULE_GAP, BOARD_BOTTOM + MODULE_GAP, Math.round(26 * MM), Math.round(34 * MM), [
+      { portId: 'gnd', label: 'GND' },
+      { portId: 'vcc', label: '+5V' },
+      { portId: 'vrx', label: 'VRx' },
+      { portId: 'vry', label: 'VRy' },
+      { portId: 'sw', label: 'SW' },
     ]),
   ],
 }
@@ -258,13 +349,13 @@ export const SERVO_PHYSICAL: PhysicalLayout = {
   ],
   modules: [
     unoFrame([
-      { portId: '5v', header: 'power', index: 4, label: '5V' },
-      { portId: 'gnd', header: 'power', index: 5, label: 'GND' },
+      { portId: '5v', header: 'power', index: 9, label: '5V' },
+      { portId: 'gnd', header: 'power', index: 8, label: 'GND' },
       { portId: 'd2', header: 'digital', index: 15, label: 'D2' },
       { portId: 'd9', header: 'digital', index: 8, label: 'D9' },
       { portId: 'd10', header: 'digital', index: 7, label: 'D10' },
-      { portId: 'a0', header: 'power', index: 8, label: 'A0' },
-      { portId: 'a1', header: 'power', index: 9, label: 'A1' },
+      { portId: 'a0', header: 'power', index: 5, label: 'A0' },
+      { portId: 'a1', header: 'power', index: 4, label: 'A1' },
     ]),
     servoPlug('pan', 28),
     servoPlug('tilt', 112),

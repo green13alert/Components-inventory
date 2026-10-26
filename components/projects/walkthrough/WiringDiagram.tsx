@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { ComponentKey, SelectedPartCard } from '@/components/projects/walkthrough/ComponentKey';
-import { ConnectionReference } from '@/components/projects/walkthrough/ConnectionReference';
+import { ConnectionReference, SelectedConnectionCard } from '@/components/projects/walkthrough/ConnectionReference';
 import { DiagramViewer } from '@/components/projects/walkthrough/DiagramViewer';
 import { useWalkthroughMarker } from '@/components/projects/walkthrough/WalkthroughScroll';
 import { PhysicalBoard, PhysicalBreadboard } from '@/components/projects/walkthrough/PhysicalBreadboard';
@@ -14,7 +14,7 @@ import { getWiringLayout, type WiringElementDef, type WiringLayout } from '@/con
 import type { StepBlock, StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 import { resolveAssembly } from '@/lib/assembly-progress';
-import { connectionReference } from '@/lib/connection-reference';
+import { focusCaption, visibleConnectionEntries } from '@/lib/connection-reference';
 import {
   buildComponentKey,
   highlightedPartIds,
@@ -22,7 +22,9 @@ import {
   toggleKeySelection,
   type KeySelection,
 } from '@/lib/component-key';
-import { hitTestScene } from '@/lib/diagram-hit';
+import { hitTestSceneTarget } from '@/lib/diagram-hit';
+import { toggleDiagramPanel, type DiagramPanel } from '@/lib/diagram-panel';
+import { retainWireFocus, toggleWireFocus } from '@/lib/diagram-selection';
 import { buildPhysicalScene, physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
 import { fitContentSize } from '@/lib/diagram-viewport';
 import {
@@ -92,7 +94,8 @@ export function WiringDiagram({
   const [view, setView] = useState<'physical' | 'schematic'>(layout?.physical ? 'physical' : 'schematic');
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<KeySelection | null>(null);
-  const [keyOpen, setKeyOpen] = useState(false);
+  const [focusedWireIds, setFocusedWireIds] = useState<string[] | null>(null);
+  const [panel, setPanel] = useState<DiagramPanel>('none');
   const reportMarker = useWalkthroughMarker();
   const markerRef = useRef<View>(null);
   const publishMarker = () => {
@@ -102,11 +105,13 @@ export function WiringDiagram({
       }
     });
   };
-  const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const showPanel = (target: 'components' | 'connections') => {
+    setPanel((current) => toggleDiagramPanel(current, target));
+  };
   useEffect(() => {
     setSelection(null);
-    setKeyOpen(false);
-    setConnectionsOpen(false);
+    setFocusedWireIds(null);
+    setPanel('none');
   }, [stepIndex]);
   const showPhysical = Boolean(layout?.physical) && view === 'physical';
   const assembly = useMemo(
@@ -128,10 +133,6 @@ export function WiringDiagram({
     () => (layout ? routeWiringDiagram(layout, connections, priorConnections) : []),
     [connections, layout, priorConnections],
   );
-  const entries = useMemo(
-    () => connectionReference(layout, connections, priorConnections),
-    [connections, layout, priorConnections],
-  );
   const installedKey = assembly.hasSequence ? assembly.installedParts.join('\n') : null;
   const groups = useMemo(() => {
     if (!layout?.physical) {
@@ -148,18 +149,40 @@ export function WiringDiagram({
     () => (showPhysical && layout ? buildPhysicalScene(layout, connections, priorConnections, assemblyFrame) : null),
     [assemblyFrame, connections, layout, priorConnections, showPhysical],
   );
+  const entries = useMemo(() => {
+    const visible = scene?.wires.filter((wire) => wire.role === 'jumper').map((wire) => wire.id) ?? [];
+    const fresh = assemblyFrame ? [...assemblyFrame.newJumpers] : [];
+    return visibleConnectionEntries(layout, connections, priorConnections, visible, fresh);
+  }, [assemblyFrame, connections, layout, priorConnections, scene]);
+  const wireIds = scene?.wires.map((wire) => wire.id) ?? [];
+  const wireKey = wireIds.join('\n');
+  useEffect(() => {
+    setFocusedWireIds((current) => retainWireFocus(current, wireKey.length > 0 ? wireKey.split('\n') : []));
+  }, [wireKey]);
   const physicalSize = showPhysical && layout ? physicalSceneSize(layout) : null;
   const contentWidth = physicalSize ? physicalSize.width : (layout?.width ?? 1);
   const contentHeight = physicalSize ? physicalSize.height : (layout?.height ?? 1);
   const choose = (next: KeySelection) => setSelection((current) => toggleKeySelection(current, next));
-  const selectPart = (id: string) => choose({ kind: 'instance', id });
+  const selectPart = (id: string) => {
+    setFocusedWireIds(null);
+    choose({ kind: 'instance', id });
+  };
+  const focusWires = (ids: string[]) => {
+    setSelection(null);
+    setFocusedWireIds((current) => toggleWireFocus(current, ids));
+  };
+  const clearFocus = () => setFocusedWireIds(null);
+  const caption = focusedWireIds && layout ? focusCaption(layout, entries, focusedWireIds) : null;
 
-  const detail = showPhysical && selection ? (
+  const detail = caption ? (
+    <SelectedConnectionCard title={caption.title} detail={caption.detail} onClear={clearFocus} />
+  ) : showPhysical && selection ? (
     <SelectedPartCard groups={groups} selection={selection} onClear={() => setSelection(null)} />
   ) : null;
 
   return (
     <View style={styles.section}>
+      <View ref={markerRef} collapsable={false} onLayout={publishMarker} style={styles.scrollAnchor} />
       {heading ? <Text style={styles.label}>{heading}</Text> : null}
       <View style={styles.card}>
         {layout?.physical ? (
@@ -187,32 +210,33 @@ export function WiringDiagram({
             priorConnections={priorConnections}
             assembly={assemblyFrame}
             selectedIds={selectedIds}
+            focusedWireIds={focusedWireIds ?? []}
             onSelectPart={selectPart}
+            onSelectWire={(id) => focusWires([id])}
           />
         ) : layout ? (
           <VisualWiringCanvas layout={layout} wires={wires} />
         ) : (
           <FallbackWiringList pair={pair} nodes={nodes} connections={connections} />
         )}
-        {detail ? <View style={styles.cardDetail}>{detail}</View> : null}
       </View>
       <View style={styles.controlRow}>
         {showPhysical && groups.length > 0 ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ expanded: keyOpen }}
-            onPress={() => setKeyOpen((openKey) => !openKey)}
-            style={[styles.viewOption, keyOpen && styles.viewOptionOn]}>
-            <Text style={[styles.viewOptionLabel, keyOpen && styles.viewOptionLabelOn]}>Components</Text>
+            accessibilityState={{ expanded: panel === 'components' }}
+            onPress={() => showPanel('components')}
+            style={[styles.viewOption, panel === 'components' && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, panel === 'components' && styles.viewOptionLabelOn]}>Components</Text>
           </Pressable>
         ) : null}
         {layout ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ expanded: connectionsOpen }}
-            onPress={() => setConnectionsOpen((openConnections) => !openConnections)}
-            style={[styles.viewOption, connectionsOpen && styles.viewOptionOn]}>
-            <Text style={[styles.viewOptionLabel, connectionsOpen && styles.viewOptionLabelOn]}>Connections</Text>
+            accessibilityState={{ expanded: panel === 'connections' }}
+            onPress={() => showPanel('connections')}
+            style={[styles.viewOption, panel === 'connections' && styles.viewOptionOn]}>
+            <Text style={[styles.viewOptionLabel, panel === 'connections' && styles.viewOptionLabelOn]}>Connections</Text>
           </Pressable>
         ) : null}
         {layout ? (
@@ -221,10 +245,11 @@ export function WiringDiagram({
           </Pressable>
         ) : null}
       </View>
-      <View ref={markerRef} collapsable={false} onLayout={publishMarker}>
-        {showPhysical && keyOpen ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : null}
-      </View>
-      {layout && connectionsOpen ? <ConnectionReference entries={entries} /> : null}
+      {detail ? <View style={styles.cardDetail}>{detail}</View> : null}
+      {showPhysical && panel === 'components' ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : null}
+      {layout && panel === 'connections' ? (
+        <ConnectionReference entries={entries} selectedWireIds={focusedWireIds} onSelectWire={focusWires} />
+      ) : null}
       {layout ? (
         <DiagramViewer
           visible={open}
@@ -234,19 +259,22 @@ export function WiringDiagram({
           showModeToggle={Boolean(layout.physical)}
           contentWidth={contentWidth}
           contentHeight={contentHeight}
-          connections={<ConnectionReference entries={entries} />}
-          connectionsOpen={connectionsOpen}
-          onToggleConnections={() => setConnectionsOpen((openConnections) => !openConnections)}
-          componentsOpen={keyOpen}
-          onToggleComponents={() => setKeyOpen((openKey) => !openKey)}
+          connections={<ConnectionReference entries={entries} selectedWireIds={focusedWireIds} onSelectWire={focusWires} />}
           detail={detail}
           onSceneTap={
             scene
               ? (point) => {
-                  const id = hitTestScene(scene, point);
-                  if (id) {
-                    selectPart(id);
+                  const hit = hitTestSceneTarget(scene, point);
+                  if (!hit) {
+                    setSelection(null);
+                    setFocusedWireIds(null);
+                    return;
                   }
+                  if (hit.kind === 'wire') {
+                    focusWires([hit.id]);
+                    return;
+                  }
+                  selectPart(hit.id);
                 }
               : undefined
           }
@@ -258,6 +286,8 @@ export function WiringDiagram({
               priorConnections={priorConnections}
               assembly={assemblyFrame}
               selectedIds={selectedIds}
+              focusedWireIds={focusedWireIds ?? []}
+              onSelectWire={(id) => focusWires([id])}
             />
           ) : (
             <SchematicFigure layout={layout} wires={wires} />
@@ -382,6 +412,8 @@ function DiagramSymbol({ element }: { element: WiringElementDef }) {
       return <ServoSymbol element={element} />;
     case 'joystick':
       return <JoystickSymbol element={element} />;
+    case 'led-matrix':
+      return <LedMatrixSymbol element={element} />;
     case 'esp32-devkit':
       return <Esp32DevkitSymbol element={element} />;
     case 'bme280':
@@ -800,6 +832,28 @@ function ServoSymbol({ element }: { element: WiringElementDef }) {
   );
 }
 
+function LedMatrixSymbol({ element }: { element: WiringElementDef }) {
+  const { x, y, width, height } = element;
+  return (
+    <G>
+      <Rect x={x} y={y} width={width} height={height} rx={10} fill="#14532D" />
+      <SvgText x={x + 12} y={y + 18} fill="#F8FAFC" fontSize={11} fontWeight="700">
+        MAX7219
+      </SvgText>
+      {Array.from({ length: 64 }, (_, index) => {
+        const column = index % 8;
+        const row = Math.floor(index / 8);
+        return <Rect key={index} x={x + width - 86 + column * 9} y={y + 28 + row * 9} width={6} height={6} rx={1} fill="#F8FAFC" />;
+      })}
+      {element.ports.map((port) => (
+        <SvgText key={port.id} x={x + 12} y={y + port.dy + 4} fill="#E5E7EB" fontSize={9} fontWeight="700">
+          {port.label}
+        </SvgText>
+      ))}
+    </G>
+  );
+}
+
 function JoystickSymbol({ element }: { element: WiringElementDef }) {
   const { x, y, width, height } = element;
   return (
@@ -886,6 +940,13 @@ function createStyles(colors: SolderiPalette) {
   return StyleSheet.create({
     section: {
       gap: 10,
+    },
+    scrollAnchor: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: 1,
+      height: 1,
     },
     card: {
       backgroundColor: colors.surfaceElevated,

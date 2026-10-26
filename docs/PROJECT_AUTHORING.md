@@ -50,6 +50,8 @@ A breadboard project shows a layout a person can copy: which leads share a row, 
 
 Keep voltage, current, and protocol detail only where the person needs it to wire, power, or check the build. Longer background belongs in the supporting notes, not in an extra step.
 
+One tutorial step is one meaningful milestone, not one tiny action or one isolated code excerpt. Positioning a board does not normally need its own step apart from connecting that board’s power. Connecting a five-pin module is usually one step, including its power and signal wires. A circuit check after the wiring is a real milestone. Installing the programming environment can be its own step. A code excerpt that cannot compile and upload on its own belongs inside a concept step, and that step says it is an excerpt of the finished program. A concept such as movement, collision, or level timing can be its own step when the learner needs it before the upload. A complex build, such as a robotic arm, can have many more steps than a small game. Do not force every project to the same count.
+
 A code excerpt is a slice of the uploadable program, and the step says so. The complete program stays in one copyable step. Phone or app steps name the taps, the write format, and what should change. Buttons and dialogs in the walkthrough do something useful. Do not leave a control that only announces unfinished work.
 
 These are the bar for a new tutorial. They are not a fixed sequence of stages. A sensor project and a radio project will not share the same outline.

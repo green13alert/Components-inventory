@@ -345,6 +345,17 @@ export function endpointMatchesPorts(layout: WiringLayout, endpoint: PhysicalEnd
   })
 }
 
+/** Male 0.1 inch headers need the female socket of the jumper. Female headers and plugs take the male pin. */
+const MALE_HEADER_KINDS = new Set(['esp32-devkit', 'led-matrix', 'joystick'])
+
+function endpointNeedsFemaleSocket(layout: WiringLayout, endpoint: PhysicalEndpoint): boolean {
+  if (!('kind' in endpoint) || endpoint.kind !== 'module') {
+    return false
+  }
+  const kind = layout.elements.find((item) => item.id === endpoint.elementId)?.kind
+  return kind != null && MALE_HEADER_KINDS.has(kind)
+}
+
 function jumperGenderErrors(layout: WiringLayout, jumpers: PhysicalJumper[]): string[] {
   const errors: string[] = []
   for (const jumper of jumpers) {
@@ -362,18 +373,20 @@ function jumperGenderErrors(layout: WiringLayout, jumpers: PhysicalJumper[]): st
       if (!kinds.includes('esp32-devkit') || !kinds.includes('bme280')) {
         errors.push(`${jumper.id} is a STEMMA QT female cable and must run from the DevKit to the BME280.`)
       }
-    } else if (moduleEnds.length === 2 && jumper.gender !== 'male-male') {
-      errors.push(`${jumper.id} joins two module pins and must be male-to-male.`)
+      continue
     }
-    if (moduleEnds.length === 1 && holeEnds === 1) {
-      const element = layout.elements.find((item) => item.id === moduleEnds[0].elementId)
-      const expectsFemale = element?.kind === 'esp32-devkit'
-      if (expectsFemale && jumper.gender !== 'male-female') {
-        errors.push(`${jumper.id} leaves a male DevKit header and must be male-to-female.`)
-      }
-      if (element && element.kind !== 'esp32-devkit' && jumper.gender !== 'male-male') {
-        errors.push(`${jumper.id} leaves ${element.label} and must be male-to-male.`)
-      }
+    if (moduleEnds.length === 0) {
+      continue
+    }
+    const femaleEnds = ends.filter((end) => endpointNeedsFemaleSocket(layout, end)).length
+    if (femaleEnds === 2) {
+      errors.push(`${jumper.id} joins two male headers. This diagram has no female-to-female wire.`)
+      continue
+    }
+    const expected = femaleEnds === 1 ? 'male-female' : 'male-male'
+    if (jumper.gender !== expected) {
+      const label = expected === 'male-female' ? 'male-to-female' : 'male-to-male'
+      errors.push(`${jumper.id} must be ${label}.`)
     }
   }
   return errors

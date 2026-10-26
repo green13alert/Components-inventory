@@ -9,7 +9,8 @@ export const FIRMWARE_COMPILE_RECORD = {
   "Adafruit BME280 Library": "2.3.0",
   "Adafruit Unified Sensor": "1.1.15",
   "Adafruit BusIO": "1.17.4",
-  "Servo": "1.3.0"
+  "Servo": "1.3.0",
+  "MD_MAX72XX": "3.5.1"
 },
   sketches: {
   "8": {
@@ -34,6 +35,12 @@ export const FIRMWARE_COMPILE_RECORD = {
     "fqbn": "esp32:esp32:esp32",
     "board": "ESP32 Dev Module (ESP32-DevKitC V4)",
     "checksum": "75b44cdd",
+    "result": "passed"
+  },
+  "25": {
+    "fqbn": "arduino:avr:uno",
+    "board": "Arduino Uno R3",
+    "checksum": "7da2ab22",
     "result": "passed"
   }
 },

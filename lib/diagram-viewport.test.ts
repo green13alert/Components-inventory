@@ -5,6 +5,7 @@ import {
   INITIAL_DIAGRAM_VIEW,
   MAX_DIAGRAM_ZOOM,
   MIN_DIAGRAM_ZOOM,
+  diagramFitHeight,
   fitContentSize,
   panDiagram,
   zoomAroundFocal,
@@ -25,6 +26,17 @@ test('the minimum zoom fits a tall diagram and a wide diagram inside the viewpor
   assert.ok(Math.abs(motion.width / motion.height - 720 / 500) < 0.001)
   const weather = fitContentSize(390, 520, 360, 300)
   assert.ok(Math.abs(weather.width / weather.height - 360 / 300) < 0.001)
+})
+
+test('a centred diagram stays above a bottom control bar', () => {
+  const viewportHeight = 700
+  const covered = 56
+  const available = diagramFitHeight(viewportHeight, covered)
+  const fitted = fitContentSize(390, available, 620, 900)
+  const bottomMargin = (viewportHeight - fitted.height) / 2
+  assert.ok(bottomMargin >= covered)
+  assert.ok(fitted.width <= 390)
+  assert.ok(fitted.height <= available)
 })
 
 test('zoom stays between fit and the maximum and does not jump when the gesture scale is 1', () => {

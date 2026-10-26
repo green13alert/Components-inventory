@@ -5,8 +5,10 @@ import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-
 import type { WiringLayout } from '@/constants/wiring-diagrams';
 import type { StepConnection } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
+import { moduleArt, type ArtMark } from '@/lib/diagram-art';
 import { partHitBox } from '@/lib/diagram-hit';
 import { buildPhysicalScene, type AssemblyFrame, type Point, type ScenePart, type SceneWire } from '@/lib/physical-scene';
+import { RESISTOR_COLORS, resistorColorCode } from '@/lib/resistor-bands';
 
 type PhysicalBreadboardProps = {
   layout: WiringLayout;
@@ -14,7 +16,9 @@ type PhysicalBreadboardProps = {
   priorConnections?: StepConnection[];
   assembly?: AssemblyFrame | null;
   selectedIds?: ReadonlySet<string>;
+  focusedWireIds?: readonly string[];
   onSelectPart?: (id: string) => void;
+  onSelectWire?: (id: string) => void;
 };
 
 export function PhysicalBreadboard({
@@ -23,7 +27,9 @@ export function PhysicalBreadboard({
   priorConnections = [],
   assembly = null,
   selectedIds,
+  focusedWireIds,
   onSelectPart,
+  onSelectWire,
 }: PhysicalBreadboardProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -43,7 +49,9 @@ export function PhysicalBreadboard({
         priorConnections={priorConnections}
         assembly={assembly}
         selectedIds={selectedIds}
+        focusedWireIds={focusedWireIds}
         onSelectPart={onSelectPart}
+        onSelectWire={onSelectWire}
       />
     </View>
   );
@@ -55,7 +63,9 @@ export function PhysicalBoard(props: {
   priorConnections?: StepConnection[];
   assembly?: AssemblyFrame | null;
   selectedIds?: ReadonlySet<string>;
+  focusedWireIds?: readonly string[];
   onSelectPart?: (id: string) => void;
+  onSelectWire?: (id: string) => void;
 }) {
   return (
     <BoardSvg
@@ -63,7 +73,9 @@ export function PhysicalBoard(props: {
       priorConnections={props.priorConnections ?? []}
       assembly={props.assembly ?? null}
       selectedIds={props.selectedIds}
+      focusedWireIds={props.focusedWireIds}
       onSelectPart={props.onSelectPart}
+      onSelectWire={props.onSelectWire}
     />
   );
 }
@@ -74,21 +86,31 @@ function BoardSvg({
   priorConnections,
   assembly,
   selectedIds = new Set<string>(),
+  focusedWireIds = [],
   onSelectPart,
+  onSelectWire,
 }: {
   layout: WiringLayout;
   connections: StepConnection[];
   priorConnections: StepConnection[];
   assembly: AssemblyFrame | null;
   selectedIds?: ReadonlySet<string>;
+  focusedWireIds?: readonly string[];
   onSelectPart?: (id: string) => void;
+  onSelectWire?: (id: string) => void;
 }) {
   const scene = buildPhysicalScene(layout, connections, priorConnections, assembly);
   if (!scene) {
     return null;
   }
   const { board } = scene;
-  const selecting = selectedIds.size > 0;
+  const focused = new Set(focusedWireIds);
+  const isolating = focused.size > 0;
+  const selecting = !isolating && selectedIds.size > 0;
+  const introducing = Boolean(assembly && (assembly.newJumpers.size > 0 || assembly.newParts.size > 0));
+  const related = (wire: SceneWire) => wire.touches.some((id) => selectedIds.has(id)) || cableSelected(wire, selectedIds);
+  const highlighted = (wire: SceneWire) => (isolating ? focused.has(wire.id) : selecting && related(wire));
+  const ordered = [...scene.wires].sort((a, b) => Number(highlighted(a)) - Number(highlighted(b)));
 
   return (
     <View style={{ flex: 1 }}>
@@ -101,8 +123,8 @@ function BoardSvg({
           width={board.width}
           height={board.height}
           rx={14}
-          fill="#F4E7C8"
-          stroke={selectedIds.has('breadboard') ? '#0F766E' : '#D6C4A3'}
+          fill="#F7F4EE"
+          stroke={selectedIds.has('breadboard') ? '#0F766E' : '#D6D3D1'}
           strokeWidth={selectedIds.has('breadboard') ? 3 : 2}
           onPress={() => onSelectPart?.('breadboard')}
         />
@@ -110,7 +132,7 @@ function BoardSvg({
         <Rail x={board.x + 24} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#2563EB" />
         <Rail x={board.x + board.width - 40} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#F43F5E" />
         <Rail x={board.x + board.width - 22} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#2563EB" />
-        <Rect x={board.trench.x} y={board.trench.y} width={board.trench.width} height={board.trench.height} rx={4} fill="#E7D3A8" />
+        <Rect x={board.trench.x} y={board.trench.y} width={board.trench.width} height={board.trench.height} rx={4} fill="#E7E5E4" />
         <SvgText x={board.x + 8} y={board.y - 6} fill="#9F1239" fontSize={12} fontWeight="700">
           {board.leftPlus}
         </SvgText>
@@ -145,8 +167,15 @@ function BoardSvg({
         ))}
         </>
         ) : null}
-        {scene.wires.map((wire) => (
-          <WirePath key={wire.id} wire={wire} dimmed={selecting && !cableSelected(wire, selectedIds)} marked={cableSelected(wire, selectedIds)} />
+        {ordered.map((wire) => (
+          <WirePath
+            key={wire.id}
+            wire={wire}
+            dimmed={isolating ? !focused.has(wire.id) : selecting && !related(wire)}
+            marked={highlighted(wire)}
+            quiet={wire.emphasis !== 'active'}
+            showEnds={highlighted(wire) || (introducing && wire.emphasis === 'active' && !selecting && !isolating)}
+          />
         ))}
         {scene.parts.map((part) => (
           <PartShape
@@ -157,6 +186,19 @@ function BoardSvg({
             onSelectPart={onSelectPart}
           />
         ))}
+        {onSelectWire
+          ? ordered.map((wire) => (
+              <Path
+                key={`hit-${wire.id}`}
+                d={wire.d}
+                fill="none"
+                stroke="rgba(0,0,0,0.01)"
+                strokeWidth={18}
+                strokeLinecap="round"
+                onPress={() => onSelectWire(wire.id)}
+              />
+            ))
+          : null}
       </Svg>
     </View>
   );
@@ -187,19 +229,41 @@ function cableSelected(wire: SceneWire, selectedIds: ReadonlySet<string>) {
   return false;
 }
 
-function WirePath({ wire, dimmed, marked }: { wire: SceneWire; dimmed: boolean; marked: boolean }) {
-  const opacity = dimmed ? 0.45 : wire.emphasis === 'context' ? 0.4 : 1;
+function WirePath({
+  wire,
+  dimmed,
+  marked,
+  quiet,
+  showEnds,
+}: {
+  wire: SceneWire;
+  dimmed: boolean;
+  marked: boolean;
+  quiet: boolean;
+  showEnds: boolean;
+}) {
+  const opacity = marked ? 1 : dimmed ? 0.16 : quiet ? 0.38 : 1;
   return (
     <G opacity={opacity}>
-      {marked ? <Path d={wire.d} fill="none" stroke="#0F766E" strokeWidth={7} strokeLinecap="round" /> : null}
-      {wire.emphasis === 'active' && !dimmed ? (
-        <Path d={wire.d} fill="none" stroke="#FDE68A" strokeWidth={7} strokeLinecap="round" />
-      ) : null}
-      <Path d={wire.d} fill="none" stroke={wire.color} strokeWidth={wire.emphasis === 'active' ? 3.4 : 2.4} strokeLinecap="round" />
-      <Circle cx={wire.from.x} cy={wire.from.y} r={3.2} fill={wire.color} />
-      <Circle cx={wire.to.x} cy={wire.to.y} r={3.2} fill={wire.color} />
+      {marked ? <Path d={wire.d} fill="none" stroke="#0F766E" strokeWidth={8} strokeLinecap="round" /> : null}
+      {!marked && showEnds ? <Path d={wire.d} fill="none" stroke="#FDE68A" strokeWidth={7} strokeLinecap="round" /> : null}
+      <Path d={wire.d} fill="none" stroke={wire.color} strokeWidth={marked ? 3.6 : quiet ? 2.2 : 2.8} strokeLinecap="round" />
+      <Endpoint at={wire.from} color={wire.color} strong={showEnds || marked} />
+      <Endpoint at={wire.to} color={wire.color} strong={showEnds || marked} />
       {wire.socketAt === 'from' ? <Socket at={wire.from} /> : null}
       {wire.socketAt === 'to' ? <Socket at={wire.to} /> : null}
+    </G>
+  );
+}
+
+function Endpoint({ at, color, strong }: { at: Point; color: string; strong: boolean }) {
+  if (!strong) {
+    return <Circle cx={at.x} cy={at.y} r={2.6} fill={color} />;
+  }
+  return (
+    <G>
+      <Circle cx={at.x} cy={at.y} r={8} fill="#FFFFFF" stroke={color} strokeWidth={2.4} />
+      <Circle cx={at.x} cy={at.y} r={2.4} fill={color} />
     </G>
   );
 }
@@ -325,11 +389,11 @@ function PartArt({ part }: { part: ScenePart }) {
   if (part.kind === 'rgb-led') {
     return <RgbLed leads={part.leads} />;
   }
-  if (part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick') {
-    return <ModuleOnHoles part={part} />;
-  }
-  if (part.kind === 'esp32' || part.kind === 'uno' || part.kind === 'servo' || part.kind === 'psu' || part.kind === 'bme280') {
+  if ('width' in part && 'x' in part) {
     return <OffBoard part={part} />;
+  }
+  if (part.kind === 'pir' || part.kind === 'buzzer' || part.kind === 'joystick' || part.kind === 'led-matrix') {
+    return <ModuleOnHoles part={part} />;
   }
   return null;
 }
@@ -345,21 +409,18 @@ function Resistor({ a, b, ohms, label }: { a: Point; b: Point; ohms?: number; la
   const end = { x: b.x - ux * inset, y: b.y - uy * inset };
   const length = Math.max(18, span - inset * 2);
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-  const bands =
-    ohms === 1000
-      ? ['#92400E', '#111827', '#DC2626', '#CA8A04']
-      : ohms === 220
-        ? ['#DC2626', '#DC2626', '#92400E', '#CA8A04']
-        : ['#92400E', '#111827', '#111827', '#CA8A04'];
-  const short = ohms === 1000 ? '1k' : ohms === 220 ? '220' : label;
+  const code = ohms == null ? null : resistorColorCode(ohms);
+  const bands = code ? code.colors.map((color) => RESISTOR_COLORS[color]) : [];
+  const body = code?.body === 'blue' ? '#1D4ED8' : '#E7D3A8';
+  const short = ohms === 1000 ? '1k' : ohms === 100 ? '100' : ohms === 220 ? '220' : label;
   return (
     <G>
       <Line x1={a.x} y1={a.y} x2={start.x} y2={start.y} stroke="#94A3B8" strokeWidth={1.6} />
       <Line x1={end.x} y1={end.y} x2={b.x} y2={b.y} stroke="#94A3B8" strokeWidth={1.6} />
       <G transform={`translate(${(start.x + end.x) / 2} ${(start.y + end.y) / 2}) rotate(${angle})`}>
-        <Rect x={-length / 2} y={-5} width={length} height={10} rx={5} fill="#D6B98A" stroke="#8C7348" strokeWidth={1.2} />
+        <Rect x={-length / 2} y={-5} width={length} height={10} rx={5} fill={body} stroke="#8C7348" strokeWidth={1.2} />
         {bands.map((fill, index) => (
-          <Rect key={`${fill}-${index}`} x={-length / 2 + 3 + index * 4} y={-5} width={2.4} height={10} fill={fill} />
+          <Rect key={`${fill}-${index}`} x={-length / 2 + 3 + index * (length / (bands.length + 1))} y={-5} width={2.2} height={10} fill={fill} />
         ))}
         <SvgText x={0} y={-8} fill="#334155" fontSize={8} fontWeight="700" textAnchor="middle" stroke="#F4E7C8" strokeWidth={2}>
           {short}
@@ -440,24 +501,18 @@ function RgbLed({ leads }: { leads: { portId: string; label: string; at: Point; 
   );
 }
 
-function ModuleOnHoles({ part }: { part: Extract<ScenePart, { kind: 'pir' | 'buzzer' | 'joystick' }> }) {
+function ModuleOnHoles({ part }: { part: Extract<ScenePart, { kind: 'pir' | 'buzzer' | 'joystick' | 'led-matrix' }> }) {
   const top = Math.min(...part.leads.map((lead) => lead.at.y));
   const bottom = Math.max(...part.leads.map((lead) => lead.at.y));
   const x = part.leads[0].at.x + 12;
   const height = Math.max(36, bottom - top + 16);
+  const width = part.kind === 'led-matrix' ? 88 : part.kind === 'joystick' ? 72 : 58;
   return (
     <G>
       {part.leads.map((lead) => (
         <Line key={lead.portId} x1={lead.at.x} y1={lead.at.y} x2={x} y2={lead.at.y} stroke={lead.color} strokeWidth={1.7} />
       ))}
-      <Rect x={x} y={top - 8} width={part.kind === 'joystick' ? 72 : 58} height={height} rx={8} fill={part.kind === 'buzzer' ? '#111827' : '#14532D'} stroke="#0F172A" strokeWidth={1.4} />
-      {part.kind === 'pir' ? <Circle cx={x + 29} cy={top + height / 2 - 8} r={12} fill="#E2E8F0" stroke="#334155" strokeWidth={1.2} /> : null}
-      {part.kind === 'joystick' ? <Circle cx={x + 36} cy={top + 16} r={10} fill="#0F172A" /> : null}
-      {part.kind === 'buzzer' ? (
-        <SvgText x={x + 8} y={top + 8} fill="#F8FAFC" fontSize={11} fontWeight="700">
-          +
-        </SvgText>
-      ) : null}
+      <Art marks={moduleArt(part.kind, x, top - 8, width, height)} />
       <SvgText x={x + 4} y={top + height + 12} fill="#0F172A" fontSize={10} fontWeight="700">
         {part.label}
       </SvgText>
@@ -470,41 +525,71 @@ function ModuleOnHoles({ part }: { part: Extract<ScenePart, { kind: 'pir' | 'buz
   );
 }
 
-function OffBoard({ part }: { part: Extract<ScenePart, { kind: 'esp32' | 'uno' | 'servo' | 'psu' | 'bme280' }> }) {
-  const fill = part.kind === 'uno' ? '#0F6E56' : part.kind === 'esp32' ? '#111827' : part.kind === 'bme280' ? '#1D4ED8' : part.kind === 'psu' ? '#1E293B' : '#334155';
-  const title = part.kind === 'esp32' ? 'ESP32-DevKitC' : part.kind === 'uno' ? 'Arduino Uno' : part.kind === 'bme280' ? 'BME280' : part.label;
+function OffBoard({ part }: { part: Extract<ScenePart, { x: number; width: number }> }) {
   return (
     <G>
-      <Rect x={part.x} y={part.y} width={part.width} height={part.height} rx={8} fill={fill} stroke="#0F172A" strokeWidth={1.5} />
-      <SvgText x={part.x + 8} y={part.y + 16} fill="#F8FAFC" fontSize={11} fontWeight="700">
-        {title}
-      </SvgText>
-      {part.kind === 'esp32' || part.kind === 'uno' ? (
-        <Rect x={part.x + part.width / 2 - 14} y={part.y + part.height - 10} width={28} height={8} rx={2} fill="#CBD5E1" />
-      ) : null}
-      {part.kind === 'bme280' ? <Rect x={part.x + 8} y={part.y + part.height - 18} width={22} height={10} rx={2} fill="#F8FAFC" /> : null}
-      {part.kind === 'servo' ? (
-        <SvgText x={part.x + 8} y={part.y + part.height - 6} fill="#F8FAFC" fontSize={8}>
-          brown red orange
-        </SvgText>
-      ) : null}
+      <Art marks={moduleArt(part.kind, part.x, part.y, part.width, part.height)} />
       {part.dots.map((dot, index) => (
         <Circle key={`${dot.x}-${dot.y}-${index}`} cx={dot.x} cy={dot.y} r={2.1} fill="#E2E8F0" />
       ))}
-      {part.pins.map((pin) => (
-        <G key={pin.label}>
-          <Circle cx={pin.at.x} cy={pin.at.y} r={3.4} fill="#F8FAFC" stroke="#0F172A" strokeWidth={1} />
-          <SvgText
-            x={pin.at.x + (pin.at.x > part.x + part.width / 2 ? -8 : 8)}
-            y={pin.at.y + 3}
-            fill="#F8FAFC"
-            fontSize={10}
-            fontWeight="700"
-            textAnchor={pin.at.x > part.x + part.width / 2 ? 'end' : 'start'}>
-            {pin.label}
+      {part.pins.map((pin) => {
+        const outsideRight = pin.at.x > part.x + part.width;
+        const outsideLeft = pin.at.x < part.x;
+        const onRightHalf = pin.at.x > part.x + part.width / 2;
+        const labelLeft = outsideRight || (!outsideLeft && onRightHalf);
+        return (
+          <G key={pin.label}>
+            <Circle cx={pin.at.x} cy={pin.at.y} r={3.4} fill="#F8FAFC" stroke="#0F172A" strokeWidth={1} />
+            <SvgText
+              x={labelLeft ? pin.at.x - 8 : pin.at.x + 8}
+              y={pin.at.y + 3}
+              fill={outsideLeft ? '#0F172A' : '#F8FAFC'}
+              stroke={outsideLeft ? '#F4E7C8' : 'none'}
+              strokeWidth={outsideLeft ? 2 : 0}
+              fontSize={10}
+              fontWeight="700"
+              textAnchor={labelLeft ? 'end' : 'start'}>
+              {pin.label}
+            </SvgText>
+          </G>
+        );
+      })}
+    </G>
+  );
+}
+
+function Art({ marks }: { marks: ArtMark[] }) {
+  return (
+    <G>
+      {marks.map((mark, index) => {
+        const key = `${mark.kind}-${index}`;
+        if (mark.kind === 'rect') {
+          return (
+            <Rect
+              key={key}
+              x={mark.x}
+              y={mark.y}
+              width={mark.width}
+              height={mark.height}
+              rx={mark.rx}
+              fill={mark.fill}
+              stroke={mark.stroke}
+              strokeWidth={mark.strokeWidth}
+            />
+          );
+        }
+        if (mark.kind === 'circle') {
+          return <Circle key={key} cx={mark.cx} cy={mark.cy} r={mark.r} fill={mark.fill} stroke={mark.stroke} strokeWidth={mark.strokeWidth} />;
+        }
+        if (mark.kind === 'line') {
+          return <Line key={key} x1={mark.x1} y1={mark.y1} x2={mark.x2} y2={mark.y2} stroke={mark.stroke} strokeWidth={mark.strokeWidth} />;
+        }
+        return (
+          <SvgText key={key} x={mark.x} y={mark.y} fill={mark.fill} fontSize={mark.size} fontWeight="700" textAnchor={mark.anchor ?? 'start'}>
+            {mark.text}
           </SvgText>
-        </G>
-      ))}
+        );
+      })}
     </G>
   );
 }

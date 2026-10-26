@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Face-track prototype</title>
+</head>
+<body>
+  <p id="status">Simulated camera. No board is connected.</p>
+  <canvas id="view" width="320" height="240"></canvas>
+  <p>
+    <button id="start" type="button">Start tracking</button>
+    <button id="stop" type="button">Stop tracking</button>
+    <button id="left" type="button">Left</button>
+    <button id="right" type="button">Right</button>
+    <button id="detect" type="button">Run MediaPipe once</button>
+  </p>
+  <p id="readout"></p>
+  <script type="module">
+    const FRAME_WIDTH = 320
+    const DEADZONE_FRACTION = 0.08
+    const MAX_DEG_PER_SEC = 40
+    const PAN_MIN = 30
+    const PAN_MAX = 150
+    let angle = 90
+    let tracking = false
+    let manual = 0
+    let faces = [{ x: 210, width: 70, height: 90 }]
+    let last = performance.now()
+    let detector = null
+
+    function selectFace(list) {
+      if (list.length === 0) return null
+      const mid = FRAME_WIDTH / 2
+      return list.reduce((best, face) => {
+        const area = face.width * face.height
+        const bestArea = best.width * best.height
+        if (area !== bestArea) return area > bestArea ? face : best
+        const faceOffset = Math.abs(face.x + face.width / 2 - mid)
+        const bestOffset = Math.abs(best.x + best.width / 2 - mid)
+        return faceOffset < bestOffset ? face : best
+      })
+    }
+
+    function rate() {
+      if (!tracking) return manual * MAX_DEG_PER_SEC
+      const face = selectFace(faces)
+      if (!face) return 0
+      const offset = (face.x + face.width / 2 - FRAME_WIDTH / 2) / FRAME_WIDTH
+      const half = DEADZONE_FRACTION / 2
+      if (Math.abs(offset) <= half) return 0
+      const span = 0.5 - half
+      const magnitude = Math.min(1, (Math.abs(offset) - half) / span)
+      return (offset > 0 ? 1 : -1) * magnitude * MAX_DEG_PER_SEC
+    }
+
+    function draw() {
+      const canvas = document.getElementById('view')
+      const pen = canvas.getContext('2d')
+      pen.fillStyle = '#111'
+      pen.fillRect(0, 0, 320, 240)
+      pen.strokeStyle = '#6cf'
+      pen.strokeRect(146, 0, 28, 240)
+      for (const face of faces) {
+        pen.strokeStyle = '#fc6'
+        pen.strokeRect(face.x, 70, face.width, face.height)
+      }
+      const degrees = rate()
+      const now = performance.now()
+      const dt = Math.min(0.2, (now - last) / 1000)
+      last = now
+      angle = Math.min(PAN_MAX, Math.max(PAN_MIN, angle + degrees * dt))
+      document.getElementById('readout').textContent =
+        `tracking ${tracking}  rate ${degrees.toFixed(1)} deg/s  angle ${angle.toFixed(1)}  faces ${faces.length}`
+      requestAnimationFrame(draw)
+    }
+
+    document.getElementById('start').onclick = () => { tracking = true; manual = 0 }
+    document.getElementById('stop').onclick = () => { tracking = false; manual = 0 }
+    document.getElementById('left').onclick = () => { manual = tracking ? 0 : -1 }
+    document.getElementById('right').onclick = () => { manual = tracking ? 0 : 1 }
+    document.getElementById('detect').onclick = async () => {
+      const status = document.getElementById('status')
+      status.textContent = 'Loading MediaPipe from the network.'
+      try {
+        const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/+esm')
+        const files = await vision.FilesetResolver.forVisionTasks(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/wasm'
+        )
+        detector = await vision.FaceDetector.createFromOptions(files, {
+          baseOptions: {
+            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'
+          },
+          runningMode: 'IMAGE'
+        })
+        const canvas = document.getElementById('view')
+        const drawn = detector.detect(canvas)
+        const image = new Image()
+        image.crossOrigin = 'anonymous'
+        image.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/President_Barack_Obama.jpg/330px-President_Barack_Obama.jpg'
+        await image.decode()
+        const photo = detector.detect(image)
+        const boxes = photo.detections?.length ?? 0
+        status.textContent = `MediaPipe ran in this browser. Drawn canvas: ${drawn.detections?.length ?? 0}. Portrait photo: ${boxes}.`
+      } catch (error) {
+        status.textContent = `MediaPipe did not start: ${error}`
+      }
+    }
+    requestAnimationFrame(draw)
+  </script>
+</body>
+</html>
