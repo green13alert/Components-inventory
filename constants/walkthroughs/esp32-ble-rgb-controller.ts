@@ -10,9 +10,9 @@ import {
 export const ESP32_BLE_RGB_PROJECT = {
   slug: '24',
   title: 'ESP32 Bluetooth RGB LED Controller',
-  description: 'Intermediate build. Mix a red, green, and blue LED from a phone over Bluetooth Low Energy, using transistor switches and PWM.',
+  description: 'Change a light’s colour and brightness from your phone.',
   overview:
-    'Build a breadboard RGB light that a phone sets over Bluetooth Low Energy. The LED takes current from the DevKit 5 V pin. Three PN2222A transistors switch the colours, and PWM sets the mix.',
+    'Build a colour light you control from your phone. Connect over Bluetooth, then mix red, green, and blue and change how bright it is. The light keeps the last colour when you disconnect.',
   category: 'iot' as const,
   difficulty: 'intermediate' as const,
   durationLabel: '3 hrs',
@@ -173,12 +173,12 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are building',
-        body: 'An ESP32 DevKit, three small transistors, and one RGB LED on a breadboard. The phone is the colour picker. The board does the switching.',
+        body: 'A colour light you set from your phone. You will wire the light one colour at a time, upload a sketch, then connect with the nRF Connect app. The light starts red and dim, under the Bluetooth name Solderi RGB.',
       },
       {
         type: 'text',
         heading: 'What it will do',
-        body: 'After you upload the sketch, the LED comes on red at a low brightness and the board advertises the name Solderi RGB. From the phone you can turn that light orange, purple, white, or off, and you can make it brighter or dimmer.',
+        body: 'From the phone you send a colour and a brightness. You can mix red, green, and blue — orange, purple, white, or off — and make the light brighter or dimmer. Disconnecting the phone leaves the last colour on.',
       },
     ],
   ),

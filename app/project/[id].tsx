@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { substituteNameFromInventory } from '@/components/projects/component-row-state';
+import { pressFeedback } from '@/components/ui/press-feedback';
 import { ProjectCover } from '@/components/projects/ProjectCover';
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
@@ -17,6 +18,7 @@ import {
   getProjectLearningPoints,
   getStartButtonLabel,
 } from '@/constants/projects-data';
+import { projectDetailIntro } from '@/lib/project-navigation';
 import {
   fetchProjectBySlug,
   fetchProjectComponents,
@@ -50,6 +52,7 @@ export default function ProjectDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [compatibility, setCompatibility] = useState<ProjectCompatibilityData | null>(null);
   const [compatibilityError, setCompatibilityError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const inventoryComponentIds = useMemo(
     () => [...new Set(inventory.flatMap((item) => (item.componentId ? [item.componentId] : [])))].sort(),
     [inventory],
@@ -155,7 +158,7 @@ export default function ProjectDetailScreen() {
     );
   }
 
-  const overview = project.overview?.trim() || project.description;
+  const { overview } = projectDetailIntro(project);
   const learningPoints =
     project.learningObjectives && project.learningObjectives.length > 0
       ? project.learningObjectives
@@ -178,14 +181,22 @@ export default function ProjectDetailScreen() {
       : `${match.ownedCount} / ${match.totalRequired} components available`;
 
   const handleStart = () => {
+    if (starting) {
+      return;
+    }
     void (async () => {
-      if (status === 'not_started') {
-        await startProject(project.id);
+      setStarting(true);
+      try {
+        if (status === 'not_started') {
+          await startProject(project.id);
+        }
+        router.push({
+          pathname: '/project/build/[id]',
+          params: { id: project.slug },
+        });
+      } finally {
+        setStarting(false);
       }
-      router.push({
-        pathname: '/project/build/[id]',
-        params: { id: project.slug },
-      });
     })();
   };
 
@@ -213,14 +224,14 @@ export default function ProjectDetailScreen() {
           <View style={styles.heroOverlay} />
           <SafeAreaView edges={['top']} style={styles.heroTopBar}>
             <Pressable
-              style={styles.backButton}
+              style={pressFeedback(styles.backButton)}
               onPress={() => router.back()}
               accessibilityRole="button"
               accessibilityLabel="Go back">
               <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
             </Pressable>
             <Pressable
-              style={styles.backButton}
+              style={pressFeedback(styles.backButton)}
               onPress={() => {
                 void toggleFavourite(project.id);
               }}
@@ -253,7 +264,6 @@ export default function ProjectDetailScreen() {
             </View>
             <Text style={styles.title}>{project.title}</Text>
             {project.isPublished ? null : <Text style={styles.description}>Unpublished draft</Text>}
-            <Text style={styles.description}>{project.description}</Text>
           </View>
 
           <View style={styles.statsRow}>
@@ -361,7 +371,7 @@ export default function ProjectDetailScreen() {
         {status === 'completed' ? (
           <View style={styles.completedFooterRow}>
             <Pressable
-              style={[styles.startButton, styles.completedFooterButton]}
+              style={pressFeedback([styles.startButton, styles.completedFooterButton])}
               onPress={handleViewSteps}
               accessibilityRole="button"
               accessibilityLabel="View Steps">
@@ -371,7 +381,7 @@ export default function ProjectDetailScreen() {
               </Text>
             </Pressable>
             <Pressable
-              style={[styles.viewCodeButton, styles.completedFooterButton]}
+              style={pressFeedback([styles.viewCodeButton, styles.completedFooterButton])}
               onPress={handleViewCode}
               accessibilityRole="button"
               accessibilityLabel="View Code">
@@ -382,9 +392,18 @@ export default function ProjectDetailScreen() {
             </Pressable>
           </View>
         ) : (
-          <Pressable style={styles.startButton} onPress={handleStart} accessibilityRole="button">
-            <Ionicons name="play" size={20} color={colors.onAccent} />
-            <Text style={styles.startButtonText}>{getStartButtonLabel(status)}</Text>
+          <Pressable
+            style={pressFeedback(styles.startButton)}
+            onPress={handleStart}
+            disabled={starting}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: starting, busy: starting }}>
+            {starting ? (
+              <ActivityIndicator color={colors.onAccent} />
+            ) : (
+              <Ionicons name="play" size={20} color={colors.onAccent} />
+            )}
+            <Text style={styles.startButtonText}>{starting ? 'Starting…' : getStartButtonLabel(status)}</Text>
           </Pressable>
         )}
       </View>

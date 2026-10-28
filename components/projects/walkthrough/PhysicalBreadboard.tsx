@@ -8,11 +8,12 @@ import { useSolderiColors } from '@/context/theme-context';
 import { moduleArt, type ArtMark } from '@/lib/diagram-art';
 import { hitTestSceneTarget, partHitBox, sceneTouchRadius, WIRE_TOUCH_POINTS } from '@/lib/diagram-hit';
 import { focusedPartOpacity, paintConnectionWires, type WirePaint } from '@/lib/diagram-selection';
-import { buildPhysicalScene, type AssemblyFrame, type Point, type ScenePart, type SceneWire } from '@/lib/physical-scene';
+import { buildPhysicalScene, type AssemblyFrame, type PhysicalScene, type Point, type ScenePart, type SceneWire } from '@/lib/physical-scene';
 import { RESISTOR_COLORS, resistorColorCode } from '@/lib/resistor-bands';
 
 type PhysicalBreadboardProps = {
   layout: WiringLayout;
+  scene?: PhysicalScene | null;
   connections: StepConnection[];
   priorConnections?: StepConnection[];
   assembly?: AssemblyFrame | null;
@@ -25,6 +26,7 @@ type PhysicalBreadboardProps = {
 
 export function PhysicalBreadboard({
   layout,
+  scene: sceneProp,
   connections,
   priorConnections = [],
   assembly = null,
@@ -38,8 +40,8 @@ export function PhysicalBreadboard({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const scene = useMemo(
-    () => buildPhysicalScene(layout, connections, priorConnections, assembly),
-    [assembly, connections, layout, priorConnections],
+    () => sceneProp ?? buildPhysicalScene(layout, connections, priorConnections, assembly),
+    [assembly, connections, layout, priorConnections, sceneProp],
   );
   if (!scene) {
     return null;
@@ -74,10 +76,8 @@ export function PhysicalBreadboard({
       style={[styles.canvas, { aspectRatio: scene.width / scene.height }]}>
       <View pointerEvents="none" style={styles.board}>
         <BoardSvg
-          layout={layout}
-          connections={connections}
-          priorConnections={priorConnections}
-          assembly={assembly}
+          scene={scene}
+          introducing={Boolean(assembly && (assembly.newJumpers.size > 0 || assembly.newParts.size > 0))}
           selectedIds={selectedIds}
           focusedWireIds={focusedWireIds}
         />
@@ -87,19 +87,15 @@ export function PhysicalBreadboard({
 }
 
 export function PhysicalBoard(props: {
-  layout: WiringLayout;
-  connections: StepConnection[];
-  priorConnections?: StepConnection[];
-  assembly?: AssemblyFrame | null;
+  scene: PhysicalScene;
+  introducing?: boolean;
   selectedIds?: ReadonlySet<string>;
   focusedWireIds?: readonly string[];
 }) {
   return (
     <BoardSvg
-      layout={props.layout}
-      connections={props.connections}
-      priorConnections={props.priorConnections ?? []}
-      assembly={props.assembly ?? null}
+      scene={props.scene}
+      introducing={props.introducing ?? false}
       selectedIds={props.selectedIds}
       focusedWireIds={props.focusedWireIds}
     />
@@ -107,28 +103,19 @@ export function PhysicalBoard(props: {
 }
 
 function BoardSvg({
-  layout,
-  connections,
-  priorConnections,
-  assembly,
+  scene,
+  introducing,
   selectedIds = new Set<string>(),
   focusedWireIds = [],
 }: {
-  layout: WiringLayout;
-  connections: StepConnection[];
-  priorConnections: StepConnection[];
-  assembly: AssemblyFrame | null;
+  scene: PhysicalScene;
+  introducing: boolean;
   selectedIds?: ReadonlySet<string>;
   focusedWireIds?: readonly string[];
 }) {
-  const scene = buildPhysicalScene(layout, connections, priorConnections, assembly);
-  if (!scene) {
-    return null;
-  }
   const { board } = scene;
   const isolating = focusedWireIds.length > 0;
   const selecting = !isolating && selectedIds.size > 0;
-  const introducing = Boolean(assembly && (assembly.newJumpers.size > 0 || assembly.newParts.size > 0));
   const related = (wire: SceneWire) => wire.touches.some((id) => selectedIds.has(id)) || cableSelected(wire, selectedIds);
   const paint = paintConnectionWires(
     scene.wires.map((wire) => ({ id: wire.id, emphasis: wire.emphasis, related: related(wire) })),

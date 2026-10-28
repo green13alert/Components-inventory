@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CodeBlock, StepContent } from '@/components/projects/walkthrough/StepContent';
+import { pressFeedback } from '@/components/ui/press-feedback';
 import { useWalkthroughScrollController, WalkthroughScrollProvider } from '@/components/projects/walkthrough/WalkthroughScroll';
 import type { SolderiPalette } from '@/constants/colors';
 import { useAtlas } from '@/context/atlas-context';
@@ -273,7 +274,7 @@ export default function ProjectBuildScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.topBar}>
           <Pressable
-            style={styles.iconButton}
+            style={pressFeedback(styles.iconButton)}
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Go back">
@@ -320,7 +321,7 @@ export default function ProjectBuildScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.topBar}>
           <Pressable
-            style={styles.iconButton}
+            style={pressFeedback(styles.iconButton)}
             onPress={exitReview}
             accessibilityRole="button"
             accessibilityLabel="Go back">
@@ -333,7 +334,7 @@ export default function ProjectBuildScreen() {
             <Text style={styles.topBarSubtitle}>Your Code</Text>
           </View>
           <Pressable
-            style={styles.iconButton}
+            style={pressFeedback(styles.iconButton)}
             onPress={exitReview}
             accessibilityRole="button"
             accessibilityLabel="Exit code review">
@@ -369,7 +370,7 @@ export default function ProjectBuildScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.topBar}>
         <Pressable
-          style={styles.iconButton}
+          style={pressFeedback(styles.iconButton)}
           onPress={() => {
             if (reviewMode) {
               exitReview();
@@ -393,7 +394,7 @@ export default function ProjectBuildScreen() {
           </Text>
         </View>
         <Pressable
-          style={styles.iconButton}
+          style={pressFeedback(styles.iconButton)}
           onPress={() => {
             if (reviewMode) {
               exitReview();
@@ -481,7 +482,7 @@ export default function ProjectBuildScreen() {
         {saveNotice ? <Text style={styles.continueHint}>{saveNotice}</Text> : null}
         <View style={styles.footerRow}>
           <Pressable
-            style={[styles.secondaryButton, isFirstStep && styles.buttonDisabled]}
+            style={pressFeedback([styles.secondaryButton, isFirstStep && styles.buttonDisabled])}
             onPress={handlePrev}
             disabled={isFirstStep}
             accessibilityRole="button"
@@ -490,7 +491,7 @@ export default function ProjectBuildScreen() {
             <Text style={styles.secondaryButtonText}>Previous</Text>
           </Pressable>
           <Pressable
-            style={[styles.primaryButton, styles.footerPrimaryButton]}
+            style={pressFeedback([styles.primaryButton, styles.footerPrimaryButton])}
             onPress={handleNext}
             disabled={!footerControls.nextEnabled}
             accessibilityRole="button"
@@ -534,7 +535,7 @@ function ProjectCompleteView({
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <View style={styles.topBar}>
         <Pressable
-          style={styles.iconButton}
+          style={pressFeedback(styles.iconButton)}
           onPress={onBackToProject}
           accessibilityRole="button"
           accessibilityLabel="Go back">
@@ -561,12 +562,12 @@ function ProjectCompleteView({
         </Text>
 
         <View style={styles.completeActions}>
-          <Pressable style={styles.primaryButton} onPress={onViewSteps} accessibilityRole="button">
+          <Pressable style={pressFeedback(styles.primaryButton)} onPress={onViewSteps} accessibilityRole="button">
             <Ionicons name="book-outline" size={18} color={colors.onAccent} />
             <Text style={styles.primaryButtonText}>View Steps</Text>
           </Pressable>
           <Pressable
-            style={[styles.secondaryButtonWide, !hasSketch && styles.buttonDisabled]}
+            style={pressFeedback([styles.secondaryButtonWide, !hasSketch && styles.buttonDisabled])}
             onPress={onViewCode}
             disabled={!hasSketch}
             accessibilityRole="button"
@@ -575,11 +576,11 @@ function ProjectCompleteView({
             <Ionicons name="code-slash-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>View Code</Text>
           </Pressable>
-          <Pressable style={styles.secondaryButtonWide} onPress={onBrowseProjects} accessibilityRole="button">
+          <Pressable style={pressFeedback(styles.secondaryButtonWide)} onPress={onBrowseProjects} accessibilityRole="button">
             <Ionicons name="albums-outline" size={18} color={colors.textPrimary} />
             <Text style={styles.secondaryButtonText}>Start another project</Text>
           </Pressable>
-          <Pressable style={styles.secondaryButtonWide} onPress={onBackToProject} accessibilityRole="button">
+          <Pressable style={pressFeedback(styles.secondaryButtonWide)} onPress={onBackToProject} accessibilityRole="button">
             <Text style={styles.secondaryButtonText}>Back to Project</Text>
           </Pressable>
         </View>

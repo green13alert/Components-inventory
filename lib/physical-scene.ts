@@ -13,6 +13,17 @@ import {
 
 export type Emphasis = 'active' | 'prior' | 'context'
 
+type RoutedGeometry = {
+  scene: PhysicalScene
+  holes: BreadboardHole[]
+  jumpers: readonly PhysicalJumper[]
+  partKeys: string[][]
+}
+
+// Wire paths depend on the layout, not on which step is open. The first build routes them.
+// Later step changes only refresh emphasis and assembly visibility.
+const routedGeometry = new WeakMap<WiringLayout, RoutedGeometry>()
+
 export type AssemblyFrame = {
   installedParts: ReadonlySet<string>
   newParts: ReadonlySet<string>
@@ -604,6 +615,23 @@ export function buildPhysicalScene(
   priorConnections: readonly StepConnection[] = [],
   frame?: AssemblyFrame | null,
 ): PhysicalScene | null {
+  const cached = routedGeometry.get(layout)
+  if (cached) {
+    return emphasizeRoutedScene(cached, layout, connections, priorConnections, frame ?? null)
+  }
+  const routed = routePhysicalGeometry(layout, connections, priorConnections)
+  if (!routed) {
+    return null
+  }
+  routedGeometry.set(layout, routed)
+  return emphasizeRoutedScene(routed, layout, connections, priorConnections, frame ?? null)
+}
+
+function routePhysicalGeometry(
+  layout: WiringLayout,
+  connections: readonly StepConnection[] = [],
+  priorConnections: readonly StepConnection[] = [],
+): RoutedGeometry | null {
   const physical = layout.physical
   if (!physical) {
     return null
@@ -612,15 +640,18 @@ export function buildPhysicalScene(
   const prior = activePortIds(layout, priorConnections)
   const height = physicalBoardHeight(physical.rows)
   const captions = railCaptions(layout)
+  const holeRefs: BreadboardHole[] = []
   const rawHoles: { at: Point; radius: number; rail: boolean; emphasis: Emphasis; label?: string }[] = []
   for (let row = 1; row <= physical.rows; row += 1) {
     for (const column of COLUMNS) {
       const hole: BreadboardHole = { kind: 'strip', column, row }
+      holeRefs.push(hole)
       rawHoles.push({ at: holePosition(hole), radius: 2.2, rail: false, emphasis: holeEmphasis(layout, hole, active, prior) })
     }
     for (const side of ['left', 'right'] as const) {
       for (const polarity of ['plus', 'minus'] as const) {
         const hole: BreadboardHole = { kind: 'rail', side, polarity, row }
+        holeRefs.push(hole)
         rawHoles.push({ at: holePosition(hole), radius: 2, rail: true, emphasis: holeEmphasis(layout, hole, active, prior) })
       }
     }
@@ -628,6 +659,7 @@ export function buildPhysicalScene(
 
   const obstacles: SceneObstacle[] = []
   const parts: ScenePart[] = []
+  const partKeys: string[][] = []
   for (const element of layout.elements) {
     const leads = physical.leads.filter((lead) => lead.elementId === element.id)
     const keys = leads.map((lead) => `${lead.elementId}:${lead.portId}`)
@@ -636,6 +668,7 @@ export function buildPhysicalScene(
       const a = holePosition(leads[0].hole)
       const b = holePosition(leads[1].hole)
       parts.push({ kind: 'resistor', id: element.id, label: element.label, ohms: element.resistorOhms, a, b, emphasis })
+      partKeys.push(keys)
       const inset = 0.22
       obstacles.push({
         id: element.id,
@@ -652,6 +685,7 @@ export function buildPhysicalScene(
       const collector = leadPoint(layout, element.id, 'collector')
       if (emitter && base && collector) {
         parts.push({ kind: 'npn', id: element.id, label: element.label, emitter, base, collector, emphasis })
+        partKeys.push(keys)
         const top = Math.min(emitter.y, base.y, collector.y)
         const bottom = Math.max(emitter.y, base.y, collector.y)
         obstacles.push({ id: element.id, kind: 'rect', x: emitter.x - 30, y: top - 6, width: 24, height: bottom - top + 12 })
@@ -661,6 +695,7 @@ export function buildPhysicalScene(
       const cathode = leadPoint(layout, element.id, 'cathode')
       if (anode && cathode) {
         parts.push({ kind: 'led', id: element.id, label: element.label, anode, cathode, emphasis })
+        partKeys.push(keys)
         obstacles.push({ id: element.id, kind: 'rect', x: anode.x + 8, y: Math.min(anode.y, cathode.y) - 4, width: 22, height: 28 })
       }
     } else if (element.kind === 'rgb-led' && leads.length === 4) {
@@ -673,6 +708,7 @@ export function buildPhysicalScene(
         .filter((lead): lead is SceneLead => lead != null)
       if (drawn.length === 4) {
         parts.push({ kind: 'rgb-led', id: element.id, label: element.label, leads: drawn, emphasis })
+        partKeys.push(keys)
         const mid = drawn.reduce((sum, lead) => sum + lead.at.y, 0) / drawn.length
         obstacles.push({ id: element.id, kind: 'rect', x: drawn[0].at.x - 34, y: mid - 16, width: 28, height: 32 })
       }
@@ -684,6 +720,7 @@ export function buildPhysicalScene(
         color: leadColor(lead.portId),
       }))
       parts.push({ kind: element.kind, id: element.id, label: element.label, leads: drawn, emphasis })
+      partKeys.push(keys)
       const top = Math.min(...drawn.map((lead) => lead.at.y))
       const left = drawn[0].at.x + 10
       const bodyWidth = element.kind === 'led-matrix' ? 96 : element.kind === 'joystick' ? 70 : 58
@@ -725,7 +762,8 @@ export function buildPhysicalScene(
             color: leadColor(lead.portId),
           }))
       : []
-    const emphasis = partEmphasis([...pinKeys, ...cableLeads.map((lead) => `${frame.elementId}:${lead.portId}`)], active, prior)
+    const moduleKeys = [...pinKeys, ...cableLeads.map((lead) => `${frame.elementId}:${lead.portId}`)]
+    const emphasis = partEmphasis(moduleKeys, active, prior)
     parts.push({
       kind: mapped,
       id: frame.elementId,
@@ -739,6 +777,7 @@ export function buildPhysicalScene(
       emphasis,
       cable: frame.cableFrom ? { from: frame.cableFrom, leads: cableLeads } : undefined,
     })
+    partKeys.push(moduleKeys)
     obstacles.push({ id: frame.elementId, kind: 'rect', x: frame.x, y: frame.y, width: frame.width, height: frame.height })
   }
 
@@ -851,6 +890,38 @@ export function buildPhysicalScene(
     parts: parts.map((part) => shiftPart(part, dx, dy)),
     obstacles: obstacles.map((item) => shiftObstacle(item, dx, dy)),
   }
+  return { scene, holes: holeRefs, jumpers: physical.jumpers, partKeys }
+}
+
+function emphasizeRoutedScene(
+  routed: RoutedGeometry,
+  layout: WiringLayout,
+  connections: readonly StepConnection[],
+  priorConnections: readonly StepConnection[],
+  frame: AssemblyFrame | null,
+): PhysicalScene {
+  const active = activePortIds(layout, connections)
+  const prior = activePortIds(layout, priorConnections)
+  const holes = routed.scene.holes.map((hole, index) => ({
+    ...hole,
+    emphasis: holeEmphasis(layout, routed.holes[index], active, prior),
+  }))
+  const parts = routed.scene.parts.map((part, index) => ({
+    ...part,
+    emphasis: partEmphasis(routed.partKeys[index] ?? [], active, prior),
+  }))
+  const partIds = new Set(parts.map((part) => part.id))
+  const emphasisByPart = new Map(parts.map((part) => [part.id, part.emphasis]))
+  const jumperById = new Map(routed.jumpers.map((jumper) => [jumper.id, jumper]))
+  const wires = routed.scene.wires.map((wire) => {
+    if (wire.role === 'cable') {
+      const owner = cableOwner(wire.id, partIds)
+      return { ...wire, emphasis: owner ? emphasisByPart.get(owner) ?? wire.emphasis : wire.emphasis }
+    }
+    const jumper = jumperById.get(wire.id)
+    return jumper ? { ...wire, emphasis: wireEmphasis(layout, jumper, active, prior) } : { ...wire }
+  })
+  const scene: PhysicalScene = { ...routed.scene, holes, parts, wires }
   return frame ? applyAssemblyFrame(scene, frame) : scene
 }
 

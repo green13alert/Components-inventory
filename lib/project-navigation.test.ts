@@ -5,7 +5,9 @@ import {
   PENDING_PROJECT_COVER_KEYS,
   applyWalkthroughSave,
   displayProjectCoverCaption,
+  claimStepWrite,
   moveWalkthroughStep,
+  stepWriteIsCurrent,
   projectCoverIsPending,
   resolveBuildDestination,
   resolveCatalogueProjectId,
@@ -185,6 +187,42 @@ test('a stale diagram caption is not shown for a pending cover', () => {
     displayProjectCoverCaption('The workbench photograph is not in the app yet. The wiring diagram is the connection reference.'),
     'The workbench photograph is not in the app yet. The wiring diagram is the connection reference.',
   )
+})
+
+test('rapid Next and Previous presses stay in order', () => {
+  let cursor = 0
+  const forward: number[] = []
+  for (let press = 0; press < 20; press += 1) {
+    const next = moveWalkthroughStep(cursor, 1, 6)
+    if (next === cursor) {
+      continue
+    }
+    cursor = next
+    forward.push(next)
+  }
+  assert.deepEqual(forward, [1, 2, 3, 4, 5])
+
+  const backward: number[] = []
+  for (let press = 0; press < 10; press += 1) {
+    const next = moveWalkthroughStep(cursor, -1, 6)
+    if (next === cursor) {
+      continue
+    }
+    cursor = next
+    backward.push(next)
+  }
+  assert.deepEqual(backward, [4, 3, 2, 1, 0])
+})
+
+test('an older step save does not replace a newer one', () => {
+  const generations = new Map<string, number>()
+  const first = claimStepWrite(generations, 'project')
+  const second = claimStepWrite(generations, 'project')
+  assert.equal(stepWriteIsCurrent(generations, 'project', first), false)
+  assert.equal(stepWriteIsCurrent(generations, 'project', second), true)
+  const other = claimStepWrite(generations, 'other')
+  assert.equal(stepWriteIsCurrent(generations, 'project', second), true)
+  assert.equal(stepWriteIsCurrent(generations, 'other', other), true)
 })
 
 test('the weather station cover uses its own photograph', () => {

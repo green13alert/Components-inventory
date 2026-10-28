@@ -77,6 +77,9 @@ export const LED_MATRIX_MAZE_FIRMWARE_TEXT = LED_MATRIX_MAZE_FIRMWARE
 export const LED_MATRIX_MAZE_PROJECT = {
   slug: '25',
   title: 'Arduino LED Matrix Maze Game',
+  description: 'Guide a glowing dot through five mazes with a joystick.',
+  overview:
+    'Build a miniature maze game on a grid of lights. Guide a glowing dot through five levels with a joystick, reach the finish, and see how long each level took.',
   isPublished: false,
   imageKey: 'ledMatrixMaze',
   learningObjectives: [
@@ -88,16 +91,11 @@ export const LED_MATRIX_MAZE_PROJECT = {
 }
 
 export const LED_MATRIX_MAZE_STEPS: AuthoredWalkthroughStep[] = [
-  step(0, 0, STAGE_UNDERSTAND, "What You're Building", 'A joystick moves one blinking dot through five mazes on an 8×8 LED matrix.', [
-    {
-      type: 'components',
-      heading: 'Parts',
-      items: COMPONENTS,
-    },
+  step(0, 0, STAGE_UNDERSTAND, "What You're Building", 'A joystick moves a glowing dot through five mazes on a grid of lights.', [
     {
       type: 'text',
       heading: 'The game',
-      body: 'You guide one LED through five mazes that are written into the sketch, so each level is the same maze every time. Walls stay lit. The player blinks quickly, on for 120 ms and off for 120 ms. The goal winks slowly: on for most of each 800 ms, then off. If the player stands on the goal, the fast blink wins, so the goal does not show through the player. Empty squares stay off. Push the stick to move one square. A wall or the edge of the grid blocks the move. Reaching the goal loads the next maze. The joystick button restarts the level you are on. After level 5, one LED runs around the border and the button starts again at level 1. The Serial Monitor at 9600 baud prints each level time in milliseconds, and the total when level 5 is finished. You will place the Uno and the breadboard, connect both modules beside the board, and upload one sketch.',
+      body: 'You guide one light through five mazes. Each maze is the same every time you play it. Walls stay lit, your dot blinks, and the finish winks more slowly. Push the stick to move one square. A wall or the edge of the grid blocks the move. Reaching the finish loads the next maze. The joystick button restarts the level you are on. After level 5, a light runs around the border, and the button starts again at level 1. The Serial Monitor shows how long each level took, and the total when you finish level 5. You will set the board beside the breadboard, connect the display and the joystick, and upload one sketch.',
     },
     {
       type: 'expected',

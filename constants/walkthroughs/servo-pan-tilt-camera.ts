@@ -385,28 +385,30 @@ void loop() {
 
 export const SERVO_PAN_TILT_CAMERA_FIRMWARE = SKETCH_COMBINED;
 
+export const SERVO_PAN_TILT_CAMERA_DESCRIPTION =
+  'Aim a small camera mount with a joystick. Letting go holds the aim.';
+
+export const SERVO_PAN_TILT_CAMERA_OVERVIEW =
+  'Build a mount you can aim with a joystick. Push the stick to pan and tilt, let go, and it holds that aim. You can put a light camera on the plate, or leave the plate empty. This project moves the mount — it does not record video.';
+
 export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
   {
     sortOrder: 0,
     stageSortOrder: 0,
     stageTitle: STAGE_UNDERSTAND,
     title: 'What We\'re Building',
-    description: 'A two-servo pan-tilt mount aims a camera plate. The joystick sets speed and direction, and releasing it holds the aim. This project aims the payload — it does not capture video.',
+    description: 'A joystick aims a two-axis mount. Let go and the plate stays where you pointed it. This build does not record video.',
     tip: null,
     blocks: [
       {
         type: 'text',
         heading: 'What we\'re building',
-        body: 'You will assemble a pan-tilt bracket around two SG90 servos, power the servos from an Adafruit 368 screw-terminal jack, and drive both axes from an analog joystick. Pan is left/right. Tilt is up/down. Mount a lightweight camera or webcam on the plate if you have one — or leave the plate empty while you learn the mechanism.',
+        body: 'You will assemble the bracket, connect the joystick, and upload a sketch. Push the stick to swing the plate left, right, up, or down. Release it and the plate holds. Mount a lightweight camera if you have one, or leave the plate empty while you learn the movement.',
       },
       {
         type: 'image',
         imageKey: 'servoCamera',
-        caption: 'Finished pan-tilt reference. Pin map: pan servo D9, tilt servo D10, joystick VRx A0, VRy A1, SW D2.',
-      },
-      {
-        type: 'components',
-        items: COMPONENTS,
+        caption: 'Finished pan-tilt mount. Later steps name each wire.',
       },
       {
         type: 'warning',

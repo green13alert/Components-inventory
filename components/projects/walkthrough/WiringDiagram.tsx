@@ -12,6 +12,7 @@ import { HW } from '@/constants/component-illustration-palette';
 import type { SolderiPalette } from '@/constants/colors';
 import { getWiringLayout, type WiringElementDef, type WiringLayout } from '@/constants/wiring-diagrams';
 import type { StepBlock, StepConnection, WiringNode, WiringPair } from '@/constants/walkthrough-content';
+import { pressFeedback } from '@/components/ui/press-feedback';
 import { useSolderiColors } from '@/context/theme-context';
 import { resolveAssembly } from '@/lib/assembly-progress';
 import { focusCaption, visibleConnectionEntries } from '@/lib/connection-reference';
@@ -194,21 +195,22 @@ export function WiringDiagram({
               <Pressable
                 accessibilityRole="button"
                 onPress={() => setView('physical')}
-                style={[styles.viewOption, view === 'physical' && styles.viewOptionOn]}>
+                style={pressFeedback([styles.viewOption, view === 'physical' && styles.viewOptionOn])}>
                 <Text style={[styles.viewOptionLabel, view === 'physical' && styles.viewOptionLabelOn]}>Physical</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 onPress={() => setView('schematic')}
-                style={[styles.viewOption, view === 'schematic' && styles.viewOptionOn]}>
+                style={pressFeedback([styles.viewOption, view === 'schematic' && styles.viewOptionOn])}>
                 <Text style={[styles.viewOptionLabel, view === 'schematic' && styles.viewOptionLabelOn]}>Schematic</Text>
               </Pressable>
             </View>
           </View>
         ) : null}
-        {showPhysical && layout ? (
+        {showPhysical && layout && scene ? (
           <PhysicalBreadboard
             layout={layout}
+            scene={scene}
             connections={connections}
             priorConnections={priorConnections}
             assembly={assemblyFrame}
@@ -230,7 +232,7 @@ export function WiringDiagram({
             accessibilityRole="button"
             accessibilityState={{ expanded: panel === 'components' }}
             onPress={() => showPanel('components')}
-            style={[styles.viewOption, panel === 'components' && styles.viewOptionOn]}>
+            style={pressFeedback([styles.viewOption, panel === 'components' && styles.viewOptionOn])}>
             <Text style={[styles.viewOptionLabel, panel === 'components' && styles.viewOptionLabelOn]}>Components</Text>
           </Pressable>
         ) : null}
@@ -239,12 +241,12 @@ export function WiringDiagram({
             accessibilityRole="button"
             accessibilityState={{ expanded: panel === 'connections' }}
             onPress={() => showPanel('connections')}
-            style={[styles.viewOption, panel === 'connections' && styles.viewOptionOn]}>
+            style={pressFeedback([styles.viewOption, panel === 'connections' && styles.viewOptionOn])}>
             <Text style={[styles.viewOptionLabel, panel === 'connections' && styles.viewOptionLabelOn]}>Connections</Text>
           </Pressable>
         ) : null}
         {layout ? (
-          <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={styles.enlarge}>
+          <Pressable accessibilityRole="button" onPress={() => setOpen(true)} style={pressFeedback(styles.enlarge)}>
             <Text style={styles.enlargeLabel}>Enlarge</Text>
           </Pressable>
         ) : null}
@@ -282,12 +284,10 @@ export function WiringDiagram({
               : undefined
           }
           components={showPhysical ? <ComponentKey groups={groups} selection={selection} onSelect={choose} /> : undefined}>
-          {showPhysical ? (
+          {showPhysical && scene ? (
             <PhysicalBoard
-              layout={layout}
-              connections={connections}
-              priorConnections={priorConnections}
-              assembly={assemblyFrame}
+              scene={scene}
+              introducing={Boolean(assemblyFrame && (assemblyFrame.newJumpers.size > 0 || assemblyFrame.newParts.size > 0))}
               selectedIds={selectedIds}
               focusedWireIds={focusedWireIds ?? []}
             />

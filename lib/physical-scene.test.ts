@@ -367,6 +367,25 @@ test('connection focus keeps one wire readable and hides wires from later steps'
   assert.equal(held.at(-1)?.id, 'devkit-5v')
 })
 
+test('a later step reuses routed wire paths and still updates emphasis', () => {
+  const laid = buildPhysicalScene(ESP32_BLE_RGB_LAYOUT, ESP32_BLE_RGB_CONNECTIONS, [])
+  const idle = buildPhysicalScene(ESP32_BLE_RGB_LAYOUT)
+  assert.ok(laid)
+  assert.ok(idle)
+  assert.equal(laid.wires.map((wire) => wire.d).join('\n'), idle.wires.map((wire) => wire.d).join('\n'))
+  assert.equal(idle.holes.every((hole) => hole.emphasis === 'active'), true)
+  assert.equal(laid.holes.some((hole) => hole.emphasis !== 'active'), true)
+  const jumper = laid.wires.find((wire) => wire.role === 'jumper')
+  assert.ok(jumper)
+  const framed = buildPhysicalScene(ESP32_BLE_RGB_LAYOUT, ESP32_BLE_RGB_CONNECTIONS, [], {
+    installedParts: new Set(laid.parts.map((part) => part.id)),
+    newParts: new Set<string>(),
+    installedJumpers: new Set([jumper.id]),
+    newJumpers: new Set([jumper.id]),
+  })
+  assert.equal(framed?.wires.find((wire) => wire.id === jumper.id)?.d, jumper.d)
+})
+
 test('connection focus toggles, switches, and survives a rebuild', () => {
   assert.deepEqual(toggleWireFocus(null, ['matrix-clk']), ['matrix-clk'])
   assert.equal(toggleWireFocus(['matrix-clk'], ['matrix-clk']), null)

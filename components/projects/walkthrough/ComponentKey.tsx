@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
+import { pressFeedback } from '@/components/ui/press-feedback';
 import type { SolderiPalette } from '@/constants/colors';
 import { useSolderiColors } from '@/context/theme-context';
 import {
@@ -68,7 +69,7 @@ export function SelectedPartCard({
           {chosenGroup ? <Text style={styles.detailBody}>{chosenGroup.summary}</Text> : null}
         </View>
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Clear component selection" onPress={onClear} style={styles.clear}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Clear component selection" onPress={onClear} style={pressFeedback(styles.clear)}>
         <Text style={styles.clearLabel}>Clear</Text>
       </Pressable>
     </View>
@@ -116,7 +117,7 @@ export function ComponentKey({ groups, selection, onSelect }: ComponentKeyProps)
                 setOpenIds((current) => [...current, group.catalogueId]);
                 onSelect({ kind: 'group', catalogueId: group.catalogueId });
               }}
-              style={[styles.row, groupOn && styles.rowOn]}>
+              style={pressFeedback([styles.row, groupOn && styles.rowOn])}>
               <ComponentIllustration id={group.illustrationId} size={40} plate={false} showGroundShadow={false} />
               <View style={styles.copy}>
                 <Text style={styles.name}>
@@ -139,7 +140,7 @@ export function ComponentKey({ groups, selection, onSelect }: ComponentKeyProps)
                       accessibilityState={{ selected: on }}
                       accessibilityLabel={`${instance.label}, ${instance.role}, ${instance.installed ? 'on the board' : 'not yet installed'}`}
                       onPress={() => onSelect({ kind: 'instance', id: instance.id })}
-                      style={[styles.instance, on && styles.rowOn]}>
+                      style={pressFeedback([styles.instance, on && styles.rowOn])}>
                       <View style={styles.instanceCopy}>
                         <Text style={styles.instanceLabel}>{instance.label}</Text>
                         <Text style={styles.role}>{instance.role}</Text>

@@ -73,6 +73,30 @@ export function walkthroughFooterControls(input: {
   };
 }
 
+/** The next write id for one project. A newer press replaces any write still in flight. */
+export function claimStepWrite(generations: Map<string, number>, projectId: string): number {
+  const writeId = (generations.get(projectId) ?? 0) + 1;
+  generations.set(projectId, writeId);
+  return writeId;
+}
+
+/** A queued save applies only when no later press has claimed the project. */
+export function stepWriteIsCurrent(generations: Map<string, number>, projectId: string, writeId: number): boolean {
+  return generations.get(projectId) === writeId;
+}
+
+/**
+ * Copy for the project detail page.
+ * List cards use `description`. The detail page shows `overview` once, under Overview.
+ * It does not repeat `description` above that section.
+ */
+export function projectDetailIntro(project: { description: string; overview?: string | null }): {
+  overview: string;
+} {
+  const overview = project.overview?.trim();
+  return { overview: overview || project.description.trim() };
+}
+
 export function moveWalkthroughStep(current: number, direction: -1 | 1, stepCount: number): number {
   const last = Math.max(0, stepCount - 1);
   const index = Math.min(Math.max(0, Math.floor(current)), last);

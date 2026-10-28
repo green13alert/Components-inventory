@@ -4,6 +4,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pressFeedback } from '@/components/ui/press-feedback';
 import type { SolderiPalette } from '@/constants/colors';
 import { useSolderiColors } from '@/context/theme-context';
 import { sceneTouchRadius, viewerPointToScene, WIRE_TOUCH_POINTS } from '@/lib/diagram-hit';
@@ -201,14 +202,14 @@ export function DiagramViewer({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       presentationStyle="fullScreen"
       statusBarTranslucent
       onRequestClose={onClose}>
       <GestureHandlerRootView style={styles.root}>
         <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           <View style={styles.header}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close diagram" onPress={onClose} style={styles.headerButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close diagram" onPress={onClose} style={pressFeedback(styles.headerButton)}>
               <Text style={styles.headerLabel}>Close</Text>
             </Pressable>
             {showModeToggle ? (
@@ -305,7 +306,7 @@ function ModeButton({ label, selected, onPress }: { label: string; selected: boo
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={[styles.modeButton, selected && styles.modeButtonOn]}>
+      style={pressFeedback([styles.modeButton, selected && styles.modeButtonOn])}>
       <Text style={[styles.modeLabel, selected && styles.modeLabelOn]}>{label}</Text>
     </Pressable>
   );

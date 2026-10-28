@@ -10,9 +10,9 @@ import {
 export const ESP32_WIFI_WEATHER_PROJECT = {
   slug: '23',
   title: 'ESP32 Wi-Fi Weather Station',
-  description: 'Measure temperature, humidity, and pressure, then read them on a local ESP32 web page.',
+  description: 'See temperature, humidity, and air pressure on a page in your home Wi-Fi.',
   overview:
-    'Build a local weather station with an ESP32 DevKit and an Adafruit BME280. The board joins your Wi-Fi network and serves a dashboard that refreshes temperature, humidity, and pressure. No cloud account is required.',
+    'Build a small weather station you can open from a phone or computer on your home Wi-Fi. It shows temperature, humidity, and air pressure, and the numbers refresh on their own. Nothing is sent to an online account.',
   category: 'iot' as const,
   difficulty: 'intermediate' as const,
   durationLabel: '3 hrs',
@@ -110,18 +110,18 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
     stageSortOrder: 0,
     stageTitle: STAGE_INTRO,
     title: 'What the finished station does',
-    description: 'The ESP32 reads a BME280 and serves the readings on your own Wi-Fi network.',
+    description: 'A desk sensor reports temperature, humidity, and air pressure to a page on your home Wi-Fi.',
     tip: null,
     blocks: [
       {
         type: 'image',
         imageKey: 'esp32WifiWeather',
-        caption: 'The finished station is an ESP32-DevKitC V4 and an Adafruit BME280 joined by one STEMMA QT cable, powered from USB. The wiring diagram is the connection reference.',
+        caption: 'Finished weather station, powered from USB. The wiring diagram is the connection reference.',
       },
       {
         type: 'text',
         heading: 'What you are building',
-        body: 'The finished station measures temperature in degrees Celsius, relative humidity in percent, and barometric pressure in hectopascals. The ESP32 DevKit joins a Wi-Fi network you choose and hosts a small web page. A phone or computer on that same network opens the page and sees the numbers update about every two seconds. Nothing is sent to a cloud service.',
+        body: 'You will connect the sensor with one cable, put your Wi-Fi name in the sketch, and upload it. A phone or computer on that same network opens a page and sees temperature in degrees Celsius, humidity in percent, and air pressure in hectopascals. The numbers refresh about every two seconds. Nothing is sent to an online account.',
       },
       {
         type: 'expected',

@@ -21,7 +21,7 @@ import {
   setInventoryItemQuantity,
   updateInventoryCatalogueItem,
 } from '@/lib/inventory';
-import { WALKTHROUGH_SAVE_FAILED, resolveCatalogueProjectId } from '@/lib/project-navigation';
+import { WALKTHROUGH_SAVE_FAILED, claimStepWrite, resolveCatalogueProjectId, stepWriteIsCurrent } from '@/lib/project-navigation';
 import {
   PROJECT_ERRORS,
   completeUserProject,
@@ -447,8 +447,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     if (!confirmedSteps.current.has(resolved)) {
       confirmedSteps.current.set(resolved, existing.currentStep);
     }
-    const writeId = (stepWriteGeneration.current.get(resolved) ?? 0) + 1;
-    stepWriteGeneration.current.set(resolved, writeId);
+    const writeId = claimStepWrite(stepWriteGeneration.current, resolved);
 
     persistUserProject({
       ...existing,
@@ -458,7 +457,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
 
     let failure: string | null = null;
     await enqueueProjectPersist(resolved, async () => {
-      if (stepWriteGeneration.current.get(resolved) !== writeId) {
+      if (!stepWriteIsCurrent(stepWriteGeneration.current, resolved, writeId)) {
         return;
       }
 
@@ -468,7 +467,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       }
 
       const result = await updateUserProjectStep(resolved, step);
-      if (stepWriteGeneration.current.get(resolved) !== writeId) {
+      if (!stepWriteIsCurrent(stepWriteGeneration.current, resolved, writeId)) {
         return;
       }
 
@@ -476,7 +475,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
         failure = WALKTHROUGH_SAVE_FAILED;
         const confirmed = confirmedSteps.current.get(resolved) ?? existing.currentStep;
         const current = getUserProject(resolved);
-        if (current && stepWriteGeneration.current.get(resolved) === writeId) {
+        if (current && stepWriteIsCurrent(stepWriteGeneration.current, resolved, writeId)) {
           persistUserProject({
             ...current,
             currentStep: confirmed,
@@ -513,8 +512,7 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
     const totalSteps = getAuthoredStepCount(resolved);
     const finalStep = currentStep ?? Math.max(0, totalSteps - 1);
     const alreadyCompleted = Boolean(existing.completedAt);
-    const writeId = (stepWriteGeneration.current.get(resolved) ?? 0) + 1;
-    stepWriteGeneration.current.set(resolved, writeId);
+    claimStepWrite(stepWriteGeneration.current, resolved);
 
     if (!confirmedSteps.current.has(resolved)) {
       confirmedSteps.current.set(resolved, existing.currentStep);

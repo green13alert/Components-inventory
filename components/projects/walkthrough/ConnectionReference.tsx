@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { pressFeedback } from '@/components/ui/press-feedback';
 import type { SolderiPalette } from '@/constants/colors';
 import { useSolderiColors } from '@/context/theme-context';
 import { sameWireIds } from '@/lib/diagram-selection';
@@ -23,7 +24,7 @@ export function SelectedConnectionCard({
         <Text style={styles.title}>{title}</Text>
         {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Clear connection selection" onPress={onClear} style={styles.clear}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Clear connection selection" onPress={onClear} style={pressFeedback(styles.clear)}>
         <Text style={styles.clearLabel}>Clear</Text>
       </Pressable>
     </View>
@@ -83,7 +84,7 @@ export function ConnectionReference({
                 accessibilityState={{ selected }}
                 accessibilityLabel={entry.title}
                 onPress={() => onSelectWire(entry.wireIds)}
-                style={[styles.row, selected && styles.rowOn]}>
+                style={pressFeedback([styles.row, selected && styles.rowOn])}>
                 {row}
               </Pressable>
             );

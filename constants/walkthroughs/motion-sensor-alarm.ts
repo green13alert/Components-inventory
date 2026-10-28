@@ -199,29 +199,34 @@ void loop() {
 
 export const MOTION_SENSOR_ALARM_FIRMWARE = SKETCH_COMBINED;
 
+export const MOTION_SENSOR_ALARM_DESCRIPTION =
+  'A light and a buzzer respond when something moves nearby.';
+
+export const MOTION_SENSOR_ALARM_OVERVIEW =
+  'Build an alarm that notices when someone moves nearby. A light turns on and a buzzer sounds while the sensor still sees movement, then both switch off.';
+
 export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
   {
     sortOrder: 0,
     stageSortOrder: 0,
     stageTitle: STAGE_UNDERSTAND,
     title: 'What We\'re Building',
-    description: 'A PIR sensor watches for movement. When it sees motion, the Arduino turns on an LED and an active buzzer together.',
+    description: 'When something moves nearby, a light and a buzzer turn on together.',
     tip: null,
     blocks: [
       {
         type: 'text',
         heading: 'What we\'re building',
-        body: 'This project is a USB-powered motion alarm. The PIR module is the input. The LED and buzzer are the outputs. There is no extra battery pack or arming switch — the board is armed once the sketch finishes its warm-up.',
+        body: 'The sensor watches the space in front of it. Movement turns the light and the buzzer on. They stay on while the sensor still reports movement, then switch off. You will connect the sensor, the light, and the buzzer, then upload a short sketch that joins them. The board is armed once that sketch finishes warming up. There is no separate arming switch.',
       },
       {
         type: 'image',
         imageKey: 'motionSensor',
-        caption: 'Finished motion alarm reference. Keep this pin map: PIR on D2, LED on D8, buzzer on D9.',
+        caption: 'Finished motion alarm. The wiring steps place the sensor, the light, and the buzzer.',
       },
-      { type: 'components', items: COMPONENTS },
       {
         type: 'warning',
-        body: 'Use the active buzzer from the parts list. A passive piezo will not sound with digitalWrite, and this sketch does not call tone().',
+        body: 'Use an active buzzer. A passive piezo will not sound with digitalWrite, and this sketch does not call tone().',
       },
     ],
   },
