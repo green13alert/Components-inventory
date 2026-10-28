@@ -28,6 +28,11 @@ export function diagramFitHeight(viewportHeight: number, coveredBottom: number) 
   return Math.max(0, viewportHeight - Math.max(0, coveredBottom) * 2)
 }
 
+/** Identifies the fitted diagram. Connection focus is deliberately not part of this key. */
+export function diagramFrameKey(mode: string, contentWidth: number, contentHeight: number) {
+  return `${mode}:${contentWidth}:${contentHeight}`
+}
+
 /**
  * Fit used when the enlarged viewer opens. Only the always-visible button row counts.
  * An expanded Components or Connections list is an overlay and must not be passed here.

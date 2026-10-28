@@ -5,7 +5,8 @@ import { ESP32_BLE_RGB_LAYOUT } from '../constants/wiring-diagrams/layouts/esp32
 import { ESP32_BLE_RGB_CONNECTIONS } from '../constants/walkthroughs/esp32-ble-rgb-controller.ts'
 import { LED_MATRIX_MAZE_LAYOUT } from '../constants/wiring-diagrams/layouts/led-matrix-maze.ts'
 import { LED_MATRIX_MAZE_CONNECTIONS } from '../constants/walkthroughs/led-matrix-maze.ts'
-import { connectionReference, visibleConnectionEntries } from './connection-reference.ts'
+import { connectionReference, focusCaption, visibleConnectionEntries } from './connection-reference.ts'
+import { toggleWireFocus } from './diagram-selection.ts'
 
 const supply = ESP32_BLE_RGB_CONNECTIONS.slice(0, 6)
 const red = ESP32_BLE_RGB_CONNECTIONS.slice(6, 10)
@@ -20,6 +21,20 @@ test('the connection reference follows the netlist and hides later channels', ()
   const signal = entries.find((entry) => entry.title.includes('IO25'))
   assert.equal(signal?.detail.includes('Male-to-female'), true)
   assert.equal(blue.every((row) => entries.some((entry) => entry.title.includes(row.fromPin) && entry.title.includes(row.toPin))), false)
+})
+
+test('the blue channel can be selected from its list entry and names its hole', () => {
+  const entries = connectionReference(ESP32_BLE_RGB_LAYOUT, ESP32_BLE_RGB_CONNECTIONS, [])
+  const blue = entries.find((entry) => entry.group === 'Blue channel' && entry.title.includes('IO27'))
+  assert.ok(blue)
+  assert.deepEqual(blue.wireIds, ['devkit-io27'])
+  assert.deepEqual(toggleWireFocus(null, blue.wireIds), ['devkit-io27'])
+  assert.equal(toggleWireFocus(blue.wireIds, blue.wireIds), null)
+  const caption = focusCaption(ESP32_BLE_RGB_LAYOUT, entries, blue.wireIds)
+  assert.equal(caption.title.includes('IO27'), true)
+  assert.equal(caption.title.includes('1k blue'), true)
+  assert.equal(caption.detail.includes('Blue channel'), true)
+  assert.equal(caption.detail.includes('a14'), true)
 })
 
 test('a seating step with no wires does not invent connections', () => {

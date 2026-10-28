@@ -6,8 +6,10 @@ import {
   MAX_DIAGRAM_ZOOM,
   MIN_DIAGRAM_ZOOM,
   diagramFitHeight,
+  diagramFrameKey,
   fitContentSize,
   panDiagram,
+  shouldRefitViewport,
   zoomAroundFocal,
 } from './diagram-viewport.ts'
 
@@ -163,4 +165,23 @@ test('a moving pinch keeps the original point under the fingers', () => {
 
 test('switching diagram mode starts from the fitted view', () => {
   assert.deepEqual(INITIAL_DIAGRAM_VIEW, { scale: 1, x: 0, y: 0 })
+})
+
+test('a connection selection does not change the fitted frame or a zoomed view', () => {
+  assert.equal(diagramFrameKey('physical', 640, 900), 'physical:640:900')
+  assert.equal(diagramFrameKey('physical', 640, 900) === diagramFrameKey('schematic', 640, 900), false)
+  assert.equal(shouldRefitViewport(390, 700, 700, true, 2), false)
+  const held = panDiagram({
+    startX: 40,
+    startY: -20,
+    translationX: 0,
+    translationY: 0,
+    scale: 2,
+    viewportWidth: 300,
+    viewportHeight: 400,
+    contentWidth: 300,
+    contentHeight: 400,
+  })
+  assert.equal(held.x, 40)
+  assert.equal(held.y, -20)
 })

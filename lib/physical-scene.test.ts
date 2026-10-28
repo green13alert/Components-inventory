@@ -13,8 +13,8 @@ import { MOTION_SENSOR_ALARM_CONNECTIONS } from '../constants/walkthroughs/motio
 import { SERVO_PAN_TILT_CAMERA_CONNECTIONS } from '../constants/walkthroughs/servo-pan-tilt-camera.ts'
 import { LED_MATRIX_MAZE_STEPS } from '../constants/walkthroughs/led-matrix-maze.ts'
 import { resolveAssembly } from './assembly-progress.ts'
-import { hitTestSceneTarget, hitTestWire, WIRE_HIT_RADIUS } from './diagram-hit.ts'
-import { retainWireFocus, toggleWireFocus } from './diagram-selection.ts'
+import { hitTestSceneTarget, hitTestWire, sceneTouchRadius, WIRE_HIT_RADIUS, WIRE_TOUCH_POINTS } from './diagram-hit.ts'
+import { focusedPartOpacity, paintConnectionWires, retainWireFocus, toggleWireFocus } from './diagram-selection.ts'
 import { focusCaption, visibleConnectionEntries } from './connection-reference.ts'
 import { buildPhysicalScene, longestSharedRun, wireBodyHits, type PhysicalScene, type SceneWire } from './physical-scene.ts'
 
@@ -313,12 +313,58 @@ test('a wire tap uses a corridor and a module body stays a part', () => {
     }
   }
   assert.equal(hitTestWire(scene, point, WIRE_HIT_RADIUS), 'matrix-clk')
+  assert.equal(hitTestWire(scene, point, sceneTouchRadius(WIRE_TOUCH_POINTS, 320, scene.width, 2)), 'matrix-clk')
   assert.deepEqual(hitTestSceneTarget(scene, point), { kind: 'wire', id: 'matrix-clk' })
   assert.equal(hitTestWire(scene, { x: 2, y: 2 }, WIRE_HIT_RADIUS), null)
   const uno = scene.parts.find((part) => part.id === 'arduino')
   assert.ok(uno && 'x' in uno)
   const body = hitTestSceneTarget(scene, { x: uno.x + uno.width / 2, y: uno.y + uno.height / 2 })
   assert.deepEqual(body, { kind: 'part', id: 'arduino' })
+})
+
+test('connection focus keeps one wire readable and hides wires from later steps', () => {
+  const projects = [MOTION_SENSOR_ALARM_LAYOUT, SERVO_PAN_TILT_CAMERA_LAYOUT, ESP32_WIFI_WEATHER_LAYOUT, ESP32_BLE_RGB_LAYOUT, LED_MATRIX_MAZE_LAYOUT]
+  for (const layout of projects) {
+    const scene = buildPhysicalScene(layout)
+    assert.ok(scene && scene.wires.length > 1)
+    const chosen = scene.wires[0].id
+    const paint = paintConnectionWires(
+      scene.wires.map((wire) => ({ id: wire.id, emphasis: wire.emphasis, related: false })),
+      [chosen],
+      { introducing: false, selecting: false },
+    )
+    assert.equal(paint.at(-1)?.id, chosen)
+    assert.equal(paint.at(-1)?.opacity, 1)
+    assert.equal(paint.at(-1)?.ends, true)
+    assert.equal(paint.at(-1)?.halo, 'focus')
+    assert.ok(paint.slice(0, -1).every((wire) => wire.opacity === 0.22 && wire.halo === 'none'))
+    assert.equal(focusedPartOpacity(true, false, false, 'active'), 1)
+  }
+
+  const early = buildPhysicalScene(ESP32_BLE_RGB_LAYOUT, ESP32_BLE_RGB_CONNECTIONS, [], {
+    installedParts: new Set(['esp32']),
+    newParts: new Set<string>(),
+    installedJumpers: new Set(['devkit-5v', 'devkit-gnd', 'devkit-io25']),
+    newJumpers: new Set(['devkit-io25']),
+  })
+  assert.ok(early)
+  const visible = early.wires.map((wire) => wire.id)
+  assert.equal(visible.includes('devkit-io27'), false)
+  assert.equal(retainWireFocus(['devkit-io27'], visible), null)
+  const open = paintConnectionWires(
+    early.wires.map((wire) => ({ id: wire.id, emphasis: wire.emphasis, related: false })),
+    [],
+    { introducing: true, selecting: false },
+  )
+  assert.equal(open.find((wire) => wire.id === 'devkit-io25')?.halo, 'new')
+  const held = paintConnectionWires(
+    early.wires.map((wire) => ({ id: wire.id, emphasis: wire.emphasis, related: false })),
+    ['devkit-5v'],
+    { introducing: true, selecting: false },
+  )
+  assert.equal(held.find((wire) => wire.id === 'devkit-5v')?.halo, 'focus')
+  assert.equal(held.find((wire) => wire.id === 'devkit-io25')?.halo, 'none')
+  assert.equal(held.at(-1)?.id, 'devkit-5v')
 })
 
 test('connection focus toggles, switches, and survives a rebuild', () => {

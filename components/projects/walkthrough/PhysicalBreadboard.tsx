@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import type { WiringLayout } from '@/constants/wiring-diagrams';
 import type { StepConnection } from '@/constants/walkthrough-content';
 import { useSolderiColors } from '@/context/theme-context';
 import { moduleArt, type ArtMark } from '@/lib/diagram-art';
-import { partHitBox } from '@/lib/diagram-hit';
+import { hitTestSceneTarget, partHitBox, sceneTouchRadius, WIRE_TOUCH_POINTS } from '@/lib/diagram-hit';
+import { focusedPartOpacity, paintConnectionWires, type WirePaint } from '@/lib/diagram-selection';
 import { buildPhysicalScene, type AssemblyFrame, type Point, type ScenePart, type SceneWire } from '@/lib/physical-scene';
 import { RESISTOR_COLORS, resistorColorCode } from '@/lib/resistor-bands';
 
@@ -19,6 +20,7 @@ type PhysicalBreadboardProps = {
   focusedWireIds?: readonly string[];
   onSelectPart?: (id: string) => void;
   onSelectWire?: (id: string) => void;
+  onClear?: () => void;
 };
 
 export function PhysicalBreadboard({
@@ -30,9 +32,11 @@ export function PhysicalBreadboard({
   focusedWireIds,
   onSelectPart,
   onSelectWire,
+  onClear,
 }: PhysicalBreadboardProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [box, setBox] = useState({ width: 0, height: 0 });
   const scene = useMemo(
     () => buildPhysicalScene(layout, connections, priorConnections, assembly),
     [assembly, connections, layout, priorConnections],
@@ -42,18 +46,43 @@ export function PhysicalBreadboard({
   }
 
   return (
-    <View style={[styles.canvas, { aspectRatio: scene.width / scene.height }]}>
-      <BoardSvg
-        layout={layout}
-        connections={connections}
-        priorConnections={priorConnections}
-        assembly={assembly}
-        selectedIds={selectedIds}
-        focusedWireIds={focusedWireIds}
-        onSelectPart={onSelectPart}
-        onSelectWire={onSelectWire}
-      />
-    </View>
+    <Pressable
+      accessible={false}
+      onLayout={(event) => {
+        const { width, height } = event.nativeEvent.layout;
+        setBox((current) => (current.width === width && current.height === height ? current : { width, height }));
+      }}
+      onPress={(event) => {
+        if (box.width <= 0 || box.height <= 0) {
+          return;
+        }
+        const point = {
+          x: (event.nativeEvent.locationX / box.width) * scene.width,
+          y: (event.nativeEvent.locationY / box.height) * scene.height,
+        };
+        const hit = hitTestSceneTarget(scene, point, sceneTouchRadius(WIRE_TOUCH_POINTS, box.width, scene.width));
+        if (!hit) {
+          onClear?.();
+          return;
+        }
+        if (hit.kind === 'wire') {
+          onSelectWire?.(hit.id);
+          return;
+        }
+        onSelectPart?.(hit.id);
+      }}
+      style={[styles.canvas, { aspectRatio: scene.width / scene.height }]}>
+      <View pointerEvents="none" style={styles.board}>
+        <BoardSvg
+          layout={layout}
+          connections={connections}
+          priorConnections={priorConnections}
+          assembly={assembly}
+          selectedIds={selectedIds}
+          focusedWireIds={focusedWireIds}
+        />
+      </View>
+    </Pressable>
   );
 }
 
@@ -64,18 +93,15 @@ export function PhysicalBoard(props: {
   assembly?: AssemblyFrame | null;
   selectedIds?: ReadonlySet<string>;
   focusedWireIds?: readonly string[];
-  onSelectPart?: (id: string) => void;
-  onSelectWire?: (id: string) => void;
 }) {
   return (
     <BoardSvg
-      {...props}
+      layout={props.layout}
+      connections={props.connections}
       priorConnections={props.priorConnections ?? []}
       assembly={props.assembly ?? null}
       selectedIds={props.selectedIds}
       focusedWireIds={props.focusedWireIds}
-      onSelectPart={props.onSelectPart}
-      onSelectWire={props.onSelectWire}
     />
   );
 }
@@ -87,8 +113,6 @@ function BoardSvg({
   assembly,
   selectedIds = new Set<string>(),
   focusedWireIds = [],
-  onSelectPart,
-  onSelectWire,
 }: {
   layout: WiringLayout;
   connections: StepConnection[];
@@ -96,21 +120,22 @@ function BoardSvg({
   assembly: AssemblyFrame | null;
   selectedIds?: ReadonlySet<string>;
   focusedWireIds?: readonly string[];
-  onSelectPart?: (id: string) => void;
-  onSelectWire?: (id: string) => void;
 }) {
   const scene = buildPhysicalScene(layout, connections, priorConnections, assembly);
   if (!scene) {
     return null;
   }
   const { board } = scene;
-  const focused = new Set(focusedWireIds);
-  const isolating = focused.size > 0;
+  const isolating = focusedWireIds.length > 0;
   const selecting = !isolating && selectedIds.size > 0;
   const introducing = Boolean(assembly && (assembly.newJumpers.size > 0 || assembly.newParts.size > 0));
   const related = (wire: SceneWire) => wire.touches.some((id) => selectedIds.has(id)) || cableSelected(wire, selectedIds);
-  const highlighted = (wire: SceneWire) => (isolating ? focused.has(wire.id) : selecting && related(wire));
-  const ordered = [...scene.wires].sort((a, b) => Number(highlighted(a)) - Number(highlighted(b)));
+  const paint = paintConnectionWires(
+    scene.wires.map((wire) => ({ id: wire.id, emphasis: wire.emphasis, related: related(wire) })),
+    focusedWireIds,
+    { introducing, selecting },
+  );
+  const wires = new Map(scene.wires.map((wire) => [wire.id, wire]));
 
   return (
     <View style={{ flex: 1 }}>
@@ -126,7 +151,6 @@ function BoardSvg({
           fill="#F7F4EE"
           stroke={selectedIds.has('breadboard') ? '#0F766E' : '#D6D3D1'}
           strokeWidth={selectedIds.has('breadboard') ? 3 : 2}
-          onPress={() => onSelectPart?.('breadboard')}
         />
         <Rail x={board.x + 6} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#F43F5E" />
         <Rail x={board.x + 24} y={board.y + 8} height={board.height - 16} splitY={board.splitY} fill="#2563EB" />
@@ -167,38 +191,29 @@ function BoardSvg({
         ))}
         </>
         ) : null}
-        {ordered.map((wire) => (
-          <WirePath
-            key={wire.id}
-            wire={wire}
-            dimmed={isolating ? !focused.has(wire.id) : selecting && !related(wire)}
-            marked={highlighted(wire)}
-            quiet={wire.emphasis !== 'active'}
-            showEnds={highlighted(wire) || (introducing && wire.emphasis === 'active' && !selecting && !isolating)}
-          />
-        ))}
+        {paint.map((style) => {
+          const wire = wires.get(style.id);
+          return wire ? <WirePath key={wire.id} wire={wire} style={style} /> : null;
+        })}
         {scene.parts.map((part) => (
           <PartShape
             key={part.id}
             part={part}
-            dimmed={selecting && !selectedIds.has(part.id)}
+            opacity={focusedPartOpacity(isolating, selecting, selectedIds.has(part.id), part.emphasis)}
             selected={selectedIds.has(part.id)}
-            onSelectPart={onSelectPart}
           />
         ))}
-        {onSelectWire
-          ? ordered.map((wire) => (
-              <Path
-                key={`hit-${wire.id}`}
-                d={wire.d}
-                fill="none"
-                stroke="rgba(0,0,0,0.01)"
-                strokeWidth={18}
-                strokeLinecap="round"
-                onPress={() => onSelectWire(wire.id)}
-              />
-            ))
-          : null}
+        {paint
+          .filter((style) => style.focused)
+          .map((style) => {
+            const wire = wires.get(style.id);
+            return wire ? (
+              <G key={`ends-${wire.id}`}>
+                <Endpoint at={wire.from} color={wire.color} strong />
+                <Endpoint at={wire.to} color={wire.color} strong />
+              </G>
+            ) : null;
+          })}
       </Svg>
     </View>
   );
@@ -229,27 +244,14 @@ function cableSelected(wire: SceneWire, selectedIds: ReadonlySet<string>) {
   return false;
 }
 
-function WirePath({
-  wire,
-  dimmed,
-  marked,
-  quiet,
-  showEnds,
-}: {
-  wire: SceneWire;
-  dimmed: boolean;
-  marked: boolean;
-  quiet: boolean;
-  showEnds: boolean;
-}) {
-  const opacity = marked ? 1 : dimmed ? 0.16 : quiet ? 0.38 : 1;
+function WirePath({ wire, style }: { wire: SceneWire; style: WirePaint }) {
   return (
-    <G opacity={opacity}>
-      {marked ? <Path d={wire.d} fill="none" stroke="#0F766E" strokeWidth={8} strokeLinecap="round" /> : null}
-      {!marked && showEnds ? <Path d={wire.d} fill="none" stroke="#FDE68A" strokeWidth={7} strokeLinecap="round" /> : null}
-      <Path d={wire.d} fill="none" stroke={wire.color} strokeWidth={marked ? 3.6 : quiet ? 2.2 : 2.8} strokeLinecap="round" />
-      <Endpoint at={wire.from} color={wire.color} strong={showEnds || marked} />
-      <Endpoint at={wire.to} color={wire.color} strong={showEnds || marked} />
+    <G opacity={style.opacity}>
+      {style.halo === 'focus' ? <Path d={wire.d} fill="none" stroke="#0F766E" strokeWidth={8} strokeLinecap="round" /> : null}
+      {style.halo === 'new' ? <Path d={wire.d} fill="none" stroke="#FDE68A" strokeWidth={7} strokeLinecap="round" /> : null}
+      <Path d={wire.d} fill="none" stroke={wire.color} strokeWidth={style.strokeWidth} strokeLinecap="round" />
+      <Endpoint at={wire.from} color={wire.color} strong={style.ends} />
+      <Endpoint at={wire.to} color={wire.color} strong={style.ends} />
       {wire.socketAt === 'from' ? <Socket at={wire.from} /> : null}
       {wire.socketAt === 'to' ? <Socket at={wire.to} /> : null}
     </G>
@@ -272,23 +274,12 @@ function Socket({ at }: { at: Point }) {
   return <Rect x={at.x - 5} y={at.y - 5} width={10} height={10} rx={2} fill="none" stroke="#0F172A" strokeWidth={1.4} />;
 }
 
-function PartShape({
-  part,
-  dimmed,
-  selected,
-  onSelectPart,
-}: {
-  part: ScenePart;
-  dimmed: boolean;
-  selected: boolean;
-  onSelectPart?: (id: string) => void;
-}) {
-  const opacity = dimmed ? 0.55 : part.emphasis === 'context' ? 0.5 : 1;
+function PartShape({ part, opacity, selected }: { part: ScenePart; opacity: number; selected: boolean }) {
   const hit = partHitBox(part);
   return (
-    <IntroOpacity isNew={part.emphasis === 'active' && !dimmed}>
+    <IntroOpacity isNew={part.emphasis === 'active' && opacity === 1}>
       <G opacity={opacity}>
-        {part.emphasis === 'active' && !dimmed ? <Highlight part={part} /> : null}
+        {part.emphasis === 'active' && opacity === 1 ? <Highlight part={part} /> : null}
         {selected ? (
           <Rect
             x={hit.x}
@@ -303,14 +294,6 @@ function PartShape({
           />
         ) : null}
         <PartArt part={part} />
-        <Rect
-          x={hit.x}
-          y={hit.y}
-          width={hit.width}
-          height={hit.height}
-          fill="transparent"
-          onPress={() => onSelectPart?.(part.id)}
-        />
       </G>
     </IntroOpacity>
   );
@@ -603,5 +586,6 @@ function createStyles(colors: { surface: string; border: string }) {
       borderRadius: 12,
       overflow: 'hidden',
     },
+    board: { flex: 1 },
   });
 }

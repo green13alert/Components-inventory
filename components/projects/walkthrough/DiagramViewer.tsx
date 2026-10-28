@@ -6,9 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SolderiPalette } from '@/constants/colors';
 import { useSolderiColors } from '@/context/theme-context';
-import { viewerPointToScene } from '@/lib/diagram-hit';
+import { sceneTouchRadius, viewerPointToScene, WIRE_TOUCH_POINTS } from '@/lib/diagram-hit';
 import { toggleDiagramPanel, type DiagramPanel } from '@/lib/diagram-panel';
-import { diagramChromeFit, panDiagram, shouldRefitViewport, zoomAroundFocal } from '@/lib/diagram-viewport';
+import { diagramChromeFit, diagramFrameKey, panDiagram, shouldRefitViewport, zoomAroundFocal } from '@/lib/diagram-viewport';
 
 type DiagramMode = 'physical' | 'schematic';
 
@@ -23,7 +23,7 @@ type DiagramViewerProps = {
   connections?: ReactNode;
   components?: ReactNode;
   detail?: ReactNode;
-  onSceneTap?: (point: { x: number; y: number }) => void;
+  onSceneTap?: (point: { x: number; y: number }, radius: number) => void;
   children: ReactNode;
 };
 
@@ -59,7 +59,7 @@ export function DiagramViewer({
   const diagramHeight = useSharedValue(contentHeight);
   const pinchStartFocalX = useSharedValue(0);
   const pinchStartFocalY = useSharedValue(0);
-  const frameKey = `${mode}:${contentWidth}:${contentHeight}`;
+  const frameKey = diagramFrameKey(mode, contentWidth, contentHeight);
   const measuredFrame = useRef('');
   const lockedHeight = useRef(0);
   if (measuredFrame.current !== '' && measuredFrame.current !== frameKey) {
@@ -107,6 +107,7 @@ export function DiagramViewer({
           sceneWidth: contentWidth,
           sceneHeight: contentHeight,
         }),
+        sceneTouchRadius(WIRE_TOUCH_POINTS, fittedSize.width, contentWidth, nextScale),
       );
     },
     [chromeHeight, contentHeight, contentWidth, onSceneTap],

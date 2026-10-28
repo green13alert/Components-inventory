@@ -42,6 +42,17 @@ export function partHitBox(part: ScenePart): HitBox {
 
 export const WIRE_HIT_RADIUS = 16
 
+/** Finger-sized target, in screen points, mapped into the scene by the caller. */
+export const WIRE_TOUCH_POINTS = 22
+
+/** Scene-unit radius that stays about `screenPoints` wide after fit and zoom. */
+export function sceneTouchRadius(screenPoints: number, viewSpan: number, sceneSpan: number, scale = 1) {
+  if (viewSpan <= 0 || sceneSpan <= 0 || scale <= 0) {
+    return WIRE_HIT_RADIUS
+  }
+  return (screenPoints * sceneSpan) / (viewSpan * scale)
+}
+
 function pointSegmentDistance(point: Point, start: Point, end: Point) {
   const dx = end.x - start.x
   const dy = end.y - start.y
@@ -90,8 +101,8 @@ export type SceneHit = { kind: 'wire'; id: string } | { kind: 'part'; id: string
  * A tap on a wire corridor selects that wire. A tap inside a module body selects the module,
  * unless the finger is sitting on the wire itself. The breadboard does not steal a wire tap.
  */
-export function hitTestSceneTarget(scene: PhysicalScene, point: Point): SceneHit | null {
-  const wireId = hitTestWire(scene, point)
+export function hitTestSceneTarget(scene: PhysicalScene, point: Point, radius = WIRE_HIT_RADIUS): SceneHit | null {
+  const wireId = hitTestWire(scene, point, radius)
   const partId = hitTestScene(scene, point)
   if (wireId) {
     const wire = scene.wires.find((item) => item.id === wireId)

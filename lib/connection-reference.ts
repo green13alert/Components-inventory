@@ -259,7 +259,8 @@ export function visibleConnectionEntries(
 export function focusCaption(layout: WiringLayout | null, entries: readonly ConnectionEntry[], ids: readonly string[]) {
   const match = entries.find((entry) => sameIds(entry.wireIds, ids))
   if (match) {
-    return { title: match.title, detail: match.detail }
+    const detail = [match.group, match.detail].filter((part) => part.length > 0).join(' · ')
+    return { title: match.title, detail }
   }
   if (layout && ids.length === 1) {
     const described = describeJumper(layout, ids[0])

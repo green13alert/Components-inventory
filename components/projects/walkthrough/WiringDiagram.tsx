@@ -22,7 +22,7 @@ import {
   toggleKeySelection,
   type KeySelection,
 } from '@/lib/component-key';
-import { hitTestSceneTarget } from '@/lib/diagram-hit';
+import { hitTestSceneTarget, sceneTouchRadius, WIRE_TOUCH_POINTS } from '@/lib/diagram-hit';
 import { toggleDiagramPanel, type DiagramPanel } from '@/lib/diagram-panel';
 import { retainWireFocus, toggleWireFocus } from '@/lib/diagram-selection';
 import { buildPhysicalScene, physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
@@ -171,7 +171,10 @@ export function WiringDiagram({
     setSelection(null);
     setFocusedWireIds((current) => toggleWireFocus(current, ids));
   };
-  const clearFocus = () => setFocusedWireIds(null);
+  const clearFocus = () => {
+    setSelection(null);
+    setFocusedWireIds(null);
+  };
   const caption = focusedWireIds && layout ? focusCaption(layout, entries, focusedWireIds) : null;
 
   const detail = caption ? (
@@ -213,6 +216,7 @@ export function WiringDiagram({
             focusedWireIds={focusedWireIds ?? []}
             onSelectPart={selectPart}
             onSelectWire={(id) => focusWires([id])}
+            onClear={clearFocus}
           />
         ) : layout ? (
           <VisualWiringCanvas layout={layout} wires={wires} />
@@ -263,11 +267,10 @@ export function WiringDiagram({
           detail={detail}
           onSceneTap={
             scene
-              ? (point) => {
-                  const hit = hitTestSceneTarget(scene, point);
+              ? (point, radius = sceneTouchRadius(WIRE_TOUCH_POINTS, 1, 1)) => {
+                  const hit = hitTestSceneTarget(scene, point, radius);
                   if (!hit) {
-                    setSelection(null);
-                    setFocusedWireIds(null);
+                    clearFocus();
                     return;
                   }
                   if (hit.kind === 'wire') {
@@ -287,7 +290,6 @@ export function WiringDiagram({
               assembly={assemblyFrame}
               selectedIds={selectedIds}
               focusedWireIds={focusedWireIds ?? []}
-              onSelectWire={(id) => focusWires([id])}
             />
           ) : (
             <SchematicFigure layout={layout} wires={wires} />
