@@ -1,6 +1,6 @@
 ---
-description: Authoring rules for Solderi projects, walkthroughs, BOMs, wiring, firmware, compatibility, and thumbnails
-globs: constants/walkthroughs/**/*.ts,constants/firmware/**/*.ts,constants/wiring-diagrams/**/*.ts,constants/projects-data.ts,constants/projects.ts,constants/component-catalogue.ts,lib/project-authoring.ts,lib/authored-projects.ts,lib/compatibility.ts,lib/project-navigation.ts,docs/PROJECT_AUTHORING.md,docs/PROJECT_THUMBNAILS.md,assets/images/projects/**,supabase/migrations/**/*.sql
+description: Authoring rules for new and existing Solderi projects, including the research record required before a tutorial is written
+globs: constants/walkthroughs/**/*.ts,constants/firmware/**/*.ts,constants/wiring-diagrams/**/*.ts,constants/projects-data.ts,constants/projects.ts,constants/component-catalogue.ts,lib/project-authoring.ts,lib/authored-projects.ts,lib/compatibility.ts,lib/project-navigation.ts,docs/PROJECT_AUTHORING.md,docs/PROJECT_THUMBNAILS.md,docs/templates/project-research-record.md,docs/research/**/*.md,assets/images/projects/**,supabase/migrations/**/*.sql
 alwaysApply: false
 ---
 
@@ -8,7 +8,9 @@ alwaysApply: false
 
 When creating or changing a Solderi project, walkthrough, BOM, wiring diagram, firmware, or compatibility requirement:
 
-- Read and follow `docs/PROJECT_AUTHORING.md` before editing.
+- Read and follow `docs/PROJECT_AUTHORING.md` before editing. A new project also follows Research before a new project in that file. Copy `docs/templates/project-research-record.md` to `docs/research/<slug>.md`. Present the parts, connections, conflicts, and assumptions, and wait for approval before the tutorial, firmware, layout, or migration, unless the request already says to implement them.
+- Research the circuit from manufacturer pages, the board pinout, and the library docs before community tutorials. Record sources that were opened. Do not invent a source, treat a lookalike module as the same pinout, or copy tutorial prose, drawings, photographs, or code. Do not integrate or scrape circuito.io.
+- Keep documented facts distinct from assumptions. A passing compile and `npm run test:compatibility` are not a hardware test. Leave connector, supply, and source conflicts in the research record instead of guessing. Do not set `hardwareTested` or call the project publication-ready while those remain.
 - Use the existing walkthrough, catalogue, wiring-layout, and firmware files. A growing-sketch project stays a growing sketch. A single-firmware project stays one program. Do not invent a new project shape.
 - Include every physical part the build needs, with a catalogue id and a quantity, so the hardware list can be built as written. Count jumper wires the way the layout uses them.
 - Write the tutorial for a learner. One step is one meaningful milestone, not one tiny action or one code fragment that cannot upload on its own. Combining placement with that board’s power, and a module’s power with its signals, is the normal shape. A circuit check, an IDE setup, and a programming concept can each be a step. A complex build may need many steps. Do not impose one step count on every project. Label an excerpt as part of the finished sketch. Keep the main path to the finished build. Do not add a standalone lesson on an elementary idea unless the build cannot continue without it. Keep a short practical warning on the step that needs it, and keep essential safety, wiring, setup, troubleshooting, and checkpoints visible. Put longer background in `constants/walkthroughs/supporting-notes.ts` until a shared explanation control exists. Do not invent that control for one project, and do not build a Learn section while authoring a project. Do not repeat a parts list or explanation the walkthrough already gave. Keep development notes in the authoring record. Show a control only when it does something.

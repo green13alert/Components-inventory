@@ -4,8 +4,64 @@ Use this when adding or revising a catalogue project. It is the checklist for ES
 
 Author the project in local TypeScript first. Sync that same content into Supabase with a migration for that slug only. Leave `is_published` false until a separate publishing review.
 
+## Research before a new project
+
+Every new catalogue project starts here. The quality gates below still decide whether the tutorial, diagram, and firmware are complete. This section decides whether the circuit that enters those gates is documented. Revising an existing project uses the quality gates. Repeat this research only when that revision changes the parts or the circuit.
+
+### Sources
+
+Look these up, in this order, and open the pages:
+
+1. Manufacturer datasheets and module documentation.
+2. The microcontroller board’s own pinout and electrical limits.
+3. The library documentation for the hardware configuration the sketch will use.
+4. Arduino Project Hub and other documented builds of the same arrangement.
+5. Other credible electronics references when the sources above do not cover a pin or a connector.
+
+Aim for two independent implementations of the same, or substantially the same, hardware. Two sites repeating one original project count once. If a second independent build cannot be found, write that down. Do not invent a URL, an author, or a test to fill the count. A published tutorial is not evidence that anyone built it. A module that looks similar is not the same pinout. When a manufacturer page covers an electrical fact, a community tutorial does not override it.
+
+### Evidence
+
+- Separate a documented fact from an assumption. Name the page for the fact.
+- Manufacturer documentation leads for voltage, current, logic level, pin function, and connector.
+- A community tutorial can support a choice. It is not the authority when a datasheet exists.
+- A different board revision or module variant is not interchangeable until its own documentation says so.
+- A successful compile does not show that the circuit works.
+- `npm run test:compatibility` does not replace a build on the specified hardware.
+- Unknown connector gender, pitch, or mating hardware is a flagged gap, not a guess.
+- An unverified supply, polarity, or current path is not described as safe.
+- When sources disagree, record both and leave the conflict open until it is resolved.
+- Do not fabricate a measurement, a pin name, a licence, or a physical test.
+
+A project with an open conflict can stay in development. Do not set `hardwareTested`, and do not describe it as publication-ready, while that conflict or an untested build remains.
+
+### Other people's work
+
+Project Hub and other public tutorials are for understanding the circuit. Do not copy their prose, drawings, photographs, or code. Read the licence before reusing anything. Solderi’s steps, diagrams, and explanations stay original. Do not integrate circuito.io, scrape it, or add a dependency on it. A generic part in another tool is not this project’s module.
+
+The research record stores titles, URLs, and short factual notes. It does not store copied tutorial text or diagrams.
+
+### Sequence
+
+1. **Research.** Investigate existing builds, official documentation, and the component specifications. Write the research record.
+2. **Hardware design.** Choose the simplest practical, reliable arrangement. Prefer a part already in the catalogue when it is electrically appropriate. Do not add a breadboard, adapter, or extra wire that the circuit does not need.
+3. **Circuit verification.** Write the exact connections. Check pins, supply, connector gender, and the physical module variant against the sources. An unresolved conflict stays in the research record.
+4. **Firmware.** One canonical sketch. Compile it for the board and library versions the tutorial names. Excerpts stay slices of that sketch. This is the existing code and firmware gates.
+5. **Tutorial authoring.** Original steps a beginner can follow. Each step is one milestone and is physically possible. Do not repeat the parts list, and do not add a lesson the build does not need.
+6. **Diagram generation.** Use the existing layout and physical-scene path. The schematic and the physical view show the verified connections. Do not move a wire or a pin to improve the picture if that drawing would then be electrically wrong.
+7. **Automated validation.** Run `npx tsc --noEmit`, `npm run test:compatibility`, and, when the toolchain is present, `npm run firmware:compile`. Fix a confirmed defect before continuing.
+8. **Physical testing.** Build the specified parts. `hardwareTested` stays false until that build is recorded. A compile record is not that record.
+9. **Publication review.** Use the publication gate below. A missing cover, a missing compile, an open electrical conflict, or an untested build keeps the project unpublished.
+
+After stage 3, present the proposed parts, connections, conflicts, and unverified assumptions. Wait for approval before stages 4–7, unless the request already says to implement the project.
+
+### Research record
+
+Copy `docs/templates/project-research-record.md` to `docs/research/<slug>.md` and fill it from pages that were opened. This file is the authoring record the quality gates refer to. It is Markdown in the repository, not a database table, a migration, or a screen in the app. Do not start a second review document for the same project. Naming a part that must not be substituted does not approve a catalogue substitute. Keep the file short enough to review with the hardware proposal.
+
 ## What to produce
 
+- For a new project, `docs/research/<slug>.md` filled in from the template before the tutorial.
 - Project title, description, difficulty, duration, and learning objectives.
 - A bill of materials whose every part exists in the component catalogue, including cables, headers, and power.
 - Compatibility requirements. Substitutions stay on the existing per-project review system. Do not approve a part because its general specs look similar.
@@ -54,7 +110,7 @@ One tutorial step is one meaningful milestone, not one tiny action or one isolat
 
 A code excerpt is a slice of the uploadable program, and the step says so. The complete program stays in one copyable step. Phone or app steps name the taps, the write format, and what should change. Buttons and dialogs in the walkthrough do something useful. Do not leave a control that only announces unfinished work.
 
-These are the bar for a new tutorial. They are not a fixed sequence of stages. A sensor project and a radio project will not share the same outline.
+These are the bar for a new tutorial’s steps. They are not a fixed outline of walkthrough stages. A sensor project and a radio project will not share the same outline. The research-to-publication sequence above is fixed. The steps inside the tutorial are not.
 
 ### 6. Expected behaviour
 
@@ -90,7 +146,7 @@ Requirements use the existing exact, direct, or conditional policies. An exact p
 
 ### 10. Publication readiness
 
-Do not publish because the fields are filled, the structural check passed, or draft preview works. Publishing is a separate decision. Before that decision, the photographic cover exists, firmware compilation has been recorded, the specified hardware has been built, and the expected behaviour has been compared with the board. Until then the project stays unpublished.
+Do not publish because the fields are filled, the structural check passed, or draft preview works. Publishing is a separate decision. Before that decision, the photographic cover exists, firmware compilation has been recorded, the specified hardware has been built, and the expected behaviour has been compared with the board. The research record, when this project has one, agrees: no open electrical conflict, and the hardware-test line is not “not done”. Until then the project stays unpublished.
 
 ## Walkthrough route
 
@@ -125,4 +181,4 @@ These are not wording checks. Record the source when a claim depends on a datash
 
 ## Before the project is called complete
 
-Run `npx tsc --noEmit` and `npm run test:compatibility`. Fix structural errors. Read every step as a learner. Look at the wiring diagram in the app. Attempt the firmware compile. Write down what was not run on hardware and which assets are still missing. Leave the project unpublished.
+Run `npx tsc --noEmit` and `npm run test:compatibility`. Fix structural errors. Read every step as a learner. Look at the wiring diagram in the app. Attempt the firmware compile. Write down what was not run on hardware and which assets are still missing. For a new project, keep `docs/research/<slug>.md` in agreement with those limits. Leave the project unpublished.
