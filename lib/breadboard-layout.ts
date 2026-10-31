@@ -392,6 +392,57 @@ function jumperGenderErrors(layout: WiringLayout, jumpers: PhysicalJumper[]): st
   return errors
 }
 
+/**
+ * Electrical groups implied by leads, rail bindings, and jumpers.
+ * A strip node is one side of one row. A rail node is one side, one polarity,
+ * and one segment. Nothing here joins opposite rails or opposite sides of the
+ * centre gap unless a jumper does.
+ */
+export function physicalElectricalGroups(layout: WiringLayout): Map<string, string[]> {
+  const physical = layout.physical
+  if (!physical) {
+    return new Map()
+  }
+  const nets = buildPhysicalNets(layout, physical)
+  const split = physical.railSplitAfter
+  const keys = new Set<string>()
+  for (const lead of physical.leads) {
+    keys.add(`${lead.elementId}:${lead.portId}`)
+    keys.add(holeKey(lead.hole, split))
+  }
+  for (const binding of physical.railBindings) {
+    const segment = split == null ? 'all' : binding.segment
+    keys.add(`${binding.elementId}:${binding.portId}`)
+    keys.add(`rail:${binding.side}:${binding.polarity}:${segment}`)
+  }
+  for (const jumper of physical.jumpers) {
+    keys.add(endpointKey(jumper.from, split))
+    keys.add(endpointKey(jumper.to, split))
+    for (const end of [jumper.from, jumper.to]) {
+      if (!('kind' in end) || end.kind !== 'module') {
+        const hole = end as BreadboardHole
+        if (hole.kind === 'rail') {
+          keys.add(holeKey(hole, split))
+        }
+      }
+    }
+  }
+  const groups = new Map<string, string[]>()
+  for (const key of keys) {
+    const root = nets.find(key)
+    const members = groups.get(root)
+    if (members) {
+      members.push(key)
+    } else {
+      groups.set(root, [key])
+    }
+  }
+  for (const members of groups.values()) {
+    members.sort()
+  }
+  return groups
+}
+
 function buildPhysicalNets(layout: WiringLayout, physical: PhysicalLayout): UnionFind {
   const nets = new UnionFind()
   const split = physical.railSplitAfter
