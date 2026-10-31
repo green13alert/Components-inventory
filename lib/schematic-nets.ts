@@ -6,7 +6,7 @@ import { normalizeWiringToken } from './wiring-diagram.ts'
 /**
  * Schematic connectivity derived from the connection list and, where a project
  * has one, the physical breadboard graph. Pixel positions are not read.
- * The schematic renderer does not use this module yet.
+ * The Project 8 schematic sheet consumes this model.
  */
 
 export type ElectricalIssueCode =
