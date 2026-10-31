@@ -44,9 +44,11 @@ function devkitFrame(used: { portId: string; header: 'j2' | 'j3'; index: number;
 
 /**
  * Arduino Uno R3, component side up, USB at the bottom of the drawing.
- * Header order is the A000066 datasheet, reversed so pin 1 (the USB end) is the high index.
- * Digital, from the top: SCL, SDA, AREF, GND, D13–D8, gap, D7–D0.
- * Power, from the top: A5–A0, gap, VIN, GND, GND, 5V, 3V3, RESET, IOREF, NC.
+ * The A000066 pinout drawing (6 Oct 2022) shows the USB at the top of the page,
+ * the power header on the left running NC toward A5, and the digital header on
+ * the right running SCL toward D0. This frame is that page rotated 180 degrees.
+ * Digital is the left edge. From the top, away from the USB: D0–D7, gap, D8–D13, GND, AREF, SDA, SCL.
+ * Power is the right edge. From the top: A5–A0, gap, VIN, GND, GND, 5V, 3V3, RESET, IOREF, NC.
  * The drawn board is narrower than a 53.4 mm Uno so the headers can sit beside the breadboard.
  * Pin pitch stays 0.1 inch. Do not retune an index without checking every jumper that uses it.
  */
@@ -57,13 +59,13 @@ function unoFrame(used: { portId: string; header: 'digital' | 'power'; index: nu
   const width = 168
   const gap = 14
   const yOf = (index: number, gapAfter: number) => y + 28 + index * pitch + (index > gapAfter ? gap : 0)
-  const digitalX = x + width - 16
-  const powerX = x + 16
+  const digitalX = x + 16
+  const powerX = x + width - 16
   const at = (header: 'digital' | 'power', index: number) => ({
     x: header === 'digital' ? digitalX : powerX,
-    y: yOf(index, header === 'digital' ? 9 : 5),
+    y: yOf(index, header === 'digital' ? 7 : 5),
   })
-  const height = yOf(17, 9) - y + 24
+  const height = yOf(17, 7) - y + 24
   return {
     elementId: 'arduino',
     x,
@@ -191,9 +193,9 @@ export const MOTION_PHYSICAL: PhysicalLayout = {
     unoFrame([
       { portId: '5v', header: 'power', index: 9, label: '5V' },
       { portId: 'gnd', header: 'power', index: 8, label: 'GND' },
-      { portId: 'd8', header: 'digital', index: 9, label: 'D8' },
-      { portId: 'd9', header: 'digital', index: 8, label: 'D9' },
-      { portId: 'd2', header: 'digital', index: 15, label: 'D2' },
+      { portId: 'd8', header: 'digital', index: 8, label: 'D8' },
+      { portId: 'd9', header: 'digital', index: 9, label: 'D9' },
+      { portId: 'd2', header: 'digital', index: 2, label: 'D2' },
     ]),
   ],
 }
@@ -260,10 +262,10 @@ export const MAZE_PHYSICAL: PhysicalLayout = {
       { portId: 'gnd', header: 'power', index: 8, label: 'GND' },
       { portId: 'a0', header: 'power', index: 5, label: 'A0' },
       { portId: 'a1', header: 'power', index: 4, label: 'A1' },
-      { portId: 'd13', header: 'digital', index: 4, label: 'D13' },
-      { portId: 'd11', header: 'digital', index: 6, label: 'D11' },
-      { portId: 'd10', header: 'digital', index: 7, label: 'D10' },
-      { portId: 'd2', header: 'digital', index: 15, label: 'D2' },
+      { portId: 'd13', header: 'digital', index: 13, label: 'D13' },
+      { portId: 'd11', header: 'digital', index: 11, label: 'D11' },
+      { portId: 'd10', header: 'digital', index: 10, label: 'D10' },
+      { portId: 'd2', header: 'digital', index: 2, label: 'D2' },
     ]),
     sideHeader('matrix', 48, BOARD_TOP - MODULE_GAP - Math.round(32 * MM), Math.round(32 * MM), Math.round(32 * MM), [
       { portId: 'clk', label: 'CLK' },
@@ -351,9 +353,9 @@ export const SERVO_PHYSICAL: PhysicalLayout = {
     unoFrame([
       { portId: '5v', header: 'power', index: 9, label: '5V' },
       { portId: 'gnd', header: 'power', index: 8, label: 'GND' },
-      { portId: 'd2', header: 'digital', index: 15, label: 'D2' },
-      { portId: 'd9', header: 'digital', index: 8, label: 'D9' },
-      { portId: 'd10', header: 'digital', index: 7, label: 'D10' },
+      { portId: 'd2', header: 'digital', index: 2, label: 'D2' },
+      { portId: 'd9', header: 'digital', index: 9, label: 'D9' },
+      { portId: 'd10', header: 'digital', index: 10, label: 'D10' },
       { portId: 'a0', header: 'power', index: 5, label: 'A0' },
       { portId: 'a1', header: 'power', index: 4, label: 'A1' },
     ]),

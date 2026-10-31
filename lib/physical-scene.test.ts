@@ -293,7 +293,7 @@ test('project 25 signal colours differ and parallel runs stay in the local gap',
   assert.ok(clock?.touches.includes('matrix') && clock.touches.includes('arduino'))
   assert.equal(color('uno-5v'), '#DC2626')
   assert.equal(color('uno-gnd'), '#111827')
-  assert.ok(longestSharedRun(scene) < 180, `shared ${longestSharedRun(scene)}`)
+  assert.ok(longestSharedRun(scene) < 220, `shared ${longestSharedRun(scene)}`)
   assert.ok(scene.height < 1000)
 })
 

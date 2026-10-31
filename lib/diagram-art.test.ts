@@ -45,8 +45,8 @@ test('uno power labels sit on the R3 header with the USB end at the bottom', () 
   assert.ok(a0.at.y < ground.at.y)
   assert.equal(supply.at.y - ground.at.y, 16)
   assert.equal(a0.at.x, supply.at.x)
-  assert.ok(supply.at.x < d13.at.x)
-  assert.ok(d13.at.y < d2.at.y)
+  assert.ok(d13.at.x < supply.at.x)
+  assert.ok(d2.at.y < d13.at.y)
   const strips = moduleArt('uno', uno.x, uno.y, uno.width, uno.height).filter(
     (mark) => mark.kind === 'rect' && mark.fill === '#111827' && mark.width === 14,
   )

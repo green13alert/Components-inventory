@@ -71,7 +71,7 @@ function unoArt(x: number, y: number, width: number, height: number): ArtMark[] 
   const headerStrip = (side: 'power' | 'digital', start: number, end: number, gapAfter: number): ArtMark => {
     const top = headerY(start, gapAfter) - 7
     const bottom = headerY(end, gapAfter) + 7
-    return rect(side === 'power' ? x + 8 : x + width - 22, top, 14, bottom - top, BLACK, 2)
+    return rect(side === 'digital' ? x + 8 : x + width - 22, top, 14, bottom - top, BLACK, 2)
   }
   const usbW = 40
   const usbX = x + width / 2 - 8
@@ -84,8 +84,8 @@ function unoArt(x: number, y: number, width: number, height: number): ArtMark[] 
     ...holes([x + 12, x + width - 12], [y + 12, y + height - 12], 4.5),
     headerStrip('power', 0, 5, 5),
     headerStrip('power', 6, 13, 5),
-    headerStrip('digital', 0, 9, 9),
-    headerStrip('digital', 10, 17, 9),
+    headerStrip('digital', 0, 7, 7),
+    headerStrip('digital', 8, 17, 7),
     rect(chipX, chipY, chipW, chipH, '#1C1917', 2, '#44403C'),
     circle(chipX + chipW / 2, chipY, 6, PCB),
     ...Array.from({ length: 12 }, (_, index) => {
@@ -97,11 +97,11 @@ function unoArt(x: number, y: number, width: number, height: number): ArtMark[] 
     }).flat(),
     text(chipX + chipW / 2, chipY + chipH / 2 + 4, '328P', '#E7E5E4', 12, 'middle'),
     rect(x + width / 2 - 18, y + height - 78, 36, 24, '#1C1917', 2),
-    circle(x + width - 42, headerY(4, 9), 5, '#F59E0B', '#92400E'),
+    circle(x + 42, headerY(13, 7), 5, '#F59E0B', '#92400E'),
     circle(x + 36, y + height - 48, 4, '#15803D', '#14532D'),
-    circle(x + width - 46, y + height - 48, 7, '#E7E5E4', '#57534E'),
-    rect(x + 14, y + height - 22, 28, 16, BLACK, 4, '#44403C'),
-    circle(x + 28, y + height - 14, 4.5, '#0C0A09'),
+    circle(x + 46, y + height - 48, 7, '#E7E5E4', '#57534E'),
+    rect(x + width - 42, y + height - 22, 28, 16, BLACK, 4, '#44403C'),
+    circle(x + width - 28, y + height - 14, 4.5, '#0C0A09'),
     rect(usbX, y + height - 22, usbW, 20, SILVER, 2, '#57534E'),
     rect(usbX + 8, y + height - 16, usbW - 16, 12, '#292524', 1),
     text(x + width / 2, y + 22, 'UNO', '#F8FAFC', 13, 'middle'),
