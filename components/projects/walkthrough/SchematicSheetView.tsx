@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import Svg, { G, Line, Path, Rect, Text as SvgText } from 'react-native-svg'
+import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg'
 
 import type { SolderiPalette } from '@/constants/colors'
 import { useSolderiColors } from '@/context/theme-context'
 import { fitContentSize } from '@/lib/diagram-viewport'
 import type { SchematicSheet, SchematicSymbol } from '@/lib/schematic-sheet'
-import { ledDrawing } from '@/lib/schematic-symbols'
+import { ledDrawing, npnDrawing, RGB_DIODE_WIDTH } from '@/lib/schematic-symbols'
 
 const PREVIEW_MAX_HEIGHT = 320
 
@@ -98,6 +98,12 @@ function SymbolGlyph({ symbol, ink, fill }: { symbol: SchematicSymbol; ink: stri
   if (symbol.kind === 'led') {
     return <LedGlyph symbol={symbol} ink={ink} />
   }
+  if (symbol.kind === 'rgb-led') {
+    return <RgbLedGlyph symbol={symbol} ink={ink} />
+  }
+  if (symbol.kind === 'npn') {
+    return <NpnGlyph symbol={symbol} ink={ink} />
+  }
   if (symbol.kind === 'power') {
     return <PowerGlyph symbol={symbol} ink={ink} />
   }
@@ -120,6 +126,8 @@ function BlockGlyph({ symbol, ink, fill }: { symbol: SchematicSymbol; ink: strin
         </SvgText>
       ) : null}
       {symbol.kind === 'buzzer' ? <SounderMark symbol={symbol} ink={ink} /> : null}
+      {symbol.kind === 'servo' ? <ServoMark symbol={symbol} ink={ink} /> : null}
+      {symbol.kind === 'connector' ? <JackMark symbol={symbol} ink={ink} /> : null}
       {symbol.pins.map((pin) => (
         <SvgText
           key={pin.portId}
@@ -132,6 +140,28 @@ function BlockGlyph({ symbol, ink, fill }: { symbol: SchematicSymbol; ink: strin
           {pin.label}
         </SvgText>
       ))}
+    </G>
+  )
+}
+
+function ServoMark({ symbol, ink }: { symbol: SchematicSymbol; ink: string }) {
+  const x = symbol.x + symbol.width - 28
+  const y = symbol.y + symbol.height - 30
+  return (
+    <G>
+      <Path d={`M ${x - 8} ${y} a 8 8 0 1 0 16 0 a 8 8 0 1 0 -16 0`} fill="none" stroke={ink} strokeWidth={1.5} />
+      <Line x1={x} y1={y - 8} x2={x + 10} y2={y - 16} stroke={ink} strokeWidth={1.5} />
+    </G>
+  )
+}
+
+function JackMark({ symbol, ink }: { symbol: SchematicSymbol; ink: string }) {
+  const x = symbol.x + symbol.width - 24
+  const y = symbol.y + 24
+  return (
+    <G>
+      <Path d={`M ${x - 7} ${y} a 7 7 0 1 0 14 0 a 7 7 0 1 0 -14 0`} fill="none" stroke={ink} strokeWidth={1.5} />
+      <Path d={`M ${x - 2} ${y} a 2 2 0 1 0 4 0 a 2 2 0 1 0 -4 0`} fill={ink} />
     </G>
   )
 }
@@ -176,6 +206,73 @@ function LedGlyph({ symbol, ink }: { symbol: SchematicSymbol; ink: string }) {
           K
         </SvgText>
       ) : null}
+    </G>
+  )
+}
+
+function RgbLedGlyph({ symbol, ink }: { symbol: SchematicSymbol; ink: string }) {
+  const anode = symbol.pins.find((pin) => pin.portId === 'anode')
+  const cathodes = symbol.pins.filter((pin) => pin.side === 'left')
+  const busX = anode ? anode.x : symbol.x + symbol.width
+  const chain = (originX: number, originY: number, points: { x: number; y: number }[]) =>
+    points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${originX + point.x} ${originY + point.y}`).join(' ')
+  return (
+    <G>
+      {anode ? <Line x1={busX} y1={anode.y} x2={busX} y2={cathodes[cathodes.length - 1]?.y ?? anode.y} stroke={ink} strokeWidth={1.75} /> : null}
+      {cathodes.map((pin) => {
+        const drawing = ledDrawing(RGB_DIODE_WIDTH, pin.y - symbol.y, true)
+        return (
+          <G key={pin.portId}>
+            <Path d={chain(pin.x, symbol.y, [drawing.anode, drawing.lead[0], drawing.lead[1], drawing.cathode])} fill="none" stroke={ink} strokeWidth={1.75} />
+            <Path d={`${chain(pin.x, symbol.y, drawing.triangle)} Z`} fill="none" stroke={ink} strokeWidth={1.75} strokeLinejoin="miter" />
+            <Path d={chain(pin.x, symbol.y, drawing.bar)} fill="none" stroke={ink} strokeWidth={1.75} />
+            {drawing.arrows.map((arrow) => (
+              <Path key={`${pin.portId}:${chain(pin.x, symbol.y, arrow)}`} d={chain(pin.x, symbol.y, arrow)} fill="none" stroke={ink} strokeWidth={1.5} strokeLinejoin="miter" />
+            ))}
+            <SvgText x={pin.x + 2} y={pin.y - 16} fill={ink} fontSize={11} fontWeight="700">
+              {pin.label}
+            </SvgText>
+          </G>
+        )
+      })}
+      {anode ? (
+        <SvgText x={anode.x + 8} y={anode.y + 16} fill={ink} fontSize={11} fontWeight="700">
+          {anode.label}
+        </SvgText>
+      ) : null}
+      <SvgText x={symbol.x + symbol.width / 2} y={(cathodes[0]?.y ?? symbol.y) + 36} fill={ink} fontSize={13} fontWeight="700" textAnchor="middle">
+        {symbol.ref}
+      </SvgText>
+      <SvgText x={symbol.x + symbol.width / 2} y={(cathodes[0]?.y ?? symbol.y) + 52} fill={ink} fontSize={12} textAnchor="middle">
+        {symbol.value}
+      </SvgText>
+    </G>
+  )
+}
+
+function NpnGlyph({ symbol, ink }: { symbol: SchematicSymbol; ink: string }) {
+  const drawing = npnDrawing()
+  const at = (point: { x: number; y: number }) => `${symbol.x + point.x} ${symbol.y + point.y}`
+  const chain = (points: { x: number; y: number }[]) => points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${at(point)}`).join(' ')
+  return (
+    <G>
+      {drawing.lines.map((line) => (
+        <Path key={chain(line)} d={chain(line)} fill="none" stroke={ink} strokeWidth={1.75} />
+      ))}
+      <Circle cx={symbol.x + drawing.circle.cx} cy={symbol.y + drawing.circle.cy} r={drawing.circle.r} fill="none" stroke={ink} strokeWidth={1.5} />
+      <Path d={`${chain(drawing.arrow)} Z`} fill={ink} stroke={ink} strokeWidth={1} strokeLinejoin="miter" />
+      {symbol.pins.map((pin) => (
+        <SvgText
+          key={pin.portId}
+          x={pin.side === 'left' ? pin.x + 4 : pin.x - 12}
+          y={pin.side === 'up' ? pin.y + 16 : pin.side === 'down' ? pin.y - 4 : pin.y - 14}
+          fill={ink}
+          fontSize={11}
+          fontWeight="700"
+          textAnchor={pin.side === 'left' ? 'start' : 'end'}>
+          {pin.label}
+        </SvgText>
+      ))}
     </G>
   )
 }

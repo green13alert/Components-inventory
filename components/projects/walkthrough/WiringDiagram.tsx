@@ -29,7 +29,7 @@ import { toggleDiagramPanel, type DiagramPanel } from '@/lib/diagram-panel';
 import { retainWireFocus, toggleWireFocus } from '@/lib/diagram-selection';
 import { buildPhysicalScene, physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
 import { fitContentSize } from '@/lib/diagram-viewport';
-import { buildMotionSchematic } from '@/lib/schematic-sheet';
+import { buildMotionSchematic, buildRgbSchematic, buildServoSchematic, buildWeatherSchematic } from '@/lib/schematic-sheet';
 import {
   routeWiringDiagram,
   usedElementIds,
@@ -132,15 +132,17 @@ export function WiringDiagram({
       newJumpers: new Set(assembly.newJumpers),
     };
   }, [assembly, showPhysical]);
-  const wires = useMemo(
-    () => (layout && layout.slug !== '8' ? routeWiringDiagram(layout, connections, priorConnections) : []),
-    [connections, layout, priorConnections],
-  );
-  const motionSheet = useMemo(() => {
-    if (layout?.slug !== '8') {
+  const schematicSheet = useMemo(() => {
+    const build =
+      layout?.slug === '8' ? buildMotionSchematic :
+      layout?.slug === '18' ? buildServoSchematic :
+      layout?.slug === '23' ? buildWeatherSchematic :
+      layout?.slug === '24' ? buildRgbSchematic :
+      null;
+    if (!build || !layout) {
       return null;
     }
-    return buildMotionSchematic({
+    return build({
       layout,
       connections,
       priorConnections,
@@ -148,6 +150,10 @@ export function WiringDiagram({
       installedJumperIds: assembly.installedJumpers,
     });
   }, [assembly, connections, layout, priorConnections]);
+  const wires = useMemo(
+    () => (layout && !schematicSheet ? routeWiringDiagram(layout, connections, priorConnections) : []),
+    [connections, layout, priorConnections, schematicSheet],
+  );
   const installedKey = assembly.hasSequence ? assembly.installedParts.join('\n') : null;
   const groups = useMemo(() => {
     if (!layout?.physical) {
@@ -175,8 +181,8 @@ export function WiringDiagram({
     setFocusedWireIds((current) => retainWireFocus(current, wireKey.length > 0 ? wireKey.split('\n') : []));
   }, [wireKey]);
   const physicalSize = showPhysical && layout ? physicalSceneSize(layout) : null;
-  const contentWidth = physicalSize ? physicalSize.width : motionSheet ? motionSheet.width : (layout?.width ?? 1);
-  const contentHeight = physicalSize ? physicalSize.height : motionSheet ? motionSheet.height : (layout?.height ?? 1);
+  const contentWidth = physicalSize ? physicalSize.width : schematicSheet ? schematicSheet.width : (layout?.width ?? 1);
+  const contentHeight = physicalSize ? physicalSize.height : schematicSheet ? schematicSheet.height : (layout?.height ?? 1);
   const choose = (next: KeySelection) => setSelection((current) => toggleKeySelection(current, next));
   const selectPart = (id: string) => {
     setFocusedWireIds(null);
@@ -234,8 +240,8 @@ export function WiringDiagram({
             onSelectWire={(id) => focusWires([id])}
             onClear={clearFocus}
           />
-        ) : motionSheet ? (
-          <SchematicPreview sheet={motionSheet} />
+        ) : schematicSheet ? (
+          <SchematicPreview sheet={schematicSheet} />
         ) : layout ? (
           <VisualWiringCanvas layout={layout} wires={wires} />
         ) : (
@@ -307,8 +313,8 @@ export function WiringDiagram({
               selectedIds={selectedIds}
               focusedWireIds={focusedWireIds ?? []}
             />
-          ) : motionSheet ? (
-            <SchematicDiagram sheet={motionSheet} />
+          ) : schematicSheet ? (
+            <SchematicDiagram sheet={schematicSheet} />
           ) : (
             <SchematicFigure layout={layout} wires={wires} />
           )}

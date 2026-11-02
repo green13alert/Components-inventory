@@ -1,4 +1,5 @@
 import type { PhysicalEndpoint, WiringLayout } from '../constants/wiring-diagrams/types.ts'
+import { physicalElectricalGroups } from './breadboard-layout.ts'
 import type { StepConnection } from '../constants/walkthrough-content.ts'
 import {
   boxesOverlap,
@@ -12,12 +13,13 @@ import {
   type SchematicJunction,
 } from './schematic-geometry.ts'
 import { buildSchematicNetlist, netByMember, pinKey, type ElectricalNet, type SchematicNetlist } from './schematic-nets.ts'
-import { ledArrowBox } from './schematic-symbols.ts'
+import { ledArrowBox, npnDrawing, RGB_DIODE_WIDTH } from './schematic-symbols.ts'
 import { connectionKey } from './wiring-diagram.ts'
 
 /**
- * Project 8 schematic sheet. Placement is authored. Connectivity comes only from
- * buildSchematicNetlist. Other projects still use the existing schematic figure.
+ * Schematic sheets for Projects 8, 18, 23, and 24. Placement is authored.
+ * Connectivity comes only from buildSchematicNetlist. Other projects still use
+ * the existing schematic figure.
  */
 
 export type PinSide = 'left' | 'right' | 'up' | 'down'
@@ -32,7 +34,7 @@ export type SchematicPin = {
   netId: string | null
 }
 
-export type SchematicSymbolKind = 'block' | 'resistor' | 'led' | 'buzzer' | 'power' | 'ground'
+export type SchematicSymbolKind = 'block' | 'resistor' | 'led' | 'rgb-led' | 'npn' | 'buzzer' | 'servo' | 'connector' | 'power' | 'ground'
 
 export type SchematicSymbol = {
   id: string
@@ -168,6 +170,154 @@ const PLACED: Record<string, Point> = {
   buzzer: { x: 292, y: 292 },
 }
 
+type SchematicProject = {
+  slug: string
+  templates: SymbolTemplate[]
+  placed: Record<string, Point>
+  powerLabels: Record<string, string>
+}
+
+const MOTION: SchematicProject = {
+  slug: '8',
+  templates: TEMPLATES,
+  placed: PLACED,
+  powerLabels: {},
+}
+
+const SERVO_TEMPLATES: SymbolTemplate[] = [
+  {
+    componentId: 'arduino',
+    kind: 'block',
+    ref: 'U1',
+    value: 'Uno R3',
+    width: 168,
+    height: 440,
+    pins: [
+      { portId: '5v', label: '5V', x: 84, y: 0, side: 'up' },
+      { portId: 'a0', label: 'A0', x: 168, y: 48, side: 'right' },
+      { portId: 'a1', label: 'A1', x: 168, y: 104, side: 'right' },
+      { portId: 'd2', label: 'D2', x: 168, y: 160, side: 'right' },
+      { portId: 'd9', label: 'D9', x: 168, y: 232, side: 'right' },
+      { portId: 'd10', label: 'D10', x: 168, y: 384, side: 'right' },
+      { portId: 'gnd', label: 'GND', x: 84, y: 440, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'joystick',
+    kind: 'block',
+    ref: 'U2',
+    value: 'KY-023',
+    width: 156,
+    height: 176,
+    pins: [
+      { portId: '5v', label: '+5V', x: 78, y: 0, side: 'up' },
+      { portId: 'vrx', label: 'VRx', x: 0, y: 48, side: 'left' },
+      { portId: 'vry', label: 'VRy', x: 0, y: 104, side: 'left' },
+      { portId: 'sw', label: 'SW', x: 0, y: 160, side: 'left' },
+      { portId: 'gnd', label: 'GND', x: 78, y: 176, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'psu',
+    kind: 'connector',
+    ref: 'J1',
+    value: '2.1 mm jack',
+    width: 148,
+    height: 80,
+    pins: [
+      { portId: '5v', label: '+', x: 74, y: 0, side: 'up' },
+      { portId: 'gnd', label: '−', x: 74, y: 80, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'pan',
+    kind: 'servo',
+    ref: 'M1',
+    value: 'Pan',
+    width: 156,
+    height: 88,
+    pins: [
+      { portId: 'sig', label: 'SIG', x: 0, y: 40, side: 'left' },
+      { portId: 'vcc', label: 'VCC', x: 156, y: 24, side: 'right' },
+      { portId: 'gnd', label: 'GND', x: 78, y: 88, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'tilt',
+    kind: 'servo',
+    ref: 'M2',
+    value: 'Tilt',
+    width: 156,
+    height: 88,
+    pins: [
+      { portId: 'sig', label: 'SIG', x: 0, y: 40, side: 'left' },
+      { portId: 'vcc', label: 'VCC', x: 156, y: 24, side: 'right' },
+      { portId: 'gnd', label: 'GND', x: 78, y: 88, side: 'down' },
+    ],
+  },
+]
+
+const SERVO_PLACED: Record<string, Point> = {
+  arduino: { x: 20, y: 64 },
+  joystick: { x: 248, y: 64 },
+  psu: { x: 460, y: 56 },
+  pan: { x: 460, y: 256 },
+  tilt: { x: 460, y: 408 },
+}
+
+const SERVO: SchematicProject = {
+  slug: '18',
+  templates: SERVO_TEMPLATES,
+  placed: SERVO_PLACED,
+  powerLabels: {
+    'arduino:5v': '+5V_LOGIC',
+    'psu:5v': '+5V_SERVO',
+  },
+}
+
+const WEATHER_TEMPLATES: SymbolTemplate[] = [
+  {
+    componentId: 'esp32',
+    kind: 'block',
+    ref: 'U1',
+    value: 'ESP32-DevKitC V4',
+    width: 220,
+    height: 144,
+    pins: [
+      { portId: '3v3', label: '3V3', x: 110, y: 0, side: 'up' },
+      { portId: 'io21', label: 'IO21', x: 220, y: 36, side: 'right' },
+      { portId: 'io22', label: 'IO22', x: 220, y: 108, side: 'right' },
+      { portId: 'gnd', label: 'GND', x: 110, y: 144, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'bme280',
+    kind: 'block',
+    ref: 'U2',
+    value: 'BME280',
+    width: 156,
+    height: 144,
+    pins: [
+      { portId: 'vin', label: 'Vin', x: 78, y: 0, side: 'up' },
+      { portId: 'sdi', label: 'SDI', x: 0, y: 36, side: 'left' },
+      { portId: 'sck', label: 'SCK', x: 0, y: 108, side: 'left' },
+      { portId: 'gnd', label: 'GND', x: 78, y: 144, side: 'down' },
+    ],
+  },
+]
+
+const WEATHER_PLACED: Record<string, Point> = {
+  esp32: { x: 16, y: 56 },
+  bme280: { x: 308, y: 56 },
+}
+
+const WEATHER: SchematicProject = {
+  slug: '23',
+  templates: WEATHER_TEMPLATES,
+  placed: WEATHER_PLACED,
+  powerLabels: {},
+}
+
 const EMPTY: SchematicSheet = {
   width: 320,
   height: 160,
@@ -186,8 +336,161 @@ export function buildMotionSchematic(input: {
   installedPartIds: readonly string[]
   installedJumperIds: readonly string[]
 }): SchematicSheet {
-  if (input.layout.slug !== '8') {
-    return { ...EMPTY, issues: [{ code: 'unsupported-project', message: 'This schematic sheet is only built for Project 8.' }] }
+  return buildProjectSchematic(MOTION, input)
+}
+
+export function buildServoSchematic(input: {
+  layout: WiringLayout
+  connections: readonly StepConnection[]
+  priorConnections?: readonly StepConnection[]
+  installedPartIds: readonly string[]
+  installedJumperIds: readonly string[]
+}): SchematicSheet {
+  return buildProjectSchematic(SERVO, input)
+}
+
+export function buildWeatherSchematic(input: {
+  layout: WiringLayout
+  connections: readonly StepConnection[]
+  priorConnections?: readonly StepConnection[]
+  installedPartIds: readonly string[]
+  installedJumperIds: readonly string[]
+}): SchematicSheet {
+  return buildProjectSchematic(WEATHER, input)
+}
+
+const NPN = npnDrawing()
+const RGB_PITCH = 176
+const RGB_RED_BASE = 188
+const RGB_ESP_X = 20
+const RGB_ESP_Y = 64
+const RGB_ESP_W = 224
+const RGB_BASE_X = 288
+const RGB_Q_X = 396
+const RGB_LIMIT_X = RGB_Q_X + NPN.collector.x + 36
+const RGB_LED_X = RGB_LIMIT_X + 72 + 32
+const RGB_CATHODE_Y = 40
+
+function rgbChannel(index: number): { base: number; collector: number } {
+  const base = RGB_RED_BASE + index * RGB_PITCH
+  return { base, collector: base - NPN.base.y }
+}
+
+function rgbResistor(componentId: string, ref: string, ohms: string): SymbolTemplate {
+  return {
+    componentId,
+    kind: 'resistor',
+    ref,
+    value: ohms,
+    width: 72,
+    height: 16,
+    pins: [
+      { portId: 'leg1', label: '', x: 0, y: 8, side: 'left' },
+      { portId: 'leg2', label: '', x: 72, y: 8, side: 'right' },
+    ],
+  }
+}
+
+function rgbTransistor(componentId: string, ref: string): SymbolTemplate {
+  return {
+    componentId,
+    kind: 'npn',
+    ref,
+    value: 'NPN',
+    width: NPN.width,
+    height: NPN.height,
+    pins: [
+      { portId: 'base', label: 'B', x: NPN.base.x, y: NPN.base.y, side: 'left' },
+      { portId: 'collector', label: 'C', x: NPN.collector.x, y: NPN.collector.y, side: 'up' },
+      { portId: 'emitter', label: 'E', x: NPN.emitter.x, y: NPN.emitter.y, side: 'down' },
+    ],
+  }
+}
+
+const RGB_CHANNELS = [
+  { colour: 'red', gpio: 'io25', label: 'IO25', index: 0, baseRef: 'R1', limitRef: 'R2', transistor: 'Q1' },
+  { colour: 'green', gpio: 'io26', label: 'IO26', index: 1, baseRef: 'R3', limitRef: 'R4', transistor: 'Q2' },
+  { colour: 'blue', gpio: 'io27', label: 'IO27', index: 2, baseRef: 'R5', limitRef: 'R6', transistor: 'Q3' },
+] as const
+
+const RGB_TEMPLATES: SymbolTemplate[] = [
+  {
+    componentId: 'esp32',
+    kind: 'block',
+    ref: 'U1',
+    value: 'ESP32-DevKitC V4',
+    width: RGB_ESP_W,
+    height: rgbChannel(2).base + 56 - RGB_ESP_Y,
+    pins: [
+      { portId: 'v5', label: '5V', x: RGB_ESP_W / 2, y: 0, side: 'up' },
+      ...RGB_CHANNELS.map((channel) => ({
+        portId: channel.gpio,
+        label: channel.label,
+        x: RGB_ESP_W,
+        y: rgbChannel(channel.index).base - RGB_ESP_Y,
+        side: 'right' as const,
+      })),
+      { portId: 'gnd', label: 'GND', x: RGB_ESP_W / 2, y: rgbChannel(2).base + 56 - RGB_ESP_Y, side: 'down' },
+    ],
+  },
+  ...RGB_CHANNELS.flatMap((channel) => [
+    rgbResistor(`base-${channel.colour}`, channel.baseRef, '1 kΩ'),
+    rgbTransistor(`q-${channel.colour}`, channel.transistor),
+    rgbResistor(`limit-${channel.colour}`, channel.limitRef, '220 Ω'),
+  ]),
+  {
+    componentId: 'led',
+    kind: 'rgb-led',
+    ref: 'D1',
+    value: 'RGB',
+    width: RGB_DIODE_WIDTH,
+    height: RGB_CATHODE_Y + (RGB_CHANNELS.length - 1) * RGB_PITCH + 36,
+    pins: [
+      { portId: 'anode', label: 'A', x: RGB_DIODE_WIDTH, y: 0, side: 'up' },
+      { portId: 'red', label: 'R', x: 0, y: RGB_CATHODE_Y, side: 'left' },
+      { portId: 'green', label: 'G', x: 0, y: RGB_CATHODE_Y + RGB_PITCH, side: 'left' },
+      { portId: 'blue', label: 'B', x: 0, y: RGB_CATHODE_Y + 2 * RGB_PITCH, side: 'left' },
+    ],
+  },
+]
+
+const RGB_PLACED: Record<string, Point> = {
+  esp32: { x: RGB_ESP_X, y: RGB_ESP_Y },
+  led: { x: RGB_LED_X, y: rgbChannel(0).collector - RGB_CATHODE_Y },
+}
+for (const channel of RGB_CHANNELS) {
+  const row = rgbChannel(channel.index)
+  RGB_PLACED[`base-${channel.colour}`] = { x: RGB_BASE_X, y: row.base - 8 }
+  RGB_PLACED[`q-${channel.colour}`] = { x: RGB_Q_X, y: row.base - NPN.base.y }
+  RGB_PLACED[`limit-${channel.colour}`] = { x: RGB_LIMIT_X, y: row.collector - 8 }
+}
+
+const RGB: SchematicProject = {
+  slug: '24',
+  templates: RGB_TEMPLATES,
+  placed: RGB_PLACED,
+  powerLabels: {},
+}
+
+export function buildRgbSchematic(input: {
+  layout: WiringLayout
+  connections: readonly StepConnection[]
+  priorConnections?: readonly StepConnection[]
+  installedPartIds: readonly string[]
+  installedJumperIds: readonly string[]
+}): SchematicSheet {
+  return buildProjectSchematic(RGB, input)
+}
+
+function buildProjectSchematic(project: SchematicProject, input: {
+  layout: WiringLayout
+  connections: readonly StepConnection[]
+  priorConnections?: readonly StepConnection[]
+  installedPartIds: readonly string[]
+  installedJumperIds: readonly string[]
+}): SchematicSheet {
+  if (input.layout.slug !== project.slug) {
+    return { ...EMPTY, issues: [{ code: 'unsupported-project', message: `This schematic sheet is only built for project ${project.slug}.` }] }
   }
 
   const visible = mergeConnections(input.priorConnections ?? [], input.connections)
@@ -205,14 +508,27 @@ export function buildMotionSchematic(input: {
 
   const connectedPins = new Set(probed.links.flatMap((link) => [pinKey(link.from), pinKey(link.to)]))
   const scoped = scopeLayout(input.layout, new Set(input.installedPartIds), new Set(input.installedJumperIds), connectedPins)
-  const netlist = buildSchematicNetlist(scoped, visible)
+  const placed = placedPinKeys(scoped)
+  if (probed.links.length !== visible.length) {
+    return {
+      ...EMPTY,
+      issues: [{ code: 'unresolved-link', message: 'A listed connection could not be matched to its pins.' }],
+    }
+  }
+  // A connections table can preview the finished pin map before those jumpers
+  // exist. Only rows whose pins are on the assembled board are drawn.
+  const wired = visible.filter((_, index) => {
+    const link = probed.links[index]
+    return link != null && placed.has(pinKey(link.from)) && placed.has(pinKey(link.to))
+  })
+  const netlist = buildSchematicNetlist(scoped, wired)
   if (netlist.issues.length > 0) {
     return { ...EMPTY, issues: netlist.issues.map(diagnostic) }
   }
 
   const installed = new Set(input.installedPartIds)
-  const symbols = TEMPLATES.filter((template) => installed.has(template.componentId)).map((template) =>
-    placeSymbol(template, netlist),
+  const symbols = project.templates.filter((template) => installed.has(template.componentId)).map((template) =>
+    placeSymbol(template, netlist, project.placed),
   )
   const missing = missingPins(symbols, netlist, installed)
   if (missing.length > 0) {
@@ -220,11 +536,19 @@ export function buildMotionSchematic(input: {
   }
 
   const boxes = symbols.map(symbolBox)
-  const led = symbols.find((item) => item.id === 'led')
+  const led = symbols.find((item) => item.kind === 'led')
   if (led) {
     const center = led.pins.find((pin) => pin.portId === 'anode')
     if (center) {
       boxes.push(ledArrowBox({ x: led.x, y: led.y }, led.width, center.y - led.y))
+    }
+  }
+  for (const rgb of symbols.filter((item) => item.kind === 'rgb-led')) {
+    for (const pin of rgb.pins) {
+      if (pin.portId === 'anode') {
+        continue
+      }
+      boxes.push(ledArrowBox({ x: pin.x, y: rgb.y }, RGB_DIODE_WIDTH, pin.y - rgb.y, true))
     }
   }
   const wires: SchematicWire[] = []
@@ -242,7 +566,7 @@ export function buildMotionSchematic(input: {
       }
       const run = supplyRun(pin)
       const anchor = run.points[run.points.length - 1]
-      const supply = supplySymbol(pin, net, netlist, anchor, run.approach)
+      const supply = supplySymbol(pin, net, netlist, anchor, run.approach, project)
       if (boxes.some((box) => boxesOverlap(symbolBox(supply), box)) || powerSymbols.some((item) => boxesOverlap(symbolBox(supply), symbolBox(item)))) {
         issues.push({ code: 'symbol-overlap', message: `${supply.value} on ${pin.componentId} ${pin.portId} overlaps another symbol.` })
         continue
@@ -344,6 +668,16 @@ function withoutPlacement(layout: WiringLayout): WiringLayout {
   return { ...layout, physical: { ...layout.physical, leads: [], jumpers: [] } }
 }
 
+function placedPinKeys(layout: WiringLayout): Set<string> {
+  const keys = new Set<string>()
+  for (const members of physicalElectricalGroups(layout).values()) {
+    for (const member of members) {
+      keys.add(member)
+    }
+  }
+  return keys
+}
+
 function modulePin(endpoint: PhysicalEndpoint): string | null {
   if ('kind' in endpoint && endpoint.kind === 'module') {
     return `${endpoint.elementId}:${endpoint.portId}`
@@ -365,7 +699,7 @@ function scopeLayout(
     ...layout,
     physical: {
       ...physical,
-      leads: physical.leads.filter((lead) => installedParts.has(lead.elementId)),
+      leads: physical.leads.filter((lead) => installedParts.has(lead.elementId) && connectedPins.has(`${lead.elementId}:${lead.portId}`)),
       jumpers: physical.jumpers.filter((jumper) => {
         if (!installedJumpers.has(jumper.id)) {
           return false
@@ -377,8 +711,8 @@ function scopeLayout(
   }
 }
 
-function placeSymbol(template: SymbolTemplate, netlist: SchematicNetlist): SchematicSymbol {
-  const origin = PLACED[template.componentId]
+function placeSymbol(template: SymbolTemplate, netlist: SchematicNetlist, placed: Record<string, Point>): SchematicSymbol {
+  const origin = placed[template.componentId]
   return {
     id: template.componentId,
     kind: template.kind,
@@ -437,13 +771,17 @@ function supplyRun(pin: SchematicPin): { points: Point[]; approach: PinSide } {
     const bend = { x: pin.x + 32, y: pin.y }
     return { points: [pointOf(pin), bend, { x: bend.x, y: pin.y - 56 }], approach: 'up' }
   }
+  if ((pin.componentId === 'pan' || pin.componentId === 'tilt') && pin.portId === 'vcc') {
+    const bend = { x: pin.x + 36, y: pin.y }
+    return { points: [pointOf(pin), bend, { x: bend.x, y: pin.y - 48 }], approach: 'up' }
+  }
   return { points: [pointOf(pin), step(pin, pin.side, STUB)], approach: pin.side }
 }
 
-function supplySymbol(pin: SchematicPin, net: ElectricalNet, netlist: SchematicNetlist, anchor: Point, approach: PinSide): SchematicSymbol {
+function supplySymbol(pin: SchematicPin, net: ElectricalNet, netlist: SchematicNetlist, anchor: Point, approach: PinSide, project: SchematicProject): SchematicSymbol {
   const power = net.kind === 'power'
-  const text = power ? powerCaption(net, netlist) : groundCaption(net, netlist)
-  const width = power ? 52 : 36
+  const text = power ? powerCaption(net, netlist, project) : groundCaption(net, netlist, project)
+  const width = power ? Math.max(52, text.length * 8) : 36
   const height = power ? 22 : 20
   const box = bodyBeside(anchor, approach, width, height)
   return {
@@ -461,23 +799,28 @@ function supplySymbol(pin: SchematicPin, net: ElectricalNet, netlist: SchematicN
   }
 }
 
-function powerCaption(net: ElectricalNet, netlist: SchematicNetlist): string {
-  const volts = net.sources[0]?.portId === '3v3' ? '+3.3V' : '+5V'
+function powerCaption(net: ElectricalNet, netlist: SchematicNetlist, project: SchematicProject): string {
+  const source = net.sources[0]
+  const named = source ? project.powerLabels[`${source.componentId}:${source.portId}`] : undefined
+  if (named) {
+    return named
+  }
+  const volts = source?.portId === '3v3' ? '+3.3V' : '+5V'
   const matches = netlist.nets.filter((item) => item.kind === 'power' && (item.sources[0]?.portId === '3v3' ? '+3.3V' : '+5V') === volts)
-  if (matches.length < 2 || !net.sources[0]) {
+  if (matches.length < 2 || !source) {
     return volts
   }
-  const ref = TEMPLATES.find((item) => item.componentId === net.sources[0].componentId)?.ref
-  return `${volts} ${ref ?? net.sources[0].componentId}`
+  const ref = project.templates.find((item) => item.componentId === source.componentId)?.ref
+  return `${volts} ${ref ?? source.componentId}`
 }
 
-function groundCaption(net: ElectricalNet, netlist: SchematicNetlist): string {
+function groundCaption(net: ElectricalNet, netlist: SchematicNetlist, project: SchematicProject): string {
   const grounds = netlist.nets.filter((item) => item.kind === 'ground')
   if (grounds.length < 2) {
     return 'GND'
   }
   const source = net.members.find((member) => member.portId === 'gnd')
-  const ref = source ? TEMPLATES.find((item) => item.componentId === source.componentId)?.ref : null
+  const ref = source ? project.templates.find((item) => item.componentId === source.componentId)?.ref : null
   return ref ? `GND ${ref}` : 'GND'
 }
 
@@ -562,6 +905,9 @@ function outsideLabels(symbols: SchematicSymbol[]): SchematicLabel[] {
     }
     if (symbol.kind === 'block' && symbol.height < 80 && symbol.value) {
       labels.push({ x: symbol.x + symbol.width + 8, y: symbol.y + symbol.height / 2 - 8, width: 40, height: 16, text: symbol.value })
+    }
+    if (symbol.kind === 'npn' && symbol.ref) {
+      labels.push({ x: symbol.x + symbol.width + 6, y: symbol.y + symbol.height / 2 - 8, width: 28, height: 16, text: symbol.ref })
     }
   }
   return labels
