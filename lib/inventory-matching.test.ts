@@ -465,30 +465,245 @@ test('unknown data, a conditional review, and a failed lookup do not cover a dif
   assert.equal(failedLookup.lines[0]?.isOwned, false)
 })
 
-test('one owned unit covers only one of two exact lines for the same component', () => {
-  const first: MatchableBomLine = {
-    id: 'synthetic-servo-a',
+/**
+ * Synthetic stock-allocation cases. None of these bills of materials are authored
+ * projects. A direct-substitute review in this section is a fixture, not an approval.
+ * ownedQuantity stays the canonical inventory total. missingQuantity is what that
+ * line still needs after earlier lines have taken units.
+ */
+
+function servoLine(id: string, quantity: number, sortOrder: number): MatchableBomLine {
+  return {
+    id,
     componentId: 'sg90',
     slug: 'sg90',
     name: 'SG90 Micro Servo',
     description: null,
-    quantity: 1,
-    sortOrder: 1,
+    quantity,
+    sortOrder,
   }
-  const second: MatchableBomLine = {
-    id: 'synthetic-servo-b',
-    componentId: 'sg90',
-    slug: 'sg90',
-    name: 'SG90 Micro Servo',
-    description: null,
-    quantity: 1,
-    sortOrder: 2,
-  }
-  const match = matchProjectInventory([first, second], [{ componentId: 'sg90', quantity: 1 }])
-  assert.equal(match.lines[0]?.coverage, 'exact')
+}
+
+function twoServoLines(quantity: number): [MatchableBomLine, MatchableBomLine] {
+  return [servoLine('synthetic-servo-a', quantity, 1), servoLine('synthetic-servo-b', quantity, 2)]
+}
+
+test('scenario A: one SG90 covers the first of two exact lines and the second is short by one', () => {
+  const [first, second] = twoServoLines(1)
+  const inventory = [{ componentId: 'sg90', quantity: 1 }]
+  const match = matchProjectInventory([first, second], inventory)
+  assert.deepEqual(match, matchProjectInventory([first, second], inventory), 'allocation is deterministic')
+  assert.equal(match.lines[0]?.coverage, 'exact', 'first line takes the only unit')
   assert.equal(match.lines[0]?.isOwned, true)
-  assert.equal(match.lines[1]?.coverage, 'none')
+  assert.equal(match.lines[0]?.missingQuantity, 0)
+  assert.equal(match.lines[0]?.ownedQuantity, 1, 'owned quantity stays the canonical total')
+  assert.equal(match.lines[1]?.coverage, 'none', 'second line stays uncovered')
   assert.equal(match.lines[1]?.isOwned, false)
+  assert.equal(match.lines[1]?.satisfiedByComponentId, null)
+  assert.equal(match.lines[1]?.missingQuantity, 1, 'the allocated unit is no longer available')
+  assert.equal(match.lines[1]?.ownedQuantity, 1)
   assert.equal(match.missingCount, 1)
   assert.equal(match.ownedCount, 1)
+  assert.equal(match.totalRequired, 2)
+  assert.equal(match.totalMissing, 1)
+  assert.equal(match.matchPercentage, 50)
+
+  const reversed = matchProjectInventory([second, first], inventory)
+  assert.equal(reversed.lines[0]?.coverage, 'none', 'later sort order does not take the unit')
+  assert.equal(reversed.lines[0]?.missingQuantity, 1)
+  assert.equal(reversed.lines[1]?.coverage, 'exact')
+  assert.equal(reversed.lines[1]?.missingQuantity, 0)
 })
+
+test('scenario B: two owned SG90s cover two exact lines', () => {
+  const lines = twoServoLines(1)
+  const inventory = [{ componentId: 'sg90', quantity: 2 }]
+  const match = matchProjectInventory(lines, inventory)
+  assert.deepEqual(match, matchProjectInventory(lines, inventory))
+  assert.equal(match.ownedCount, 2)
+  assert.equal(match.missingCount, 0)
+  assert.equal(match.totalMissing, 0)
+  assert.equal(match.matchPercentage, 100)
+  for (const [index, line] of match.lines.entries()) {
+    const label = `line ${index + 1}`
+    assert.equal(line.coverage, 'exact', label)
+    assert.equal(line.isOwned, true, label)
+    assert.equal(line.missingQuantity, 0, label)
+    assert.equal(line.satisfiedByComponentId, 'sg90', label)
+    assert.equal(line.ownedQuantity, 2, label)
+  }
+})
+
+test('scenario C: three SG90s cover a line of two and leave the next line short by one', () => {
+  const lines = twoServoLines(2)
+  const match = matchProjectInventory(lines, [{ componentId: 'sg90', quantity: 3 }])
+  assert.equal(match.lines[0]?.coverage, 'exact')
+  assert.equal(match.lines[0]?.missingQuantity, 0)
+  assert.equal(match.lines[0]?.ownedQuantity, 3)
+  assert.equal(match.lines[1]?.coverage, 'none', 'one leftover unit does not finish a line of two')
+  assert.equal(match.lines[1]?.isOwned, false)
+  assert.equal(match.lines[1]?.missingQuantity, 1, 'the leftover unit reduces the shortfall')
+  assert.equal(match.lines[1]?.ownedQuantity, 3)
+  assert.equal(match.ownedCount, 1)
+  assert.equal(match.missingCount, 1)
+  assert.equal(match.totalMissing, 1)
+  assert.equal(match.matchPercentage, 50)
+
+  const uncovered = [
+    servoLine('synthetic-servo-a', 2, 1),
+    servoLine('synthetic-servo-b', 2, 2),
+    servoLine('synthetic-servo-c', 2, 3),
+  ]
+  const partial = matchProjectInventory(uncovered, [{ componentId: 'sg90', quantity: 1 }])
+  assert.deepEqual(
+    partial.lines.map((line) => line.missingQuantity),
+    [1, 2, 2],
+    'one leftover unit is credited to the first uncovered line only',
+  )
+  assert.equal(partial.ownedCount, 0)
+  assert.equal(partial.missingCount, 3)
+  assert.equal(partial.totalMissing, 5)
+  assert.equal(partial.matchPercentage, 0)
+})
+
+test('scenario D: no SG90 stock leaves both lines short by one', () => {
+  const lines = twoServoLines(1)
+  const match = matchProjectInventory(lines, [])
+  assert.equal(match.ownedCount, 0)
+  assert.equal(match.missingCount, 2)
+  assert.equal(match.totalMissing, 2)
+  assert.equal(match.matchPercentage, 0)
+  for (const [index, line] of match.lines.entries()) {
+    const label = `line ${index + 1}`
+    assert.equal(line.coverage, 'none', label)
+    assert.equal(line.isOwned, false, label)
+    assert.equal(line.missingQuantity, 1, label)
+    assert.equal(line.ownedQuantity, 0, label)
+    assert.equal(line.satisfiedByComponentId, null, label)
+  }
+})
+
+test('scenario E: unrelated stock does not change shared-component allocation', () => {
+  const cases = [
+    { lines: twoServoLines(1), inventory: [{ componentId: 'sg90', quantity: 1 }] },
+    { lines: twoServoLines(1), inventory: [{ componentId: 'sg90', quantity: 2 }] },
+    { lines: twoServoLines(2), inventory: [{ componentId: 'sg90', quantity: 3 }] },
+    { lines: twoServoLines(1), inventory: [] as Stock[] },
+  ]
+  for (const [index, item] of cases.entries()) {
+    const plain = matchProjectInventory(item.lines, item.inventory)
+    const withExtra = matchProjectInventory(item.lines, [
+      ...item.inventory,
+      { componentId: 'hc-sr04', quantity: 4 },
+    ])
+    assert.deepEqual(withExtra, plain, `case ${index}`)
+  }
+})
+
+test('scenario F: an approved substitute covers a second line without consuming the exact unit twice', () => {
+  const [first, second] = twoLimiterLines()
+  const third: MatchableBomLine = { ...first, id: 'synthetic-limiter-c', sortOrder: 3 }
+  const data = limiterCompatibility([first, second, third])
+  const exactAndSubstitute = [
+    { componentId: 'resistor-220', quantity: 1 },
+    { componentId: 'resistor', quantity: 1 },
+  ]
+  const match = matchProjectInventory([first, second, third], exactAndSubstitute, data)
+  assert.deepEqual(match, matchProjectInventory([first, second, third], exactAndSubstitute, data))
+  assert.equal(match.lines[0]?.coverage, 'exact', 'exact stock is allocated before the substitute')
+  assert.equal(match.lines[0]?.satisfiedByComponentId, 'resistor-220')
+  assert.equal(match.lines[0]?.missingQuantity, 0)
+  assert.equal(match.lines[1]?.coverage, 'direct_substitute')
+  assert.equal(match.lines[1]?.satisfiedByComponentId, 'resistor', 'the substitute covers only the next line')
+  assert.equal(match.lines[1]?.missingQuantity, 0)
+  assert.equal(match.lines[1]?.ownedQuantity, 1, 'owned quantity counts the canonical part, not the substitute')
+  assert.equal(match.lines[2]?.coverage, 'none')
+  assert.equal(match.lines[2]?.isOwned, false)
+  assert.equal(match.lines[2]?.missingQuantity, 1, 'one exact unit and one substitute leave the third line short')
+  assert.equal(match.ownedCount, 2)
+  assert.equal(match.missingCount, 1)
+  assert.equal(match.totalMissing, 1)
+  assert.equal(match.matchPercentage, (2 / 3) * 100)
+
+  const substituteOnly = matchProjectInventory([first, second], [{ componentId: 'resistor', quantity: 1 }], data)
+  assert.equal(substituteOnly.lines[0]?.coverage, 'direct_substitute')
+  assert.equal(substituteOnly.lines[0]?.missingQuantity, 0)
+  assert.equal(substituteOnly.lines[0]?.ownedQuantity, 0)
+  assert.equal(substituteOnly.lines[1]?.coverage, 'none', 'one substitute unit is not used twice')
+  assert.equal(substituteOnly.lines[1]?.missingQuantity, 1)
+  assert.equal(substituteOnly.lines[1]?.ownedQuantity, 0)
+  assert.equal(substituteOnly.totalMissing, 1)
+
+  const conditional: ProjectCompatibilityData = {
+    ...data,
+    reviews: data.reviews.map((review) =>
+      review.requirementId === second.id
+        ? {
+            ...review,
+            assessedResult: 'conditional' as const,
+            changes: [{ changeKind: 'wiring' as const, summary: 'Move one lead.' }],
+          }
+        : review,
+    ),
+  }
+  const held = matchProjectInventory(
+    [first, second],
+    exactAndSubstitute,
+    conditional,
+  )
+  assert.equal(held.lines[0]?.coverage, 'exact')
+  assert.equal(held.lines[0]?.satisfiedByComponentId, 'resistor-220', 'the conditional review does not take the exact unit')
+  assert.equal(held.lines[1]?.coverage, 'none', 'a conditional review is not coverage')
+  assert.equal(held.lines[1]?.missingQuantity, 1)
+  assert.equal(held.totalMissing, 1)
+})
+
+function twoLimiterLines(): [MatchableBomLine, MatchableBomLine] {
+  return [
+    {
+      id: 'synthetic-limiter-a',
+      componentId: 'resistor-220',
+      slug: 'resistor-220',
+      name: '220 Ω resistor',
+      description: null,
+      quantity: 1,
+      sortOrder: 1,
+    },
+    {
+      id: 'synthetic-limiter-b',
+      componentId: 'resistor-220',
+      slug: 'resistor-220',
+      name: '220 Ω resistor',
+      description: null,
+      quantity: 1,
+      sortOrder: 2,
+    },
+  ]
+}
+
+function limiterCompatibility(lines: readonly MatchableBomLine[]): ProjectCompatibilityData {
+  return {
+    requirementsByBomLineId: new Map(
+      lines.map((line) => [
+        line.id,
+        {
+          id: line.id,
+          policy: 'direct' as const,
+          canonicalComponentId: line.componentId,
+          constraints: [],
+          pinRoles: [],
+        },
+      ]),
+    ),
+    componentsById: new Map([
+      ['resistor-220', componentRecord('resistor-220', [])],
+      ['resistor', componentRecord('resistor', [])],
+    ]),
+    reviews: lines.map((line) => ({
+      requirementId: line.id,
+      componentId: 'resistor',
+      assessedResult: 'direct' as const,
+      changes: [],
+    })),
+  }
+}

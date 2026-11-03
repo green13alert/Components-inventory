@@ -671,7 +671,8 @@ function reviewFor(
  * Exact catalogue ids are allocated first. A different owned part can cover a
  * line only when the evaluator's direct-substitute result explicitly allows it.
  * One owned unit is never allocated to two lines. Missing compatibility data
- * does not create a substitute.
+ * does not create a substitute. An uncovered line's missing quantity is its
+ * requirement minus canonical stock that earlier lines have not already taken.
  */
 export function matchProjectInventory(
   bom: readonly MatchableBomLine[],
@@ -752,6 +753,21 @@ export function matchProjectInventory(
     }
   }
 
+  const unallocated = new Map(remaining)
+  const missingByLineId = new Map<string, number>()
+  for (const { line } of ordered) {
+    if (coverageByLineId.has(line.id)) {
+      missingByLineId.set(line.id, 0)
+      continue
+    }
+    const available = unallocated.get(line.componentId) ?? 0
+    const credited = Math.min(available, line.quantity)
+    missingByLineId.set(line.id, line.quantity - credited)
+    if (credited > 0) {
+      unallocated.set(line.componentId, available - credited)
+    }
+  }
+
   const lines = bom.map((line) => {
     const ownedQuantity = totals.get(line.componentId) ?? 0
     const satisfied = coverageByLineId.get(line.id)
@@ -763,7 +779,7 @@ export function matchProjectInventory(
       description: line.description,
       requiredQuantity: line.quantity,
       ownedQuantity,
-      missingQuantity: isOwned ? 0 : Math.max(line.quantity - ownedQuantity, 0),
+      missingQuantity: missingByLineId.get(line.id) ?? line.quantity,
       isOwned,
       coverage: satisfied?.coverage ?? 'none',
       satisfiedByComponentId: satisfied?.satisfiedByComponentId ?? null,
