@@ -29,7 +29,7 @@ import { toggleDiagramPanel, type DiagramPanel } from '@/lib/diagram-panel';
 import { retainWireFocus, toggleWireFocus } from '@/lib/diagram-selection';
 import { buildPhysicalScene, physicalSceneSize, type AssemblyFrame } from '@/lib/physical-scene';
 import { fitContentSize } from '@/lib/diagram-viewport';
-import { buildMotionSchematic, buildRgbSchematic, buildServoSchematic, buildWeatherSchematic } from '@/lib/schematic-sheet';
+import { buildMazeSchematic, buildMotionSchematic, buildRgbSchematic, buildServoSchematic, buildWeatherSchematic } from '@/lib/schematic-sheet';
 import {
   routeWiringDiagram,
   usedElementIds,
@@ -138,6 +138,7 @@ export function WiringDiagram({
       layout?.slug === '18' ? buildServoSchematic :
       layout?.slug === '23' ? buildWeatherSchematic :
       layout?.slug === '24' ? buildRgbSchematic :
+      layout?.slug === '25' ? buildMazeSchematic :
       null;
     if (!build || !layout) {
       return null;

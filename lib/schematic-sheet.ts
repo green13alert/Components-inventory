@@ -17,7 +17,7 @@ import { ledArrowBox, npnDrawing, RGB_DIODE_WIDTH } from './schematic-symbols.ts
 import { connectionKey } from './wiring-diagram.ts'
 
 /**
- * Schematic sheets for Projects 8, 18, 23, and 24. Placement is authored.
+ * Schematic sheets for Projects 8, 18, 23, 24, and 25. Placement is authored.
  * Connectivity comes only from buildSchematicNetlist. Other projects still use
  * the existing schematic figure.
  */
@@ -480,6 +480,91 @@ export function buildRgbSchematic(input: {
   installedJumperIds: readonly string[]
 }): SchematicSheet {
   return buildProjectSchematic(RGB, input)
+}
+
+const MAZE_UNO_X = 20
+const MAZE_UNO_Y = 64
+const MAZE_UNO_W = 168
+const MAZE_MOD_X = 292
+const MAZE_MAT_W = 208
+const MAZE_MAT_H = 208
+const MAZE_JOY_W = 156
+const MAZE_JOY_H = 176
+const MAZE_JOY_Y = 392
+const MAZE_UNO_H = MAZE_JOY_Y + 160 - MAZE_UNO_Y + 56
+
+const MAZE_TEMPLATES: SymbolTemplate[] = [
+  {
+    componentId: 'arduino',
+    kind: 'block',
+    ref: 'U1',
+    value: 'Uno R3',
+    width: MAZE_UNO_W,
+    height: MAZE_UNO_H,
+    pins: [
+      { portId: '5v', label: '5V', x: MAZE_UNO_W / 2, y: 0, side: 'up' },
+      { portId: 'd13', label: 'D13', x: MAZE_UNO_W, y: 48, side: 'right' },
+      { portId: 'd10', label: 'D10', x: MAZE_UNO_W, y: 104, side: 'right' },
+      { portId: 'd11', label: 'D11', x: MAZE_UNO_W, y: 160, side: 'right' },
+      { portId: 'a0', label: 'A0', x: MAZE_UNO_W, y: MAZE_JOY_Y + 48 - MAZE_UNO_Y, side: 'right' },
+      { portId: 'a1', label: 'A1', x: MAZE_UNO_W, y: MAZE_JOY_Y + 104 - MAZE_UNO_Y, side: 'right' },
+      { portId: 'd2', label: 'D2', x: MAZE_UNO_W, y: MAZE_JOY_Y + 160 - MAZE_UNO_Y, side: 'right' },
+      { portId: 'gnd', label: 'GND', x: MAZE_UNO_W / 2, y: MAZE_UNO_H, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'matrix',
+    kind: 'block',
+    ref: 'U2',
+    value: 'FC-16 MAX7219 8×8',
+    width: MAZE_MAT_W,
+    height: MAZE_MAT_H,
+    pins: [
+      { portId: 'vcc', label: 'VCC', x: MAZE_MAT_W / 2, y: 0, side: 'up' },
+      { portId: 'clk', label: 'CLK', x: 0, y: 48, side: 'left' },
+      { portId: 'cs', label: 'CS', x: 0, y: 104, side: 'left' },
+      { portId: 'din', label: 'DIN', x: 0, y: 160, side: 'left' },
+      { portId: 'gnd', label: 'GND', x: MAZE_MAT_W / 2, y: MAZE_MAT_H, side: 'down' },
+    ],
+  },
+  {
+    componentId: 'joystick',
+    kind: 'block',
+    ref: 'U3',
+    value: 'KY-023',
+    width: MAZE_JOY_W,
+    height: MAZE_JOY_H,
+    pins: [
+      { portId: 'vcc', label: '+5V', x: MAZE_JOY_W / 2, y: 0, side: 'up' },
+      { portId: 'vrx', label: 'VRx', x: 0, y: 48, side: 'left' },
+      { portId: 'vry', label: 'VRy', x: 0, y: 104, side: 'left' },
+      { portId: 'sw', label: 'SW', x: 0, y: 160, side: 'left' },
+      { portId: 'gnd', label: 'GND', x: MAZE_JOY_W / 2, y: MAZE_JOY_H, side: 'down' },
+    ],
+  },
+]
+
+const MAZE_PLACED: Record<string, Point> = {
+  arduino: { x: MAZE_UNO_X, y: MAZE_UNO_Y },
+  matrix: { x: MAZE_MOD_X, y: MAZE_UNO_Y },
+  joystick: { x: MAZE_MOD_X, y: MAZE_JOY_Y },
+}
+
+const MAZE: SchematicProject = {
+  slug: '25',
+  templates: MAZE_TEMPLATES,
+  placed: MAZE_PLACED,
+  powerLabels: {},
+}
+
+export function buildMazeSchematic(input: {
+  layout: WiringLayout
+  connections: readonly StepConnection[]
+  priorConnections?: readonly StepConnection[]
+  installedPartIds: readonly string[]
+  installedJumperIds: readonly string[]
+}): SchematicSheet {
+  return buildProjectSchematic(MAZE, input)
 }
 
 function buildProjectSchematic(project: SchematicProject, input: {
