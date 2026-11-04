@@ -30,7 +30,7 @@ import {
  * These limitations stay outside this matcher. The tests do not treat them as solved:
  * - usb-data-cable is one catalogue row. It does not record USB-B versus Micro-B.
  * - usb-power-source is one generic catalogue row.
- * - Onboarding writes broad slugs at quantity 1. That selection happens before matching.
+ * - A generic onboarding choice stays that catalogue row. It does not become a specific variant.
  * - Project 18's servo supply is authored and hardwareTested stays false. A full
  *   parts match is not a bench test.
  * - Each project is matched with the whole inventory. Nothing is reserved for a second project.

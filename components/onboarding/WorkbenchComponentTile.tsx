@@ -14,6 +14,8 @@ type WorkbenchComponentTileProps = {
   componentId: string;
   label: string;
   selected: boolean;
+  detail?: string;
+  quantity?: number;
   compact?: boolean;
   onSurface?: boolean;
   onPress: () => void;
@@ -25,6 +27,8 @@ export function WorkbenchComponentTile({
   componentId,
   label,
   selected,
+  detail,
+  quantity,
   compact = false,
   onSurface = false,
   onPress,
@@ -57,7 +61,7 @@ export function WorkbenchComponentTile({
   });
 
   const isSurfaceCompact = compact && onSurface;
-  const illustrationSize = isSurfaceCompact ? 40 : compact ? 44 : 48;
+  const illustrationSize = isSurfaceCompact ? 28 : compact ? 44 : 48;
 
   return (
     <Pressable
@@ -78,6 +82,7 @@ export function WorkbenchComponentTile({
       unstable_pressDelay={onSurface ? 80 : 0}
       accessibilityRole="button"
       accessibilityState={{ selected }}
+      accessibilityLabel={quantity != null ? `${label}, quantity ${quantity}` : label}
       style={
         isSurfaceCompact
           ? styles.surfacePressable
@@ -103,6 +108,9 @@ export function WorkbenchComponentTile({
               plate={false}
               showGroundShadow={false}
             />
+            {quantity != null ? (
+              <Text style={styles.surfaceQuantity}>{`×${quantity}`}</Text>
+            ) : null}
             {selected ? (
               <View style={[styles.checkBadge, styles.checkBadgeSurface]}>
                 <Ionicons name="checkmark" size={10} color={colors.onAccent} />
@@ -126,6 +134,11 @@ export function WorkbenchComponentTile({
           {!compact ? (
             <Text style={styles.label} numberOfLines={2}>
               {label}
+            </Text>
+          ) : null}
+          {!compact && detail ? (
+            <Text style={styles.detail} numberOfLines={2}>
+              {detail}
             </Text>
           ) : null}
           {selected ? (
@@ -194,12 +207,12 @@ function createStyles(colors: SolderiPalette) {
       elevation: 2,
     },
     surfacePart: {
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 52,
       borderRadius: Radii.sm,
       alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 8,
+      justifyContent: 'flex-end',
+      marginBottom: 2,
       zIndex: 1,
     },
     tileSelected: {
@@ -221,6 +234,19 @@ function createStyles(colors: SolderiPalette) {
       color: colors.textPrimary,
       textAlign: 'center',
       lineHeight: 16,
+    },
+    detail: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.accent,
+      textAlign: 'center',
+      lineHeight: 14,
+    },
+    surfaceQuantity: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.accent,
+      lineHeight: 13,
     },
     checkBadge: {
       position: 'absolute',

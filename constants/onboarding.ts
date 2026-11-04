@@ -75,50 +75,10 @@ export const COMPONENT_CATEGORY_ORDER: ComponentCategory[] = [
   'displays',
 ];
 
-export type OnboardingComponent = {
-  id: string;
-  name: string;
-  category: ComponentCategory;
-};
-
-export const ONBOARDING_COMPONENTS: OnboardingComponent[] = [
-  { id: 'arduino-uno', name: 'Arduino Uno', category: 'boards' },
-  { id: 'esp32', name: 'ESP32', category: 'boards' },
-  { id: 'servo-sg90', name: 'Servo SG90', category: 'motors' },
-  { id: 'hc-sr04', name: 'HC-SR04', category: 'sensors' },
-  { id: 'oled', name: 'OLED Display', category: 'displays' },
-  { id: 'led', name: 'LED', category: 'components' },
-  { id: 'resistor', name: 'Resistor', category: 'components' },
-  { id: 'breadboard', name: 'Breadboard', category: 'components' },
-  { id: 'dc-motor', name: 'DC Motor', category: 'motors' },
-  { id: 'dht11', name: 'DHT11', category: 'sensors' },
-];
-
-/**
- * Maps onboarding picker IDs to `public.components.slug`.
- * Inventory rows store the catalogue UUID, not these slugs or display names.
- */
-export const ONBOARDING_COMPONENT_SLUGS: Record<(typeof ONBOARDING_COMPONENTS)[number]['id'], string> = {
-  'arduino-uno': 'arduino-uno-r3',
-  esp32: 'esp32',
-  'servo-sg90': 'sg90',
-  'hc-sr04': 'hc-sr04',
-  oled: 'oled-096',
-  led: 'led',
-  resistor: 'resistor',
-  breadboard: 'breadboard',
-  'dc-motor': 'dc-motor',
-  dht11: 'dht11',
-};
-
 /** `user_preferences.key` for onboarding topic / interest picks. */
 export const USER_PREFERENCE_TOPIC_KEY = 'topic';
 
-export const ONBOARDING_SAVE_ERRORS = {
-  unauthenticated: 'Sign in to save your workshop.',
-  generic: 'Could not save your workshop. Please try again.',
-  missingComponents: 'Some selected components are not in the catalogue yet. Please try again later.',
-} as const;
+export { ONBOARDING_SAVE_ERRORS } from '../lib/onboarding-inventory.ts';
 
 export type OnboardingInterest = {
   id: string;

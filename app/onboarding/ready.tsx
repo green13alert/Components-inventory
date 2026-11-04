@@ -14,7 +14,7 @@ import {
 export default function OnboardingReadyRoute() {
   const router = useRouter();
   const { user } = useAuth();
-  const { experience, selectedComponentIds, selectedInterestIds, summary } = useOnboarding();
+  const { experience, selectedComponents, selectedInterestIds, summary } = useOnboarding();
   const [saving, setSaving] = useState(false);
 
   const handleFinish = async () => {
@@ -24,7 +24,7 @@ export default function OnboardingReadyRoute() {
 
     const selections = {
       skillLevel: experience,
-      componentIds: selectedComponentIds,
+      components: selectedComponents,
       interestIds: selectedInterestIds,
     };
     stashOnboardingSelections(selections);
@@ -56,7 +56,7 @@ export default function OnboardingReadyRoute() {
   return (
     <ReadyScreen
       experienceLabel={summary.experienceLabel}
-      componentCount={summary.componentCount}
+      componentSummary={summary.componentSummary}
       interestSummary={summary.interestSummary}
       onBack={() => router.back()}
       onFinish={() => {

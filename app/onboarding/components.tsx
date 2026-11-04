@@ -5,12 +5,13 @@ import { useOnboarding } from '@/context/onboarding-context';
 
 export default function OnboardingComponentsRoute() {
   const router = useRouter();
-  const { selectedComponentIds, toggleComponent } = useOnboarding();
+  const { selectedComponents, applyOfferQuantities, removeComponent } = useOnboarding();
 
   return (
     <ComponentsScreen
-      selectedIds={selectedComponentIds}
-      onToggle={toggleComponent}
+      selected={selectedComponents}
+      onApply={applyOfferQuantities}
+      onRemove={removeComponent}
       onBack={() => router.back()}
       onContinue={() => router.push('/onboarding/interests')}
     />

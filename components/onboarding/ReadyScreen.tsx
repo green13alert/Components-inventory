@@ -11,7 +11,7 @@ import { useSolderiColors } from '@/context/theme-context';
 
 type ReadyScreenProps = {
   experienceLabel: string | null;
-  componentCount: number;
+  componentSummary: string;
   interestSummary: string;
   onBack: () => void;
   onFinish: () => void;
@@ -20,7 +20,7 @@ type ReadyScreenProps = {
 
 export function ReadyScreen({
   experienceLabel,
-  componentCount,
+  componentSummary,
   interestSummary,
   onBack,
   onFinish,
@@ -28,13 +28,9 @@ export function ReadyScreen({
 }: ReadyScreenProps) {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const summaryParts = [
-    experienceLabel,
-    `${componentCount} component${componentCount === 1 ? '' : 's'}`,
-    interestSummary || null,
-  ].filter(Boolean);
+  const summaryParts = [experienceLabel, componentSummary, interestSummary || null].filter(Boolean);
 
-  const summaryLine = summaryParts.join(' · ');
+  const summaryLine = summaryParts.join('\n');
 
   return (
     <OnboardingShell

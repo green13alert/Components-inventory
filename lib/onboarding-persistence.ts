@@ -1,15 +1,19 @@
 import {
   INTEREST_OPTIONS,
-  ONBOARDING_COMPONENT_SLUGS,
   ONBOARDING_SAVE_ERRORS,
   USER_PREFERENCE_TOPIC_KEY,
   type ExperienceLevel,
 } from '@/constants/onboarding';
+import {
+  saveOnboardingInventory,
+  type OnboardingComponentSelection,
+  type OnboardingInventoryGateway,
+} from '@/lib/onboarding-inventory';
 import { supabase } from '@/lib/supabase';
 
 export type OnboardingSelections = {
   skillLevel: ExperienceLevel | null;
-  componentIds: string[];
+  components: OnboardingComponentSelection[];
   interestIds: string[];
 };
 
@@ -25,7 +29,7 @@ let persistStashOnAuth = true;
 export function stashOnboardingSelections(selections: OnboardingSelections) {
   pendingSelections = {
     skillLevel: selections.skillLevel,
-    componentIds: [...selections.componentIds],
+    components: selections.components.map((item) => ({ slug: item.slug, quantity: item.quantity })),
     interestIds: [...selections.interestIds],
   };
   persistStashOnAuth = true;
@@ -84,49 +88,62 @@ async function persistSkillLevel(userId: string, skillLevel: ExperienceLevel): P
   return { error: null };
 }
 
-async function persistInventory(userId: string, componentIds: string[]): Promise<PersistResult> {
-  const slugs = [
-    ...new Set(
-      componentIds
-        .map((id) => ONBOARDING_COMPONENT_SLUGS[id])
-        .filter((slug): slug is string => Boolean(slug)),
-    ),
-  ];
+function inventoryGateway(): OnboardingInventoryGateway {
+  return {
+    async findCatalogueBySlug(slugs) {
+      const { data, error } = await supabase.from('components').select('id, slug').in('slug', [...slugs]);
+      if (error) {
+        return { rows: null, error: error.message };
+      }
+      return {
+        rows: (data ?? []).map((row) => ({
+          id: row.id as string,
+          slug: row.slug as string,
+        })),
+        error: null,
+      };
+    },
+    async findOwned(userId, componentIds) {
+      if (componentIds.length === 0) {
+        return { rows: [], error: null };
+      }
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('component_id, quantity')
+        .eq('user_id', userId)
+        .in('component_id', [...componentIds]);
+      if (error) {
+        return { rows: null, error: error.message };
+      }
+      return {
+        rows: (data ?? []).map((row) => ({
+          componentId: row.component_id as string,
+          quantity: row.quantity as number,
+        })),
+        error: null,
+      };
+    },
+    async insertMissing(userId, rows) {
+      const { error } = await supabase.from('inventory_items').insert(
+        rows.map((row) => ({
+          user_id: userId,
+          component_id: row.componentId,
+          quantity: row.quantity,
+        })),
+      );
+      if (!error) {
+        return { error: null, conflict: false };
+      }
+      return { error: error.message, conflict: error.code === '23505' };
+    },
+  };
+}
 
-  if (slugs.length === 0) {
-    return { error: null };
-  }
-
-  const { data: catalogueRows, error: catalogueError } = await supabase
-    .from('components')
-    .select('id, slug')
-    .in('slug', slugs);
-
-  if (catalogueError) {
-    return { error: mapPersistError(catalogueError.message) };
-  }
-
-  const foundSlugs = new Set((catalogueRows ?? []).map((row) => row.slug as string));
-  if (foundSlugs.size !== slugs.length) {
-    return { error: ONBOARDING_SAVE_ERRORS.missingComponents };
-  }
-
-  const rows = (catalogueRows ?? []).map((row) => ({
-    user_id: userId,
-    component_id: row.id as string,
-    quantity: 1,
-  }));
-
-  const { error } = await supabase.from('inventory_items').upsert(rows, {
-    onConflict: 'user_id,component_id',
-    ignoreDuplicates: true,
-  });
-
-  if (error) {
-    return { error: mapPersistError(error.message) };
-  }
-
-  return { error: null };
+async function persistInventory(
+  userId: string,
+  components: readonly OnboardingComponentSelection[],
+): Promise<PersistResult> {
+  return saveOnboardingInventory(userId, components, inventoryGateway());
 }
 
 async function persistTopics(userId: string, interestIds: string[]): Promise<PersistResult> {
@@ -196,7 +213,7 @@ export async function persistOnboardingSelections(
     }
   }
 
-  const inventoryResult = await persistInventory(userId, selections.componentIds);
+  const inventoryResult = await persistInventory(userId, selections.components);
   if (inventoryResult.error) {
     return inventoryResult;
   }

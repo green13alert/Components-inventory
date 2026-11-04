@@ -7,21 +7,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingCta } from '@/components/onboarding/OnboardingCta';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { WorkbenchCategoryTabs } from '@/components/onboarding/WorkbenchCategoryTabs';
+import { OnboardingQuantitySheet } from '@/components/onboarding/OnboardingQuantitySheet';
 import { WorkbenchComponentTile } from '@/components/onboarding/WorkbenchComponentTile';
 import { WorkbenchSurface, getBenchFaceOverlayInsets } from '@/components/onboarding/WorkbenchSurface';
 import type { SolderiPalette } from '@/constants/colors';
-import {
-  ONBOARDING_COMPONENTS,
-  ONBOARDING_CONTINUE,
-  type ComponentCategory,
-  type OnboardingComponent,
-} from '@/constants/onboarding';
+import { ONBOARDING_CONTINUE, type ComponentCategory } from '@/constants/onboarding';
+import { getOnboardingChoice, getOnboardingOffers, type OnboardingOffer } from '@/constants/onboarding-offers';
+import type { OnboardingComponentSelection, OnboardingSheetQuantity } from '@/lib/onboarding-inventory';
 import { Spacing } from '@/constants/tokens';
 import { useSolderiColors } from '@/context/theme-context';
 
 type ComponentsScreenProps = {
-  selectedIds: string[];
-  onToggle: (id: string) => void;
+  selected: readonly OnboardingComponentSelection[];
+  onApply: (draft: readonly OnboardingSheetQuantity[]) => void;
+  onRemove: (slug: string) => void;
   onBack: () => void;
   onContinue: () => void;
 };
@@ -41,8 +40,9 @@ const BENCH_SCROLL_AREA_HEIGHT = BENCH_SCROLL_TOP_PAD + BENCH_GRID_HEIGHT + 8;
 const HORIZONTAL_INSET = 28;
 
 export function ComponentsScreen({
-  selectedIds,
-  onToggle,
+  selected,
+  onApply,
+  onRemove,
   onBack,
   onContinue,
 }: ComponentsScreenProps) {
@@ -51,30 +51,33 @@ export function ComponentsScreen({
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [activeCategory, setActiveCategory] = useState<ComponentCategory>('boards');
-  const count = selectedIds.length;
+  const [activeOffer, setActiveOffer] = useState<OnboardingOffer | null>(null);
+  const count = selected.length;
+  const pieceCount = selected.reduce((sum, item) => sum + item.quantity, 0);
 
-  const categoryComponents = useMemo(
-    () => ONBOARDING_COMPONENTS.filter((component) => component.category === activeCategory),
-    [activeCategory],
-  );
+  const categoryOffers = useMemo(() => getOnboardingOffers(activeCategory), [activeCategory]);
 
   const selectedComponents = useMemo(
     () =>
-      selectedIds
-        .map((id) => ONBOARDING_COMPONENTS.find((component) => component.id === id))
-        .filter(Boolean) as OnboardingComponent[],
-    [selectedIds],
+      selected
+        .map((item) => {
+          const choice = getOnboardingChoice(item.slug);
+          return choice ? { ...choice, quantity: item.quantity } : null;
+        })
+        .filter((item): item is NonNullable<typeof item> => item != null),
+    [selected],
   );
 
   const countLabel =
-    count === 0 ? '0 components' : `${count} component${count === 1 ? '' : 's'}`;
+    count === 0 ? '0 parts' : `${pieceCount} owned · ${count} part${count === 1 ? '' : 's'}`;
 
-  const stageHeight = SURFACE_HEIGHT + STAGE_EXTRA_HEIGHT;
-  const benchOverlayInsets = getBenchFaceOverlayInsets(SURFACE_HEIGHT, stageHeight);
+  const surfaceHeight = SURFACE_HEIGHT;
+  const stageHeight = surfaceHeight + STAGE_EXTRA_HEIGHT;
+  const benchOverlayInsets = getBenchFaceOverlayInsets(surfaceHeight, stageHeight);
   const isBenchEmpty = selectedComponents.length === 0;
 
   const benchColumns = useMemo(() => {
-    const columns: (OnboardingComponent | undefined)[][] = [];
+    const columns: (typeof selectedComponents[number] | undefined)[][] = [];
     const columnCount = Math.max(1, Math.ceil(selectedComponents.length / BENCH_ROW_COUNT));
 
     for (let col = 0; col < columnCount; col += 1) {
@@ -114,7 +117,7 @@ export function ComponentsScreen({
         <View style={styles.headerCopy}>
           <Text style={styles.title}>What&apos;s in your workshop?</Text>
           <Text style={styles.description}>
-            Add some components you already own and we&apos;ll use them to find projects you can build.
+            Choose a part, the exact type if you know it, and how many you have.
           </Text>
         </View>
 
@@ -128,7 +131,7 @@ export function ComponentsScreen({
 
       <View style={styles.workbenchZone}>
         <View style={[styles.surfaceStage, { height: stageHeight }]}>
-          <WorkbenchSurface width={screenWidth} height={SURFACE_HEIGHT} />
+          <WorkbenchSurface width={screenWidth} height={surfaceHeight} />
 
           <View style={[styles.surfaceOverlay, benchOverlayInsets]}>
             {isBenchEmpty ? (
@@ -159,14 +162,15 @@ export function ComponentsScreen({
                         <View key={`col-${columnIndex}`} style={styles.benchColumn}>
                           {column.map((component, rowIndex) =>
                             component ? (
-                              <View key={component.id} style={styles.benchTileSlot}>
+                              <View key={component.slug} style={styles.benchTileSlot}>
                                 <WorkbenchComponentTile
-                                  componentId={component.id}
+                                  componentId={component.slug}
                                   label={component.name}
+                                  quantity={component.quantity}
                                   selected
                                   compact
                                   onSurface
-                                  onPress={() => onToggle(component.id)}
+                                  onPress={() => onRemove(component.slug)}
                                 />
                               </View>
                             ) : (
@@ -203,19 +207,28 @@ export function ComponentsScreen({
               key={activeCategory}
               entering={FadeIn.duration(260)}
               style={styles.pickerGrid}>
-              {categoryComponents.map((component, index) => (
-                <Animated.View
-                  key={component.id}
-                  entering={FadeInDown.duration(320).delay(index * 40)}
-                  style={styles.pickerCell}>
-                  <WorkbenchComponentTile
-                    componentId={component.id}
-                    label={component.name}
-                    selected={selectedIds.includes(component.id)}
-                    onPress={() => onToggle(component.id)}
-                  />
-                </Animated.View>
-              ))}
+              {categoryOffers.map((offer, index) => {
+                const chosen = offer.choices
+                  .map((choice) => selected.find((item) => item.slug === choice.slug))
+                  .filter((item): item is OnboardingComponentSelection => item != null);
+                const detail = chosen
+                  .map((item) => `${getOnboardingChoice(item.slug)?.name ?? item.slug} ×${item.quantity}`)
+                  .join(' · ');
+                return (
+                  <Animated.View
+                    key={offer.id}
+                    entering={FadeInDown.duration(320).delay(index * 40)}
+                    style={styles.pickerCell}>
+                    <WorkbenchComponentTile
+                      componentId={offer.image}
+                      label={offer.title}
+                      detail={detail || undefined}
+                      selected={chosen.length > 0}
+                      onPress={() => setActiveOffer(offer)}
+                    />
+                  </Animated.View>
+                );
+              })}
             </Animated.View>
           </View>
         </ScrollView>
@@ -230,6 +243,12 @@ export function ComponentsScreen({
           />
         </View>
       </View>
+      <OnboardingQuantitySheet
+        offer={activeOffer}
+        selected={selected}
+        onClose={() => setActiveOffer(null)}
+        onApply={onApply}
+      />
     </View>
   );
 }
