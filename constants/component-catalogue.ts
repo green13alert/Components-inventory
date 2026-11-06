@@ -428,8 +428,8 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   },
   {
     id: 'jumper-wires',
-    name: 'Male-to-male jumper wires',
-    aliases: ['jumpers', 'dupont wires', 'male to male', 'jumper wires'],
+    name: 'Male-to-Male Jumper Wires',
+    aliases: ['jumpers', 'dupont wires', 'male to male', 'jumper wires', 'male to male jumper wires'],
     description: 'Male-to-male Dupont jumper. A project parts list counts individual wires.',
     category: 'modules',
     type: 'prototyping',
@@ -671,8 +671,8 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   },
   {
     id: 'jumper-male-female',
-    name: 'Male-to-female jumper wires',
-    aliases: ['male to female jumpers', 'dupont male female', 'mf jumper'],
+    name: 'Male-to-Female Jumper Wires',
+    aliases: ['male to female jumpers', 'dupont male female', 'mf jumper', 'jumper wires', 'male to female jumper wires'],
     description: 'Dupont wires with a female socket on one end and a male pin on the other. The socket fits a male header pin.',
     category: 'modules',
     type: 'prototyping',
@@ -761,6 +761,25 @@ export function searchComponentCatalogue(query: string, limit = 8): CatalogueCom
 
 export function getCatalogueComponent(id: string): CatalogueComponent | undefined {
   return COMPONENT_CATALOGUE.find((entry) => entry.id === id);
+}
+
+/**
+ * Label for a catalogue slug. A known slug uses the local catalogue name, so a
+ * generic `public.components.name` such as "Jumper Wires" does not replace it.
+ * An unknown slug keeps the stored name.
+ */
+export function componentDisplayName(slug: string | null | undefined, storedName?: string | null): string {
+  if (slug) {
+    const catalogue = getCatalogueComponent(slug);
+    if (catalogue) {
+      return catalogue.name;
+    }
+  }
+  const stored = storedName?.trim();
+  if (stored) {
+    return stored;
+  }
+  return slug ?? '';
 }
 
 /** Best catalogue match for an existing inventory row (edit flow). */

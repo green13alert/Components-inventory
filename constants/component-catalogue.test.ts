@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { COMPONENT_CATALOGUE, getCatalogueComponent, searchComponentCatalogue } from './component-catalogue.ts'
+import { localAuthoredProjects } from '../lib/authored-projects.ts'
+import { matchProjectInventory } from '../lib/compatibility.ts'
+import {
+  COMPONENT_CATALOGUE,
+  componentDisplayName,
+  getCatalogueComponent,
+  searchComponentCatalogue,
+} from './component-catalogue.ts'
 import { CATEGORY_LABELS, INVENTORY_CATEGORY_IDS } from './inventory.ts'
 
 function idsFor(query: string): string[] {
@@ -183,6 +190,80 @@ test('Pico W, ESP32-CAM, and the Raspberry Pi computers have their own identitie
   assert.equal(idsFor('pi 5').includes('raspberry-pi-4'), false)
   assert.equal(INVENTORY_CATEGORY_IDS.includes('computers'), true)
   assert.equal(CATEGORY_LABELS.computers, 'Computer')
+})
+
+test('jumper labels name the connector gender and search still finds both', () => {
+  assert.equal(componentDisplayName('jumper-wires', 'Jumper Wires'), 'Male-to-Male Jumper Wires')
+  assert.equal(componentDisplayName('jumper-male-female', 'Jumper Wires'), 'Male-to-Female Jumper Wires')
+  assert.equal(getCatalogueComponent('jumper-wires')?.id, 'jumper-wires')
+  assert.equal(getCatalogueComponent('jumper-male-female')?.id, 'jumper-male-female')
+  assert.equal(componentDisplayName('jumper-wires') === componentDisplayName('jumper-male-female'), false)
+
+  const found = idsFor('jumper wires')
+  assert.equal(found.includes('jumper-wires'), true)
+  assert.equal(found.includes('jumper-male-female'), true)
+
+  const projects = new Map(localAuthoredProjects().map((project) => [project.slug, project]))
+  const quantity = (slug: string, componentSlug: string) => {
+    const line = projects.get(slug)?.bom.find((item) => item.slug === componentSlug)
+    assert.ok(line, `${slug} ${componentSlug}`)
+    return line.quantity
+  }
+  assert.equal(quantity('8', 'jumper-wires'), 10)
+  assert.equal(quantity('24', 'jumper-wires'), 8)
+  assert.equal(quantity('24', 'jumper-male-female'), 5)
+  assert.equal(quantity('25', 'jumper-wires'), 2)
+  assert.equal(quantity('25', 'jumper-male-female'), 10)
+
+  const maleToMaleId = '00000000-0000-4000-8000-000000000011'
+  const maleToFemaleId = '00000000-0000-4000-8000-000000000012'
+  const lines = [
+    {
+      id: 'bom-8-jumper-wires',
+      componentId: maleToMaleId,
+      slug: 'jumper-wires',
+      name: componentDisplayName('jumper-wires', 'Jumper Wires'),
+      description: null,
+      quantity: quantity('8', 'jumper-wires'),
+      sortOrder: 1,
+    },
+    {
+      id: 'bom-25-jumper-male-female',
+      componentId: maleToFemaleId,
+      slug: 'jumper-male-female',
+      name: componentDisplayName('jumper-male-female', 'Jumper Wires'),
+      description: null,
+      quantity: 10,
+      sortOrder: 2,
+    },
+  ]
+  const covered = matchProjectInventory(lines, [{ componentId: maleToMaleId, quantity: 10 }], null)
+  assert.equal(covered.lines[0]?.name, 'Male-to-Male Jumper Wires')
+  assert.equal(covered.lines[0]?.isOwned, true)
+  assert.equal(covered.lines[0]?.missingQuantity, 0)
+  assert.equal(covered.lines[1]?.name, 'Male-to-Female Jumper Wires')
+  assert.equal(covered.lines[1]?.isOwned, false)
+  assert.equal(covered.lines[0]?.componentId, maleToMaleId)
+})
+
+test('generic catalogue rows stay generic', () => {
+  assert.equal(componentDisplayName('usb-data-cable', 'USB data cable'), 'USB data cable')
+  assert.equal(componentDisplayName('usb-data-cable').includes('USB-B'), false)
+  assert.equal(componentDisplayName('usb-data-cable').includes('Micro-B'), false)
+  assert.equal(componentDisplayName('esp32', 'ESP32 DevKit'), 'ESP32 DevKit')
+  assert.equal(componentDisplayName('esp32') === componentDisplayName('esp32-devkitc-v4'), false)
+  assert.equal(componentDisplayName('resistor', 'Resistor'), 'Resistor')
+  assert.equal(componentDisplayName('resistor-220', 'Resistor'), '220 Ω resistor')
+  assert.equal(componentDisplayName('resistor-1k', 'Resistor'), '1 kΩ resistor')
+  assert.equal(componentDisplayName('unknown-part', 'Stored name'), 'Stored name')
+  assert.equal(getCatalogueComponent('buzzer')?.name, 'Active buzzer')
+  assert.equal(getCatalogueComponent('sg90')?.name, 'SG90 Micro Servo')
+  assert.equal(getCatalogueComponent('mg90s')?.name, 'MG90S Servo')
+  assert.equal(getCatalogueComponent('rgb-led-ca')?.name, 'Common-anode RGB LED')
+  assert.equal(getCatalogueComponent('rgb-led-cc')?.name, 'Common-cathode RGB LED')
+  assert.equal(getCatalogueComponent('max7219')?.name, 'MAX7219 LED Matrix')
+  assert.equal(getCatalogueComponent('stemma-qt-female')?.name, 'STEMMA QT to female cable')
+  assert.equal(getCatalogueComponent('stemma-qt-cable')?.name, 'STEMMA QT to male cable')
 })
 
 test('Pico W does not resolve to the Raspberry Pi Pico row', () => {

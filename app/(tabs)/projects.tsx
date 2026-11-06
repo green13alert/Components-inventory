@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -44,6 +44,7 @@ export default function ProjectsScreen() {
     projectsLoading,
     projectsError,
     getUserProject,
+    reloadInventory,
   } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -57,6 +58,12 @@ export default function ProjectsScreen() {
   const [draftUserId, setDraftUserId] = useState<string | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
   const showDrafts = draftProjectsAreRequested(__DEV__);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadInventory({ silent: true });
+    }, [reloadInventory]),
+  );
 
   const projectIds = useMemo(
     () => [...publishedProjects, ...draftProjects].map((project) => project.id),

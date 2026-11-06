@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProjectCover } from '@/components/projects/ProjectCover';
 import type { SolderiPalette } from '@/constants/colors';
+import { listedPartsLabel } from '@/constants/parts-match';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
 import type { Project, ProjectInventoryMatch } from '@/lib/projects';
@@ -38,7 +39,7 @@ export function ProjectListCard({ project, match, inventoryReady }: ProjectListC
     if (match.matchPercentage == null) {
       partsLabel = 'Components not yet defined';
     } else {
-      partsLabel = `${Math.round(match.matchPercentage)}% ready · ${match.ownedCount}/${match.totalRequired} available`;
+      partsLabel = listedPartsLabel(match.matchPercentage, match.ownedCount, match.totalRequired);
     }
   }
 

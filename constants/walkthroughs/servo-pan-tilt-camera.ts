@@ -18,7 +18,7 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'joystick', name: 'Analog Joystick Module', illustrationId: 'joystick', owned: false, quantity: 1 },
   { id: 'pan-tilt-bracket', name: 'Pan-Tilt Bracket Kit', illustrationId: 'electronics-kit', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
-  { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 14 },
+  { id: 'jumper-wires', name: 'Male-to-Male Jumper Wires', illustrationId: 'jumper-wires', owned: false, quantity: 14 },
   { id: 'adafruit-368', name: '2.1 mm jack to screw terminal', illustrationId: 'generic-module', owned: false, quantity: 1 },
   { id: 'gst18a05-p1j', name: '5 V 3 A DC supply', illustrationId: 'battery', owned: false, quantity: 1 },
   { id: 'iec-c13-mains-lead', name: 'IEC C13 mains lead', illustrationId: 'usb-cable', owned: false, quantity: 1 },

@@ -18,7 +18,7 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'led', name: 'LED', illustrationId: 'led', owned: false, quantity: 1 },
   { id: 'resistor-220', name: '220 Ω resistor', illustrationId: 'resistor', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
-  { id: 'jumper-wires', name: 'Male-to-male jumper wires', illustrationId: 'jumper-wires', owned: false, quantity: 10 },
+  { id: 'jumper-wires', name: 'Male-to-Male Jumper Wires', illustrationId: 'jumper-wires', owned: false, quantity: 10 },
   { id: 'usb-data-cable', name: 'USB data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
   { id: 'usb-power-source', name: 'USB power source', illustrationId: 'generic-module', owned: false, quantity: 1 },
 ];

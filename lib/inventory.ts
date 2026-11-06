@@ -1,4 +1,4 @@
-import { getCatalogueComponent } from '@/constants/component-catalogue';
+import { componentDisplayName, getCatalogueComponent } from '@/constants/component-catalogue';
 import {
   INVENTORY_CATEGORY_IDS,
   type ComponentCategory,
@@ -88,7 +88,7 @@ function mapInventoryRow(row: InventoryRow): InventoryComponent | null {
 
   return {
     id: row.id,
-    name: component.name,
+    name: componentDisplayName(component.slug, component.name),
     category: component.category,
     quantity: row.quantity,
     catalogueId: component.slug,

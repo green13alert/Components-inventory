@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { ProjectCover } from '@/components/projects/ProjectCover';
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
 import { getCatalogueComponent } from '@/constants/component-catalogue';
+import { LISTED_PARTS_COMPLETE } from '@/constants/parts-match';
 import { resolveComponentIllustration } from '@/constants/component-illustrations';
 import type { SolderiPalette } from '@/constants/colors';
 import {
@@ -43,7 +44,7 @@ export default function ProjectDetailScreen() {
   const slug = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { inventory, inventoryLoading, getUserProject, isFavourite, toggleFavourite, startProject } = useAtlas();
+  const { inventory, inventoryLoading, getUserProject, isFavourite, toggleFavourite, startProject, reloadInventory } = useAtlas();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [project, setProject] = useState<Project | null>(null);
@@ -53,6 +54,12 @@ export default function ProjectDetailScreen() {
   const [compatibility, setCompatibility] = useState<ProjectCompatibilityData | null>(null);
   const [compatibilityError, setCompatibilityError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      void reloadInventory({ silent: true });
+    }, [reloadInventory]),
+  );
+
   const inventoryComponentIds = useMemo(
     () => [...new Set(inventory.flatMap((item) => (item.componentId ? [item.componentId] : [])))].sort(),
     [inventory],
@@ -331,7 +338,7 @@ export default function ProjectDetailScreen() {
             {!inventoryLoading && match.matchPercentage != null && match.missingCount === 0 ? (
               <View style={styles.readyBanner}>
                 <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
-                <Text style={styles.readyBannerText}>You have all the parts needed!</Text>
+                <Text style={styles.readyBannerText}>{LISTED_PARTS_COMPLETE}</Text>
               </View>
             ) : null}
             <View style={styles.componentsList}>

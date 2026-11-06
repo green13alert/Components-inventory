@@ -9,6 +9,7 @@ import {
   type SubstitutionChange,
   type SubstitutionReview,
 } from '@/lib/compatibility';
+import { componentDisplayName } from '@/constants/component-catalogue';
 import { getProjectImage } from '@/constants/projects';
 import type { Project as WalkthroughProject, ProjectStatus } from '@/constants/projects-data';
 import { STEP_BLOCK_TYPES, type StepBlock, type StepCodeContent } from '@/constants/walkthrough-content';
@@ -275,7 +276,7 @@ function mapProjectComponentRow(row: ProjectComponentRow): ProjectBomComponent |
     projectId: row.project_id,
     componentId: row.component_id,
     slug: catalogue.slug,
-    name: catalogue.name,
+    name: componentDisplayName(catalogue.slug, catalogue.name),
     description: catalogue.description,
     quantity: row.quantity,
     sortOrder: row.sort_order,
