@@ -56,3 +56,17 @@ export function planInventoryRefresh<T>(input: {
     reportedError: null,
   }
 }
+
+/**
+ * A second silent refresh for the same account waits on the refresh already
+ * running. A different account never receives that result.
+ */
+export function joinInFlightRefresh<T>(
+  current: { accountId: string | null; task: Promise<T> } | null,
+  accountId: string | null,
+): Promise<T> | null {
+  if (!current || current.accountId !== accountId) {
+    return null
+  }
+  return current.task
+}

@@ -77,8 +77,8 @@ export default function ProjectsScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      setPartsRefreshPending(true);
-      setPartsRefreshFailed(false);
+      // A settled check keeps its label. Resetting pending here paints
+      // "Checking inventory…" until this silent refresh returns.
       void reloadInventory({ silent: true }).then((result) => {
         if (!active) {
           return;

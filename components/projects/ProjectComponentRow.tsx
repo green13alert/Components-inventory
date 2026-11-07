@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import {
   componentRowPresentation,
+  requirementQuantityLabel,
   type ComponentRowCoverage,
 } from '@/components/projects/component-row-state';
 import type { SolderiPalette } from '@/constants/colors';
@@ -46,13 +47,15 @@ export function ProjectComponentRow({ component }: ProjectComponentRowProps) {
       </View>
       <View style={styles.copy}>
         <Text style={[styles.name, !satisfied && styles.nameMissing]}>{component.name}</Text>
-        <Text style={styles.quantityDetail}>Required: {component.requiredQuantity}</Text>
-        <Text style={styles.quantityDetail}>You have: {component.ownedQuantity}</Text>
+        <Text style={styles.quantityDetail}>
+          {requirementQuantityLabel({
+            requiredQuantity: component.requiredQuantity,
+            missingQuantity: component.missingQuantity,
+            coverage: component.coverage,
+          })}
+        </Text>
         {presentation.substituteLine ? (
           <Text style={styles.quantityDetail}>{presentation.substituteLine}</Text>
-        ) : null}
-        {presentation.status === 'missing' ? (
-          <Text style={styles.quantityDetail}>Missing: {component.missingQuantity}</Text>
         ) : null}
       </View>
       <View style={[styles.badge, satisfied ? styles.badgeOwned : styles.badgeMissing]}>

@@ -21,7 +21,7 @@ import {
   setInventoryItemQuantity,
   updateInventoryCatalogueItem,
 } from '@/lib/inventory';
-import { planInventoryRefresh } from '@/lib/inventory-refresh';
+import { joinInFlightRefresh, planInventoryRefresh } from '@/lib/inventory-refresh';
 import { WALKTHROUGH_SAVE_FAILED, claimStepWrite, resolveCatalogueProjectId, stepWriteIsCurrent } from '@/lib/project-navigation';
 import {
   PROJECT_ERRORS,
@@ -78,7 +78,7 @@ type AtlasContextValue = {
   favouriteProjectIds: Set<string>;
   projectProgress: Record<string, ProjectProgress>;
   recentActivity: WorkshopActivity[];
-  reloadInventory: (options?: { silent?: boolean }) => Promise<{ error: string | null }>;
+  reloadInventory: (options?: { silent?: boolean }) => Promise<{ error: string | null; applied?: boolean }>;
   addInventoryItem: (item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
   updateInventoryItem: (id: string, item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
   updateInventoryQuantity: (id: string, quantity: number) => Promise<InventoryMutationResult>;
@@ -150,6 +150,10 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const hideToast = useCallback(() => setToastMessage(null), []);
   const userId = session?.user.id;
   const loadGeneration = useRef(0);
+  const inventoryRefresh = useRef<{
+    accountId: string | null;
+    task: Promise<{ error: string | null; applied: boolean }>;
+  } | null>(null);
   const projectLoadGeneration = useRef(0);
   const stepWriteGeneration = useRef(new Map<string, number>());
   const confirmedSteps = useRef(new Map<string, number>());
@@ -164,46 +168,63 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reloadInventory = useCallback(async (options?: { silent?: boolean }) => {
-    const generation = ++loadGeneration.current;
     const silent = options?.silent === true;
+    const accountId = userId ?? null;
+    if (silent) {
+      const existing = joinInFlightRefresh(inventoryRefresh.current, accountId);
+      if (existing) {
+        return existing;
+      }
+    }
 
-    if (!userId) {
-      const signedOut = planInventoryRefresh({
+    const generation = ++loadGeneration.current;
+    const task = (async () => {
+      if (!userId) {
+        const signedOut = planInventoryRefresh({
+          cached: [],
+          signedIn: false,
+          silent,
+          result: { data: [], error: null },
+        });
+        setInventory([...signedOut.inventory]);
+        setInventoryError(signedOut.storedError);
+        setInventoryLoading(false);
+        return { error: signedOut.reportedError, applied: true };
+      }
+
+      if (!silent) {
+        setInventoryLoading(true);
+        setInventoryError(null);
+      }
+
+      const result = await fetchInventory();
+      if (generation !== loadGeneration.current) {
+        return { error: null, applied: false };
+      }
+
+      const plan = planInventoryRefresh({
         cached: [],
-        signedIn: false,
+        signedIn: true,
         silent,
-        result: { data: [], error: null },
+        result: { data: result.data, error: result.error },
       });
-      setInventory([...signedOut.inventory]);
-      setInventoryError(signedOut.storedError);
+      if (plan.replaceInventory) {
+        setInventory([...plan.inventory]);
+      }
+      if (plan.touchError) {
+        setInventoryError(plan.storedError);
+      }
       setInventoryLoading(false);
-      return { error: signedOut.reportedError };
-    }
+      return { error: plan.reportedError, applied: true };
+    })();
 
-    if (!silent) {
-      setInventoryLoading(true);
-      setInventoryError(null);
-    }
-
-    const result = await fetchInventory();
-    if (generation !== loadGeneration.current) {
-      return { error: null };
-    }
-
-    const plan = planInventoryRefresh({
-      cached: [],
-      signedIn: true,
-      silent,
-      result: { data: result.data, error: result.error },
+    inventoryRefresh.current = { accountId, task };
+    void task.finally(() => {
+      if (inventoryRefresh.current?.task === task) {
+        inventoryRefresh.current = null;
+      }
     });
-    if (plan.replaceInventory) {
-      setInventory([...plan.inventory]);
-    }
-    if (plan.touchError) {
-      setInventoryError(plan.storedError);
-    }
-    setInventoryLoading(false);
-    return { error: plan.reportedError };
+    return task;
   }, [userId]);
 
   const reloadProjectState = useCallback(async () => {

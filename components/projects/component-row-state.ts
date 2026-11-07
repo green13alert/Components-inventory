@@ -29,6 +29,27 @@ export function substituteNameFromInventory(
   return owned.name.length > 0 ? owned.name : null
 }
 
+/**
+ * Allocated quantity for one requirement. `missingQuantity` is already the
+ * shortfall after shared stock and substitutes, so total canonical stock is
+ * not shown again on a later line.
+ */
+export function requirementQuantityLabel(input: {
+  requiredQuantity: number
+  missingQuantity: number
+  coverage?: ComponentRowCoverage
+}): string {
+  const required = Math.max(0, input.requiredQuantity)
+  const covered = input.coverage === 'exact' || input.coverage === 'direct_substitute'
+  const missing = covered ? 0 : Math.min(required, Math.max(0, input.missingQuantity))
+  const allocated = Math.max(0, required - missing)
+  if (missing === 0) {
+    return `${allocated}/${required} owned`
+  }
+  const needed = missing === 1 ? '1 more needed' : `${missing} more needed`
+  return `${allocated}/${required} owned — ${needed}`
+}
+
 export function componentRowPresentation(input: {
   coverage?: ComponentRowCoverage
   isOwned: boolean

@@ -9,7 +9,7 @@ import { pressFeedback } from '@/components/ui/press-feedback';
 import { ProjectCover } from '@/components/projects/ProjectCover';
 import { ProjectComponentRow } from '@/components/projects/ProjectComponentRow';
 import { ProjectDetailStat } from '@/components/projects/ProjectDetailStat';
-import { getCatalogueComponent } from '@/constants/component-catalogue';
+import { componentDisplayName, getCatalogueComponent } from '@/constants/component-catalogue';
 import { LISTED_PARTS_COMPLETE } from '@/constants/parts-match';
 import { resolveComponentIllustration } from '@/constants/component-illustrations';
 import type { SolderiPalette } from '@/constants/colors';
@@ -350,7 +350,7 @@ export default function ProjectDetailScreen() {
                     key={component.componentId}
                     component={{
                       id: component.componentId,
-                      name: component.name,
+                      name: componentDisplayName(component.slug, component.name),
                       illustrationId: illustrationForSlug(component.slug),
                       requiredQuantity: component.requiredQuantity,
                       ownedQuantity: component.ownedQuantity,

@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+// The app tsconfig does not include Node types. The test runner still reads these screens.
+// @ts-expect-error node types are not part of the Expo typecheck
+import { readFileSync } from 'fs'
 import { test } from 'node:test'
 
 import { shownInProjectCatalogue } from './catalogue-visibility.ts'
@@ -169,7 +172,7 @@ test('complete listed coverage qualifies and a missing part does not', () => {
 
   const missing = matchProjectInventory(lines, [], null)
   assert.equal(listedComponentsAreOwned(missing, 'ready'), false)
-  assert.equal(projectPartsSummary(missing, 'ready'), 'Missing 1 component across 1 requirement')
+  assert.equal(projectPartsSummary(missing, 'ready'), `Missing 1 ${CANONICAL}`)
 })
 
 test('insufficient quantity and an incompatible variant do not qualify', () => {
@@ -479,7 +482,7 @@ test('a failed inventory refresh keeps the cache and blocks a complete-parts cla
   const recoveredMatch = matchProjectInventory(lines, recoveredPlan.inventory, null)
   assert.equal(recoveredCoverage, 'ready')
   assert.equal(listedComponentsAreOwned(recoveredMatch, recoveredCoverage), false)
-  assert.equal(projectPartsSummary(recoveredMatch, recoveredCoverage), 'Missing 1 component across 1 requirement')
+  assert.equal(projectPartsSummary(recoveredMatch, recoveredCoverage), `Missing 1 ${CANONICAL}`)
 
   const signedOut = planInventoryRefresh({
     cached,
@@ -490,6 +493,58 @@ test('a failed inventory refresh keeps the cache and blocks a complete-parts cla
   assert.equal(signedOut.reportedError, null)
   assert.deepEqual([...signedOut.inventory], [])
   assert.equal(signedOut.replaceInventory, true)
+})
+
+test('a silent refocus keeps a settled parts label instead of the loading placeholder', () => {
+  const lines = [
+    bomLine('jumpers', 'jumper-wires', 4, 1),
+    bomLine('pir', 'pir-sensor', 1, 2),
+  ]
+  const match = matchProjectInventory(lines, [], null)
+  assert.equal(match.totalMissing, 5)
+  assert.equal(match.missingCount, 2)
+
+  const settled = discoveryCoverage({
+    inventoryLoading: false,
+    refreshPending: false,
+    refreshFailed: false,
+    inventoryError: null,
+    compatibilityPending: false,
+    compatibilityError: null,
+  })
+  assert.equal(settled, 'ready')
+  assert.equal(projectPartsSummary(match, settled), 'Missing 2 components')
+
+  const placeholder = discoveryCoverage({
+    inventoryLoading: false,
+    refreshPending: true,
+    refreshFailed: false,
+    inventoryError: null,
+    compatibilityPending: false,
+    compatibilityError: null,
+  })
+  assert.equal(projectPartsSummary(match, placeholder), 'Checking inventory…')
+
+  const owned = matchProjectInventory(lines.slice(0, 1), [{ componentId: 'jumper-wires', quantity: 4 }], null)
+  const failed = discoveryCoverage({
+    inventoryLoading: false,
+    refreshPending: false,
+    refreshFailed: true,
+    inventoryError: null,
+    compatibilityPending: false,
+    compatibilityError: null,
+  })
+  assert.equal(listedComponentsAreOwned(owned, 'ready'), true)
+  assert.equal(projectPartsSummary(owned, failed), 'Parts check unavailable')
+
+  const projectsScreen = readFileSync('app/(tabs)/projects.tsx', 'utf8')
+  const homeHook = readFileSync('hooks/use-home-recommendations.ts', 'utf8')
+  for (const source of [projectsScreen, homeHook]) {
+    assert.equal(/useFocusEffect\(/.test(source), true)
+    assert.equal(/reloadInventory\(\{ silent: true \}\)/.test(source), true)
+    assert.equal(source.includes('setPartsRefreshPending(true)'), false)
+    assert.equal(source.includes('setPartsRefreshFailed(false)'), false)
+  }
 })
 
 test('the three dropdowns default to every status, every level, and catalogue order', () => {

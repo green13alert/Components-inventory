@@ -1,3 +1,4 @@
+import { componentDisplayName } from '../constants/component-catalogue.ts'
 import { Spacing } from '../constants/tokens.ts'
 import type { ProjectInventoryMatch } from './compatibility.ts'
 
@@ -464,6 +465,35 @@ export function listedComponentsAreOwned(
   )
 }
 
+/**
+ * A quantity of one keeps the catalogue name. A larger quantity pluralises only
+ * the last word, and a name that is already plural stays as written.
+ * A single title-case word such as "Resistor" becomes "resistors".
+ */
+export function componentNameForQuantity(name: string, quantity: number): string {
+  const trimmed = name.trim()
+  if (trimmed.length === 0 || quantity === 1 || /s$/i.test(trimmed)) {
+    return trimmed
+  }
+  const words = trimmed.split(/\s+/)
+  const last = words[words.length - 1] ?? trimmed
+  if (/s$/i.test(last)) {
+    return trimmed
+  }
+  const plural =
+    /y$/i.test(last) && !/[aeiou]y$/i.test(last) ? `${last.slice(0, -1)}ies` : `${last}s`
+  if (words.length === 1 && /^[A-Z][a-z]+$/.test(last)) {
+    return plural.toLowerCase()
+  }
+  words[words.length - 1] = plural
+  return words.join(' ')
+}
+
+/**
+ * Short coverage line for project cards. One unsatisfied component type names
+ * that part and its missing units. Several types count distinct components,
+ * not units or duplicate BOM lines.
+ */
 export function projectPartsSummary(match: ProjectInventoryMatch, coverage: PartsCoverageState): string {
   if (coverage === 'loading') {
     return 'Checking inventory…'
@@ -471,15 +501,37 @@ export function projectPartsSummary(match: ProjectInventoryMatch, coverage: Part
   if (coverage === 'unavailable') {
     return 'Parts check unavailable'
   }
-  if (match.lines.length === 0) {
+  if (match.lines.length === 0 || match.matchPercentage == null) {
     return 'Components not yet defined'
   }
   if (listedComponentsAreOwned(match, coverage)) {
     return 'All listed components owned'
   }
-  const units = match.totalMissing === 1 ? 'component' : 'components'
-  const requirements = match.missingCount === 1 ? 'requirement' : 'requirements'
-  return `Missing ${match.totalMissing} ${units} across ${match.missingCount} ${requirements}`
+  const missingTypes = new Map<string, { slug: string; name: string; missing: number }>()
+  for (const line of match.lines) {
+    if (line.missingQuantity <= 0) {
+      continue
+    }
+    const key = line.slug || line.componentId
+    const current = missingTypes.get(key)
+    if (current) {
+      current.missing += line.missingQuantity
+    } else {
+      missingTypes.set(key, { slug: line.slug, name: line.name, missing: line.missingQuantity })
+    }
+  }
+  if (missingTypes.size === 1) {
+    const missingType = [...missingTypes.values()][0]
+    const name = componentNameForQuantity(
+      componentDisplayName(missingType.slug, missingType.name),
+      missingType.missing,
+    )
+    return `Missing ${missingType.missing} ${name}`
+  }
+  if (missingTypes.size > 1) {
+    return `Missing ${missingTypes.size} components`
+  }
+  return 'Parts check unavailable'
 }
 
 export function discoveryCoverage(input: {

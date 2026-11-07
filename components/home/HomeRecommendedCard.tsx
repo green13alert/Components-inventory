@@ -13,7 +13,7 @@ type HomeRecommendedCardProps = {
   title: string;
   difficulty: string;
   duration: string;
-  componentCount: number;
+  partsLabel: string;
   imageKey: string;
 };
 
@@ -22,7 +22,7 @@ export function HomeRecommendedCard({
   title,
   difficulty,
   duration,
-  componentCount,
+  partsLabel,
   imageKey,
 }: HomeRecommendedCardProps) {
   const colors = useSolderiColors();
@@ -34,7 +34,7 @@ export function HomeRecommendedCard({
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
       onPress={() => router.push(`/project/${projectId}`)}
       accessibilityRole="button"
-      accessibilityLabel={`View project ${title}`}>
+      accessibilityLabel={`View project ${title}. ${partsLabel}`}>
       <ProjectCover imageKey={imageKey} style={styles.image} />
 
       <View style={styles.content}>
@@ -42,9 +42,7 @@ export function HomeRecommendedCard({
         <Text style={styles.meta}>
           {difficulty} · {duration}
         </Text>
-        <Text style={styles.components}>
-          {componentCount} component{componentCount !== 1 ? 's' : ''}
-        </Text>
+        <Text style={styles.components}>{partsLabel}</Text>
 
         <View style={styles.action}>
           <Text style={styles.actionText}>View Project</Text>

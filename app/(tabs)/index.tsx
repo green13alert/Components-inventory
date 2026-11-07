@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeOnboardingDevButton } from '@/components/dev/onboarding-shortcuts';
@@ -15,32 +15,26 @@ import type { SolderiPalette } from '@/constants/colors';
 import { DEV_ONBOARDING_SHORTCUTS } from '@/constants/onboarding-dev';
 import { tabBarBottomPadding } from '@/constants/layout';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
-import { Spacing } from '@/constants/tokens';
-import { useAtlas } from '@/context/atlas-context';
-import { shownInRecommendations } from '@/lib/catalogue-visibility';
+import { Spacing, Typography } from '@/constants/tokens';
+import { useHomeRecommendations } from '@/hooks/use-home-recommendations';
 import { useSolderiColors } from '@/context/theme-context';
 
-const RECOMMENDED_PROJECT_LIMIT = 3;
 const RECENT_COMPONENT_COUNT = 4;
 
 export default function HomeScreen() {
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const { getProjectsWithStatus, inventory, getCurrentStepIndex, getUserProject } = useAtlas();
+  const {
+    inventory,
+    projects,
+    continueProjects,
+    recommendations,
+    partsById,
+    presentation,
+    getCurrentStepIndex,
+  } = useHomeRecommendations();
 
-  const projects = getProjectsWithStatus();
-  const continueProjects = projects
-    .filter((p) => p.status === 'in_progress')
-    .sort((a, b) => {
-      const aUpdated = getUserProject(a.id)?.updatedAt ?? '';
-      const bUpdated = getUserProject(b.id)?.updatedAt ?? '';
-      return bUpdated.localeCompare(aUpdated);
-    });
-  const recommendedProjects = projects
-    .filter((project) => shownInRecommendations(project.slug))
-    .filter((project) => project.requiredComponentCount > 0 || project.authoredSteps.length > 0)
-    .slice(0, RECOMMENDED_PROJECT_LIMIT);
   const recentComponents = [...inventory]
     .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
     .slice(0, RECENT_COMPONENT_COUNT);
@@ -106,24 +100,26 @@ export default function HomeScreen() {
 
         <BuildActivitySection />
 
-        {recommendedProjects.length > 0 ? (
-          <View style={styles.section}>
-            <SectionHeading title="Recommended For You" />
+        <View style={styles.section}>
+          <SectionHeading title="Recommended For You" />
+          {presentation.kind === 'list' ? (
             <View style={styles.recommendedList}>
-              {recommendedProjects.map((project) => (
+              {recommendations.map((project) => (
                 <HomeRecommendedCard
                   key={project.id}
                   projectId={project.slug}
                   title={project.title}
                   difficulty={DIFFICULTY_LABELS[project.difficulty]}
                   duration={project.durationLabel}
-                  componentCount={project.requiredComponentCount}
+                  partsLabel={partsById.get(project.id) ?? 'Parts check unavailable'}
                   imageKey={project.imageKey}
                 />
               ))}
             </View>
-          </View>
-        ) : null}
+          ) : (
+            <Text style={styles.recommendationNote}>{presentation.message}</Text>
+          )}
+        </View>
 
         <View style={styles.section}>
           <SectionHeading title="Recently Added" />
@@ -155,6 +151,10 @@ function createStyles(colors: SolderiPalette) {
     },
     recommendedList: {
       gap: Spacing.xs,
+    },
+    recommendationNote: {
+      ...Typography.body,
+      color: colors.textSecondary,
     },
   });
 }

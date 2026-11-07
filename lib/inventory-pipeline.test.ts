@@ -304,10 +304,12 @@ test('the next match uses the inventory loaded after a change', () => {
 
   const projectsScreen = readFileSync('app/(tabs)/projects.tsx', 'utf8')
   const detailScreen = readFileSync('app/project/[id].tsx', 'utf8')
-  for (const source of [projectsScreen, detailScreen]) {
+  const homeRecommendations = readFileSync('hooks/use-home-recommendations.ts', 'utf8')
+  for (const source of [projectsScreen, detailScreen, homeRecommendations]) {
     assert.equal(/useFocusEffect\(/.test(source), true)
     assert.equal(/reloadInventory\(\{ silent: true \}\)/.test(source), true)
   }
+  assert.equal(/fetchDraftProjects\(/.test(homeRecommendations), false)
   assert.equal(detailScreen.includes('LISTED_PARTS_COMPLETE'), true)
   assert.equal(projectsScreen.includes('% ready'), false)
   assert.equal(detailScreen.includes('You have all the parts needed!'), false)
