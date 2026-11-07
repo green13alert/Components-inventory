@@ -5,9 +5,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ProjectCover } from '@/components/projects/ProjectCover';
 import type { SolderiPalette } from '@/constants/colors';
-import { listedPartsLabel } from '@/constants/parts-match';
 import { DIFFICULTY_LABELS } from '@/constants/projects-data';
 import { useAtlas } from '@/context/atlas-context';
+import type { PartsCoverageState } from '@/lib/project-discovery';
+import { projectPartsSummary } from '@/lib/project-discovery';
 import type { Project, ProjectInventoryMatch } from '@/lib/projects';
 import { getUserProjectProgressPercent, getUserProjectStatus } from '@/lib/projects';
 import { useSolderiColors } from '@/context/theme-context';
@@ -15,10 +16,10 @@ import { useSolderiColors } from '@/context/theme-context';
 type ProjectListCardProps = {
   project: Project;
   match: ProjectInventoryMatch;
-  inventoryReady: boolean;
+  partsState: PartsCoverageState;
 };
 
-export function ProjectListCard({ project, match, inventoryReady }: ProjectListCardProps) {
+export function ProjectListCard({ project, match, partsState }: ProjectListCardProps) {
   const router = useRouter();
   const { getUserProject, isFavourite, toggleFavourite } = useAtlas();
   const colors = useSolderiColors();
@@ -34,14 +35,7 @@ export function ProjectListCard({ project, match, inventoryReady }: ProjectListC
     advanced: colors.error,
   };
 
-  let partsLabel = 'Checking inventory…';
-  if (inventoryReady) {
-    if (match.matchPercentage == null) {
-      partsLabel = 'Components not yet defined';
-    } else {
-      partsLabel = listedPartsLabel(match.matchPercentage, match.ownedCount, match.totalRequired);
-    }
-  }
+  const partsLabel = projectPartsSummary(match, partsState);
 
   return (
     <View style={styles.container}>
@@ -72,7 +66,9 @@ export function ProjectListCard({ project, match, inventoryReady }: ProjectListC
           <View style={styles.footer}>
             <View style={styles.partsRow}>
               <Ionicons name="cube-outline" size={13} color={colors.textMuted} />
-              <Text style={styles.partsText}>{partsLabel}</Text>
+              <Text style={styles.partsText} numberOfLines={2}>
+                {partsLabel}
+              </Text>
             </View>
             {isInProgress ? <Text style={styles.progressText}>{progress}% done</Text> : null}
           </View>
@@ -177,7 +173,9 @@ function createStyles(colors: SolderiPalette) {
       flex: 1,
     },
     partsText: {
+      flexShrink: 1,
       fontSize: 12,
+      lineHeight: 16,
       color: colors.textMuted,
     },
     progressText: {

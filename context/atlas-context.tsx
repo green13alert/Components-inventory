@@ -21,6 +21,7 @@ import {
   setInventoryItemQuantity,
   updateInventoryCatalogueItem,
 } from '@/lib/inventory';
+import { planInventoryRefresh } from '@/lib/inventory-refresh';
 import { WALKTHROUGH_SAVE_FAILED, claimStepWrite, resolveCatalogueProjectId, stepWriteIsCurrent } from '@/lib/project-navigation';
 import {
   PROJECT_ERRORS,
@@ -77,7 +78,7 @@ type AtlasContextValue = {
   favouriteProjectIds: Set<string>;
   projectProgress: Record<string, ProjectProgress>;
   recentActivity: WorkshopActivity[];
-  reloadInventory: (options?: { silent?: boolean }) => Promise<void>;
+  reloadInventory: (options?: { silent?: boolean }) => Promise<{ error: string | null }>;
   addInventoryItem: (item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
   updateInventoryItem: (id: string, item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
   updateInventoryQuantity: (id: string, quantity: number) => Promise<InventoryMutationResult>;
@@ -164,36 +165,45 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
 
   const reloadInventory = useCallback(async (options?: { silent?: boolean }) => {
     const generation = ++loadGeneration.current;
+    const silent = options?.silent === true;
 
     if (!userId) {
-      setInventory([]);
-      setInventoryError(null);
+      const signedOut = planInventoryRefresh({
+        cached: [],
+        signedIn: false,
+        silent,
+        result: { data: [], error: null },
+      });
+      setInventory([...signedOut.inventory]);
+      setInventoryError(signedOut.storedError);
       setInventoryLoading(false);
-      return;
+      return { error: signedOut.reportedError };
     }
 
-    if (!options?.silent) {
+    if (!silent) {
       setInventoryLoading(true);
       setInventoryError(null);
     }
 
     const result = await fetchInventory();
     if (generation !== loadGeneration.current) {
-      return;
+      return { error: null };
     }
 
-    if (result.error) {
-      if (!options?.silent) {
-        setInventory([]);
-        setInventoryError(result.error);
-      }
-      setInventoryLoading(false);
-      return;
+    const plan = planInventoryRefresh({
+      cached: [],
+      signedIn: true,
+      silent,
+      result: { data: result.data, error: result.error },
+    });
+    if (plan.replaceInventory) {
+      setInventory([...plan.inventory]);
     }
-
-    setInventory(result.data ?? []);
-    setInventoryError(null);
+    if (plan.touchError) {
+      setInventoryError(plan.storedError);
+    }
     setInventoryLoading(false);
+    return { error: plan.reportedError };
   }, [userId]);
 
   const reloadProjectState = useCallback(async () => {
