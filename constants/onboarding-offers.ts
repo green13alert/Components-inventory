@@ -83,12 +83,17 @@ export const ONBOARDING_OFFERS: readonly OnboardingOffer[] = [
     choice('jumper-wires', 'A pin on both ends.'),
     choice('jumper-male-female', 'A socket on one end and a pin on the other.'),
   ]),
+  offer('usb-cable', 'components', 'USB data cable', 'Look at the plug that fits the board. An unknown plug does not count as either.', [
+    choice('usb-b-data-cable', 'USB-A to USB-B. Fits an Arduino Uno R3.'),
+    choice('usb-micro-b-data-cable', 'USB-A to Micro-USB. Fits an ESP32-DevKitC V4.'),
+    choice('usb-data-cable', 'The plug was not recorded. This does not count as either cable.', true),
+  ]),
   offer('stemma-qt', 'components', 'STEMMA QT cable', 'Skip this if you are not sure which end mates with the board.', [
     choice('stemma-qt-female', 'Four sockets that fit header pins.'),
     choice('stemma-qt-cable', 'Four pins that fit a breadboard.'),
   ]),
   offer('pir-sensor', 'sensors', 'PIR Motion Sensor', 'The motion-sensor module.', [
-    choice('pir-sensor', 'Passive infrared motion detector.'),
+    choice('pir-sensor', 'HC-SR501-style module. Male header, usually VCC, OUT, GND.'),
   ]),
   offer('bme280', 'sensors', 'Adafruit BME280', 'A BMP280 is a different sensor.', [
     choice('bme280', 'Adafruit BME280 with STEMMA QT sockets.'),
@@ -107,7 +112,7 @@ export const ONBOARDING_OFFERS: readonly OnboardingOffer[] = [
     choice('mg90s', 'Metal-gear micro servo. This is not an SG90.'),
   ]),
   offer('buzzer', 'motors', 'Active buzzer', 'Leave this out if yours is a two-pin piezo.', [
-    choice('buzzer', 'Three-pin module. The sounder turns on when the signal is high.'),
+    choice('buzzer', 'Male header, usually VCC, I/O, GND. Not a two-pin piezo.'),
   ]),
   offer('dc-motor', 'motors', 'DC Motor', 'A brushed hobby motor.', [
     choice('dc-motor', 'Brushed DC gear motor.'),

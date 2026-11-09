@@ -29,7 +29,7 @@ test('the motion alarm has one upload sketch and the three-pin buzzer', () => {
   assert.equal(finals.length, 1)
   assert.equal(blocks[blocks.length - 1].type === 'code' && blocks[blocks.length - 1].code === MOTION_SENSOR_ALARM_FIRMWARE, true)
   assert.equal(MOTION_SENSOR_ALARM_FIRMWARE.includes('Alarm armed.'), true)
-  assert.equal(MOTION_SENSOR_ALARM_COMPONENTS.some((item) => item.id === 'usb-data-cable'), true)
+  assert.equal(MOTION_SENSOR_ALARM_COMPONENTS.some((item) => item.id === 'usb-b-data-cable'), true)
   assert.equal(MOTION_SENSOR_ALARM_COMPONENTS.some((item) => item.id === 'buzzer'), true)
   const text = JSON.stringify(MOTION_SENSOR_ALARM_STEPS)
   assert.equal(text.includes('two leads'), false)
@@ -38,7 +38,7 @@ test('the motion alarm has one upload sketch and the three-pin buzzer', () => {
 
 test('the pan-tilt supply is a named 5 V adapter and the positive rails stay separate', () => {
   const slugs = SERVO_PAN_TILT_CAMERA_COMPONENTS.map((item) => item.id)
-  for (const id of ['gst18a05-p1j', 'iec-c13-mains-lead', 'adafruit-368', 'usb-data-cable']) {
+  for (const id of ['gst18a05-p1j', 'iec-c13-mains-lead', 'adafruit-368', 'usb-b-data-cable']) {
     assert.equal(slugs.includes(id), true, id)
   }
   assert.equal(slugs.includes('breadboard-psu'), false)

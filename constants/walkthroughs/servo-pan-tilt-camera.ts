@@ -20,9 +20,9 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
   { id: 'jumper-wires', name: 'Male-to-Male Jumper Wires', illustrationId: 'jumper-wires', owned: false, quantity: 14 },
   { id: 'adafruit-368', name: '2.1 mm jack to screw terminal', illustrationId: 'generic-module', owned: false, quantity: 1 },
-  { id: 'gst18a05-p1j', name: '5 V 3 A DC supply', illustrationId: 'battery', owned: false, quantity: 1 },
-  { id: 'iec-c13-mains-lead', name: 'IEC C13 mains lead', illustrationId: 'usb-cable', owned: false, quantity: 1 },
-  { id: 'usb-data-cable', name: 'USB data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
+  { id: 'gst18a05-p1j', name: '5 V 3 A DC supply', illustrationId: 'generic-module', owned: false, quantity: 1 },
+  { id: 'iec-c13-mains-lead', name: 'IEC C13 mains lead', illustrationId: 'generic-module', owned: false, quantity: 1 },
+  { id: 'usb-b-data-cable', name: 'USB-B data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
   { id: 'usb-power-source', name: 'USB power source', illustrationId: 'generic-module', owned: false, quantity: 1 },
 ];
 

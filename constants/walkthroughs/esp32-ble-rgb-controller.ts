@@ -36,7 +36,7 @@ export const ESP32_BLE_RGB_BOM = [
   { slug: 'breadboard', name: 'Breadboard', quantity: 1, role: 'breadboard', illustrationId: 'breadboard' as const },
   { slug: 'jumper-male-female', name: 'Male-to-Female Jumper Wires', quantity: 5, role: 'jumper_wires', illustrationId: 'jumper-wires' as const },
   { slug: 'jumper-wires', name: 'Male-to-Male Jumper Wires', quantity: 8, role: 'rail_jumpers', illustrationId: 'jumper-wires' as const },
-  { slug: 'usb-data-cable', name: 'USB data cable', quantity: 1, role: 'usb_cable', illustrationId: 'usb-cable' as const },
+  { slug: 'usb-micro-b-data-cable', name: 'Micro-USB data cable', quantity: 1, role: 'usb_cable', illustrationId: 'usb-cable' as const },
   { slug: 'usb-power-source', name: 'USB power source', quantity: 1, role: 'usb_power', illustrationId: 'generic-module' as const },
 ] as const;
 

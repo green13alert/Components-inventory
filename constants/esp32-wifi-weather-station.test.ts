@@ -53,7 +53,7 @@ test('the BOM lists every required physical part once', () => {
       ['esp32-devkitc-v4', 1],
       ['bme280', 1],
       ['stemma-qt-female', 1],
-      ['usb-data-cable', 1],
+      ['usb-micro-b-data-cable', 1],
       ['usb-power-source', 1],
     ],
   )

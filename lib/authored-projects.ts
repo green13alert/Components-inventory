@@ -74,7 +74,7 @@ export function localAuthoredProjects(): AuthoredProjectInput[] {
     {
       slug: '18',
       title: 'Servo Pan-Tilt Camera',
-      isPublished: true,
+      isPublished: false,
       learningObjectives: [],
       coverPending: projectCoverIsPending('servoCamera'),
       bom: SERVO_PAN_TILT_CAMERA_COMPONENTS.map((item) => ({ slug: item.id, quantity: item.quantity })),

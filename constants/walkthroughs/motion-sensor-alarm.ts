@@ -16,17 +16,17 @@ const COMPONENTS: ProjectComponent[] = [
   { id: 'pir-sensor', name: 'PIR motion sensor', illustrationId: 'pir-sensor', owned: false, quantity: 1 },
   { id: 'buzzer', name: 'Active buzzer module', illustrationId: 'buzzer', owned: false, quantity: 1 },
   { id: 'led', name: 'LED', illustrationId: 'led', owned: false, quantity: 1 },
-  { id: 'resistor-220', name: '220 Ω resistor', illustrationId: 'resistor', owned: false, quantity: 1 },
+  { id: 'resistor-220', name: '220 Ω resistor', illustrationId: 'resistor-band-220', owned: false, quantity: 1 },
   { id: 'breadboard', name: 'Breadboard', illustrationId: 'breadboard', owned: false, quantity: 1 },
   { id: 'jumper-wires', name: 'Male-to-Male Jumper Wires', illustrationId: 'jumper-wires', owned: false, quantity: 10 },
-  { id: 'usb-data-cable', name: 'USB data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
+  { id: 'usb-b-data-cable', name: 'USB-B data cable', illustrationId: 'usb-cable', owned: false, quantity: 1 },
   { id: 'usb-power-source', name: 'USB power source', illustrationId: 'generic-module', owned: false, quantity: 1 },
 ];
 
 const NODE_ARDUINO: WiringNode = { id: 'arduino', name: 'Arduino Uno', illustrationId: 'arduino-uno' };
 const NODE_PIR: WiringNode = { id: 'pir', name: 'PIR', illustrationId: 'pir-sensor' };
 const NODE_LED: WiringNode = { id: 'led', name: 'LED', illustrationId: 'led' };
-const NODE_RESISTOR: WiringNode = { id: 'resistor', name: '220 Ω resistor', illustrationId: 'resistor' };
+const NODE_RESISTOR: WiringNode = { id: 'resistor', name: '220 Ω resistor', illustrationId: 'resistor-band-220' };
 const NODE_BUZZER: WiringNode = { id: 'buzzer', name: 'Buzzer', illustrationId: 'buzzer' };
 
 const PIR_CONNECTIONS: StepConnection[] = [
@@ -271,7 +271,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'What you are wiring',
-        body: 'Plug the PIR pins into c3, c4, and c5: VCC, OUT, then GND. A male-to-male jumper joins a3 to the left + rail at row 3. Another joins a5 to the left − rail at row 5. D2 goes to a4. OUT is the motion flag — that is PIR_PIN in the sketch. After power-up, give the module about 30 seconds. OUT can chatter during that time. A HIGH is one motion pulse, then it returns LOW. It does not stay HIGH for as long as a person remains in view. Aim the lens away from heaters and vents.',
+        body: 'Plug the PIR pins into c3, c4, and c5: VCC, OUT, then GND. The usual HC-SR501 header, with the pins along the bottom and the two trimmers along the top, reads in that order. If the silk prints another order, put each labelled pin in the hole named for it and do not swap VCC and GND. A male-to-male jumper joins a3 to the left + rail at row 3. Another joins a5 to the left − rail at row 5. D2 goes to a4. OUT is the motion flag — that is PIR_PIN in the sketch. After power-up, give the module about 30 seconds. OUT can chatter during that time. A HIGH is one motion pulse, then it returns LOW. It does not stay HIGH for as long as a person remains in view. Aim the lens away from heaters and vents.',
       },
       {
         type: 'wiring',
@@ -332,7 +332,7 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'text',
         heading: 'Three-pin active module',
-        body: 'Use the three-pin active module from the parts list. Plug it into c9, c10, and c11: VCC, I/O, then GND. a9 goes to the left + rail at row 9, D9 goes to a10, and a11 goes to the left − rail at row 11. The GPIO drives I/O only. The module takes sounder current from the 5 V rail. A two-pin piezo is not this part, and this sketch will not sound one.',
+        body: 'Use the three-pin active module from the parts list. Its header is male. Plug it into c9, c10, and c11: VCC, I/O, then GND. If the silk prints another order, follow the silk and do not swap VCC and GND. a9 goes to the left + rail at row 9, D9 goes to a10, and a11 goes to the left − rail at row 11. The GPIO drives I/O only. The module takes sounder current from the 5 V rail. A two-pin piezo is not this part, and this sketch will not sound one.',
       },
       {
         type: 'wiring',

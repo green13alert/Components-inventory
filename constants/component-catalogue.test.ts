@@ -83,8 +83,8 @@ const BATCH_ONE_IDS = [
 
 test('batch 1 adds 18 components and keeps the original ids', () => {
   const ids = COMPONENT_CATALOGUE.map((entry) => entry.id)
-  assert.equal(ids.length, 73)
-  assert.equal(new Set(ids).size, 73)
+  assert.equal(ids.length, 75)
+  assert.equal(new Set(ids).size, 75)
   for (const id of ['esp32-devkitc-v4', 'stemma-qt-female', 'gst18a05-p1j', 'iec-c13-mains-lead', 'adafruit-368']) {
     assert.equal(ids.includes(id), true)
   }
@@ -145,7 +145,7 @@ test('the catalogue buzzer is the active buzzer named by the motion-alarm steps'
   assert.equal(buzzer?.category, 'actuators')
   assert.equal(
     buzzer?.description,
-    'Three-pin active buzzer module: VCC, I/O, and GND. HIGH on I/O turns the sounder on. The module switches the sounder from VCC, so the GPIO is a control pin. A two-pin piezo is a different part.',
+    'Three-pin active buzzer module with a 2.54 mm male header. The usual order is VCC, I/O, GND, and it runs from 5 V. HIGH on I/O turns the sounder on. The module takes sounder current from VCC, so the GPIO is only the control pin. Match the silk if a board prints another order. A two-pin sounder is a different part.',
   )
   assert.equal(idsFor('active buzzer')[0], 'buzzer')
   assert.equal(idsFor('buzzer')[0], 'buzzer')
@@ -200,8 +200,14 @@ test('jumper labels name the connector gender and search still finds both', () =
   assert.equal(componentDisplayName('jumper-wires') === componentDisplayName('jumper-male-female'), false)
 
   const found = idsFor('jumper wires')
-  assert.equal(found.includes('jumper-wires'), true)
+  assert.equal(found[0], 'jumper-wires')
   assert.equal(found.includes('jumper-male-female'), true)
+  assert.equal(getCatalogueComponent('jumper-male-female')?.aliases.includes('jumper wires'), false)
+  assert.equal(getCatalogueComponent('sg90')?.aliases.includes('servo'), false)
+  assert.equal(getCatalogueComponent('pn2222a')?.aliases.includes('2n2222'), false)
+  const servos = idsFor('servo')
+  assert.equal(servos.includes('sg90'), true)
+  assert.equal(servos.includes('mg90s'), true)
 
   const projects = new Map(localAuthoredProjects().map((project) => [project.slug, project]))
   const quantity = (slug: string, componentSlug: string) => {
@@ -250,6 +256,14 @@ test('generic catalogue rows stay generic', () => {
   assert.equal(componentDisplayName('usb-data-cable', 'USB data cable'), 'USB data cable')
   assert.equal(componentDisplayName('usb-data-cable').includes('USB-B'), false)
   assert.equal(componentDisplayName('usb-data-cable').includes('Micro-B'), false)
+  assert.equal(componentDisplayName('usb-b-data-cable'), 'USB-B data cable')
+  assert.equal(componentDisplayName('usb-micro-b-data-cable'), 'Micro-USB data cable')
+  assert.equal(idsFor('usb-b')[0], 'usb-b-data-cable')
+  assert.equal(idsFor('micro usb')[0], 'usb-micro-b-data-cable')
+  assert.equal(idsFor('micro usb').includes('usb-b-data-cable'), false)
+  assert.equal(getCatalogueComponent('rgb-led-cc')?.image, 'rgb-led')
+  assert.equal(getCatalogueComponent('gst18a05-p1j')?.image, 'generic-module')
+  assert.equal(getCatalogueComponent('iec-c13-mains-lead')?.image, 'generic-module')
   assert.equal(componentDisplayName('esp32', 'ESP32 DevKit'), 'ESP32 DevKit')
   assert.equal(componentDisplayName('esp32') === componentDisplayName('esp32-devkitc-v4'), false)
   assert.equal(componentDisplayName('resistor', 'Resistor'), 'Resistor')

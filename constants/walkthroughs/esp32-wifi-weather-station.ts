@@ -31,7 +31,7 @@ export const ESP32_WIFI_WEATHER_BOM = [
   { slug: 'esp32-devkitc-v4', name: 'ESP32-DevKitC V4', quantity: 1, role: 'microcontroller', illustrationId: 'esp32' as const },
   { slug: 'bme280', name: 'Adafruit BME280', quantity: 1, role: 'environment_sensor', illustrationId: 'bme280' as const },
   { slug: 'stemma-qt-female', name: 'STEMMA QT to female cable', quantity: 1, role: 'sensor_cable', illustrationId: 'stemma-qt' as const },
-  { slug: 'usb-data-cable', name: 'USB data cable', quantity: 1, role: 'usb_cable', illustrationId: 'usb-cable' as const },
+  { slug: 'usb-micro-b-data-cable', name: 'Micro-USB data cable', quantity: 1, role: 'usb_cable', illustrationId: 'usb-cable' as const },
   { slug: 'usb-power-source', name: 'USB power source', quantity: 1, role: 'usb_power', illustrationId: 'generic-module' as const },
 ] as const;
 

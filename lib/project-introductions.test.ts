@@ -99,7 +99,7 @@ test('step 1 introduces the result without copying the overview', () => {
 test('publication flags stay as they are', () => {
   const bySlug = new Map(localAuthoredProjects().map((project) => [project.slug, project.isPublished]))
   assert.equal(bySlug.get('8'), true)
-  assert.equal(bySlug.get('18'), true)
+  assert.equal(bySlug.get('18'), false)
   assert.equal(bySlug.get('23'), false)
   assert.equal(bySlug.get('24'), false)
   assert.equal(bySlug.get('25'), false)

@@ -28,7 +28,7 @@ import {
  * required quantity.
  *
  * These limitations stay outside this matcher. The tests do not treat them as solved:
- * - usb-data-cable is one catalogue row. It does not record USB-B versus Micro-B.
+ * - usb-data-cable remains the legacy row. It does not satisfy a USB-B or Micro-USB line.
  * - usb-power-source is one generic catalogue row.
  * - A generic onboarding choice stays that catalogue row. It does not become a specific variant.
  * - Project 18's servo supply is authored and hardwareTested stays false. A full
@@ -361,6 +361,40 @@ test('project 8 keeps the 220 ohm resistor, the active buzzer, and ten jumpers e
   assertShort(wrongBuzzer, 'buzzer', 1)
 
   assertShort(matchLines('8', withStock(lines, [{ componentId: 'jumper-wires', quantity: 9 }])), 'jumper-wires', 1)
+  requiredQuantity(lines, 'usb-b-data-cable', 1)
+  assertShort(
+    matchLines('8', withStock(lines, [{ componentId: 'usb-b-data-cable', quantity: 0 }], [{ componentId: 'usb-data-cable', quantity: 1 }])),
+    'usb-b-data-cable',
+    1,
+  )
+  assertShort(
+    matchLines('8', withStock(lines, [{ componentId: 'usb-b-data-cable', quantity: 0 }], [{ componentId: 'usb-micro-b-data-cable', quantity: 1 }])),
+    'usb-b-data-cable',
+    1,
+  )
+})
+
+test('a legacy USB cable does not prove a Micro-USB socket, and quantities stay on their own lines', () => {
+  const weather = bomLines('23')
+  requiredQuantity(weather, 'usb-micro-b-data-cable', 1)
+  assertShort(
+    matchLines('23', withStock(weather, [{ componentId: 'usb-micro-b-data-cable', quantity: 0 }], [{ componentId: 'usb-data-cable', quantity: 1 }])),
+    'usb-micro-b-data-cable',
+    1,
+  )
+  assertShort(
+    matchLines('23', withStock(weather, [{ componentId: 'usb-micro-b-data-cable', quantity: 0 }], [{ componentId: 'usb-b-data-cable', quantity: 1 }])),
+    'usb-micro-b-data-cable',
+    1,
+  )
+  const exact = matchLines('23', exactInventory(weather))
+  assertComplete(exact, 'weather cables')
+
+  const rgb = bomLines('24')
+  requiredQuantity(rgb, 'pn2222a', 3)
+  requiredQuantity(rgb, 'resistor-220', 3)
+  requiredQuantity(rgb, 'resistor-1k', 3)
+  assertShort(matchLines('24', withStock(rgb, [{ componentId: 'pn2222a', quantity: 2 }])), 'pn2222a', 1)
 })
 
 /**

@@ -130,7 +130,8 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     id: 'pir-sensor',
     name: 'PIR Motion Sensor',
     aliases: ['pir', 'motion sensor', 'hc-sr501', 'hc sr501'],
-    description: 'Passive infrared motion detector',
+    description:
+      'HC-SR501-style module with a 2.54 mm male header. With the header along the bottom and the two trimmers along the top, the usual silk is VCC, OUT, GND. OUT is a 3.3 V digital signal and VCC is 5 V into the module regulator. Some boards print the opposite order, so match the silk and do not swap VCC and GND.',
     category: 'sensors',
     type: 'motion',
     image: 'pir-sensor',
@@ -183,7 +184,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'sg90',
     name: 'SG90 Micro Servo',
-    aliases: ['sg90', 'sg 90', 'micro servo', '9g servo', 'servo'],
+    aliases: ['sg90', 'sg 90', 'micro servo', '9g servo'],
     description: '9g hobby servo motor',
     category: 'actuators',
     type: 'servo',
@@ -238,7 +239,8 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     id: 'buzzer',
     name: 'Active buzzer',
     aliases: ['buzzer', 'active buzzer', 'piezo buzzer'],
-    description: 'Three-pin active buzzer module: VCC, I/O, and GND. HIGH on I/O turns the sounder on. The module switches the sounder from VCC, so the GPIO is a control pin. A two-pin piezo is a different part.',
+    description:
+      'Three-pin active buzzer module with a 2.54 mm male header. The usual order is VCC, I/O, GND, and it runs from 5 V. HIGH on I/O turns the sounder on. The module takes sounder current from VCC, so the GPIO is only the control pin. Match the silk if a board prints another order. A two-pin sounder is a different part.',
     category: 'actuators',
     type: 'buzzer',
     image: 'buzzer',
@@ -377,7 +379,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
       '5 mm common-cathode RGB LED using the Young Sun YSL-R596CR3G4B5C-C10 lead order. Leads pointing down, left to right: red anode, common cathode (longest), green anode, blue anode. This row is not a common-anode LED and not an addressable pixel.',
     category: 'modules',
     type: 'led',
-    image: 'led',
+    image: 'rgb-led',
   },
   {
     id: 'rgb-led-ca',
@@ -392,9 +394,9 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'pn2222a',
     name: 'PN2222A transistor',
-    aliases: ['pn2222', '2n2222', 'p2n2222a', 'npn transistor'],
+    aliases: ['pn2222', 'p2n2222a', 'npn transistor'],
     description:
-      'onsemi PN2222ABU, the bulk TO-92 formerly listed by Fairchild. Top mark PN2222A. The PN2222A Rev. 1.1.0 package sketch labels the leads E, B, C: flat face toward you and leads down, left to right is emitter, base, collector. A metal-can 2N2222, and some other TO-92 parts with a similar mark, use a different order. Absolute maximum collector current is 1 A. Used as a low-side switch.',
+      'onsemi PN2222ABU, the bulk TO-92 formerly listed by Fairchild. Top mark PN2222A. The PN2222A Rev. 1.1.0 package sketch labels the leads E, B, C: flat face toward you and leads down, left to right is emitter, base, collector. A metal-can transistor with a similar marking, and some other TO-92 parts, use a different lead order. Absolute maximum collector current is 1 A. Used as a low-side switch.',
     category: 'modules',
     type: 'transistor',
     image: 'transistor',
@@ -609,8 +611,29 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'usb-data-cable',
     name: 'USB data cable',
-    aliases: ['usb cable', 'micro usb cable', 'data cable'],
-    description: 'Data-capable USB cable. Match the plug to the board: Arduino Uno R3 uses USB-B, and Espressif ESP32-DevKitC V4 uses Micro-B. A charge-only cable can power a board and still fail upload.',
+    aliases: ['usb cable', 'data cable'],
+    description:
+      'A data-capable USB cable whose plug was not recorded. It does not count as a USB-B cable or a Micro-USB cable. Add the cable whose plug you can see.',
+    category: 'modules',
+    type: 'cable',
+    image: 'usb-cable',
+  },
+  {
+    id: 'usb-b-data-cable',
+    name: 'USB-B data cable',
+    aliases: ['usb-b', 'usb b', 'usb type b', 'arduino usb cable'],
+    description:
+      'USB-A to USB-B cable that carries data. Fits the Arduino Uno R3 USB-B socket. A phone-sized plug does not fit this socket, and a charge-only cable can power the board and still fail upload.',
+    category: 'modules',
+    type: 'cable',
+    image: 'usb-cable',
+  },
+  {
+    id: 'usb-micro-b-data-cable',
+    name: 'Micro-USB data cable',
+    aliases: ['micro-usb', 'micro usb', 'micro-b', 'usb micro-b'],
+    description:
+      'USB-A to Micro-USB cable that carries data. Fits the Espressif ESP32-DevKitC V4 Micro-USB socket. A USB-B cable does not fit this socket, and a USB-C cable does not fit it either.',
     category: 'modules',
     type: 'cable',
     image: 'usb-cable',
@@ -649,7 +672,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'MEAN WELL GST18A05-P1J. Output 5 V DC at 3 A, plug 5.5×2.1 mm, center positive. The inlet is IEC C14 and the mains lead is a separate part.',
     category: 'power',
     type: 'power_supply',
-    image: 'battery',
+    image: 'generic-module',
   },
   {
     id: 'iec-c13-mains-lead',
@@ -658,7 +681,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
     description: 'Mains lead with an IEC C13 connector for the GST18A05-P1J C14 inlet, and a plug for the local mains outlet.',
     category: 'power',
     type: 'cable',
-    image: 'usb-cable',
+    image: 'generic-module',
   },
   {
     id: 'adafruit-368',
@@ -672,7 +695,7 @@ export const COMPONENT_CATALOGUE: CatalogueComponent[] = [
   {
     id: 'jumper-male-female',
     name: 'Male-to-Female Jumper Wires',
-    aliases: ['male to female jumpers', 'dupont male female', 'mf jumper', 'jumper wires', 'male to female jumper wires'],
+    aliases: ['male to female jumpers', 'dupont male female', 'mf jumper', 'male to female jumper wires'],
     description: 'Dupont wires with a female socket on one end and a male pin on the other. The socket fits a male header pin.',
     category: 'modules',
     type: 'prototyping',

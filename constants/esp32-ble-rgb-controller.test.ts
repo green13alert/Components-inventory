@@ -54,7 +54,7 @@ test('the BOM is the common-anode LED, PN2222A switches, and the DevKit', () => 
       ['breadboard', 1],
       ['jumper-male-female', 5],
       ['jumper-wires', 8],
-      ['usb-data-cable', 1],
+      ['usb-micro-b-data-cable', 1],
       ['usb-power-source', 1],
     ],
   )
