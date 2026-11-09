@@ -16,6 +16,14 @@ import { pressFeedback } from '@/components/ui/press-feedback';
 import { useWalkthroughScrollController, WalkthroughScrollProvider } from '@/components/projects/walkthrough/WalkthroughScroll';
 import type { SolderiPalette } from '@/constants/colors';
 import { useAtlas } from '@/context/atlas-context';
+import { useAuth } from '@/context/auth-context';
+import { completionStepForWalkthrough } from '@/lib/build-activity';
+import {
+  initialStepScrollGate,
+  stepAdvanceLocked,
+  updateStepScrollGate,
+  type StepScrollMeasurement,
+} from '@/lib/walkthrough-scroll-gate';
 import {
   moveWalkthroughStep,
   resolveBuildDestination,
@@ -51,6 +59,7 @@ export default function ProjectBuildScreen() {
   const reviewRequested = (Array.isArray(reviewParam) ? reviewParam[0] : reviewParam) === '1';
   const codeRequested = (Array.isArray(codeParam) ? codeParam[0] : codeParam) === '1';
   const router = useRouter();
+  const { session } = useAuth();
   const insets = useSafeAreaInsets();
   const colors = useSolderiColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -60,6 +69,7 @@ export default function ProjectBuildScreen() {
     setProjectStep,
     completeProject,
     startProject,
+    recordStepCompletion,
   } = useAtlas();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -73,6 +83,8 @@ export default function ProjectBuildScreen() {
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const startAttemptedRef = useRef<string | null>(null);
   const stepCursorRef = useRef(0);
+  const scrollGateRef = useRef(initialStepScrollGate());
+  const [scrollReachedKey, setScrollReachedKey] = useState<string | null>(null);
   const [wiringPinchActive, setWiringPinchActive] = useState(false);
 
   useEffect(() => {
@@ -156,6 +168,16 @@ export default function ProjectBuildScreen() {
   stepCursorRef.current = currentStepIndex;
   const currentStep = steps[currentStepIndex] ?? steps[0];
   const stepNavigationKey = currentStep?.id ?? String(currentStepIndex);
+  const scrollGateKey = `${session?.user.id ?? 'signed-out'}:${projectKey}:${stepNavigationKey}`;
+  if (scrollGateRef.current.stepKey !== scrollGateKey) {
+    scrollGateRef.current = updateStepScrollGate(scrollGateRef.current, scrollGateKey, {});
+  }
+  const nextLocked = !reviewMode && (scrollReachedKey !== scrollGateKey || stepAdvanceLocked(scrollGateRef.current, scrollGateKey));
+  const reportScrollMetrics = (metrics: StepScrollMeasurement) => {
+    const next = updateStepScrollGate(scrollGateRef.current, scrollGateKey, metrics);
+    scrollGateRef.current = next;
+    setScrollReachedKey((current) => (current === next.reachedStepKey ? current : next.reachedStepKey));
+  };
   const walkthroughScroll = useWalkthroughScrollController(stepNavigationKey);
   const footerControls = walkthroughFooterControls({
     stepIndex: currentStepIndex,
@@ -226,8 +248,17 @@ export default function ProjectBuildScreen() {
   };
 
   const finishProject = async () => {
+    const completedStep = completionStepForWalkthrough({
+      action: 'finish',
+      reviewing: false,
+      stepIndex: stepCursorRef.current,
+      stepCount: steps.length,
+    });
     const result = await completeProject(project.id, stepCursorRef.current);
     setSaveNotice(result.error ? WALKTHROUGH_SAVE_FAILED : null);
+    if (completedStep != null) {
+      void recordStepCompletion(project.id, completedStep);
+    }
   };
 
   const handlePrev = () => {
@@ -256,10 +287,19 @@ export default function ProjectBuildScreen() {
       setReviewStepIndex((index) => Math.min(index + 1, lastStepIndex));
       return;
     }
+    if (stepAdvanceLocked(scrollGateRef.current, scrollGateKey)) {
+      return;
+    }
     if (isLastStep) {
       void finishProject();
       return;
     }
+    const completedStep = completionStepForWalkthrough({
+      action: 'next',
+      reviewing: false,
+      stepIndex: stepCursorRef.current,
+      stepCount: steps.length,
+    });
     const next = moveWalkthroughStep(stepCursorRef.current, 1, steps.length);
     if (next === stepCursorRef.current) {
       return;
@@ -267,6 +307,9 @@ export default function ProjectBuildScreen() {
     stepCursorRef.current = next;
     setStepOverride(next);
     void persistStep(next);
+    if (completedStep != null) {
+      void recordStepCompletion(project.id, completedStep);
+    }
   };
 
   if (destination === 'coming_soon') {
@@ -428,13 +471,32 @@ export default function ProjectBuildScreen() {
         nestedScrollEnabled
         scrollEnabled={!wiringPinchActive}
         scrollEventThrottle={16}
-        onScroll={walkthroughScroll.onScroll}
+        onLayout={(event) => {
+          reportScrollMetrics({ viewportHeight: event.nativeEvent.layout.height });
+        }}
+        onScroll={(event) => {
+          walkthroughScroll.onScroll(event);
+          reportScrollMetrics({
+            offsetY: event.nativeEvent.contentOffset.y,
+            viewportHeight: event.nativeEvent.layoutMeasurement.height,
+          });
+        }}
         onScrollBeginDrag={walkthroughScroll.onScrollBeginDrag}
         onScrollEndDrag={walkthroughScroll.onScrollEndDrag}
-        onMomentumScrollEnd={walkthroughScroll.onMomentumScrollEnd}
+        onMomentumScrollEnd={(event) => {
+          walkthroughScroll.onMomentumScrollEnd();
+          reportScrollMetrics({
+            offsetY: event.nativeEvent.contentOffset.y,
+            viewportHeight: event.nativeEvent.layoutMeasurement.height,
+          });
+        }}
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         contentInsetAdjustmentBehavior="never">
-        <View style={styles.stepBody}>
+        <View
+          style={styles.stepBody}
+          onLayout={(event) => {
+            reportScrollMetrics({ instructionalHeight: event.nativeEvent.layout.height });
+          }}>
           {stage ? (
             <Text style={styles.stageKicker}>
               Stage {stage.stageNumber} of {stage.stageCount} — {stage.stageTitle}
@@ -480,6 +542,7 @@ export default function ProjectBuildScreen() {
 
       <View style={[styles.footer, { paddingBottom: walkthroughFooterPadding(insets.bottom) }]}>
         {saveNotice ? <Text style={styles.continueHint}>{saveNotice}</Text> : null}
+        {nextLocked ? <Text style={styles.continueHint}>Scroll to the end to continue</Text> : null}
         <View style={styles.footerRow}>
           <Pressable
             style={pressFeedback([styles.secondaryButton, isFirstStep && styles.buttonDisabled])}
@@ -491,11 +554,15 @@ export default function ProjectBuildScreen() {
             <Text style={styles.secondaryButtonText}>Previous</Text>
           </Pressable>
           <Pressable
-            style={pressFeedback([styles.primaryButton, styles.footerPrimaryButton])}
+            style={pressFeedback([
+              styles.primaryButton,
+              styles.footerPrimaryButton,
+              (nextLocked || !footerControls.nextEnabled) && styles.buttonDisabled,
+            ])}
             onPress={handleNext}
-            disabled={!footerControls.nextEnabled}
+            disabled={nextLocked || !footerControls.nextEnabled}
             accessibilityRole="button"
-            accessibilityState={{ disabled: !footerControls.nextEnabled }}>
+            accessibilityState={{ disabled: nextLocked || !footerControls.nextEnabled }}>
             <Text style={styles.primaryButtonText}>
               {footerControls.nextLabel}
             </Text>

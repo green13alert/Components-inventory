@@ -21,8 +21,10 @@ import {
   setInventoryItemQuantity,
   updateInventoryCatalogueItem,
 } from '@/lib/inventory';
+import { mergeStepCompletions, rememberStepCompletion, type StepCompletionEvent, type StepHistoryStatus } from '@/lib/build-activity';
 import { joinInFlightRefresh, planInventoryRefresh } from '@/lib/inventory-refresh';
 import { WALKTHROUGH_SAVE_FAILED, claimStepWrite, resolveCatalogueProjectId, stepWriteIsCurrent } from '@/lib/project-navigation';
+import { fetchStepCompletions, insertStepCompletion } from '@/lib/step-completions';
 import {
   PROJECT_ERRORS,
   completeUserProject,
@@ -78,6 +80,11 @@ type AtlasContextValue = {
   favouriteProjectIds: Set<string>;
   projectProgress: Record<string, ProjectProgress>;
   recentActivity: WorkshopActivity[];
+  stepCompletions: StepCompletionEvent[];
+  stepCompletionStatus: StepHistoryStatus;
+  stepCompletionAccountId: string | null;
+  reloadStepCompletions: (options?: { silent?: boolean }) => Promise<{ error: string | null; applied?: boolean }>;
+  recordStepCompletion: (projectId: string, stepIndex: number) => Promise<{ recorded: boolean; error: string | null }>;
   reloadInventory: (options?: { silent?: boolean }) => Promise<{ error: string | null; applied?: boolean }>;
   addInventoryItem: (item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
   updateInventoryItem: (id: string, item: Omit<InventoryComponent, 'id'>) => Promise<InventoryMutationResult>;
@@ -145,6 +152,9 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [userProjects, setUserProjects] = useState<UserProject[]>([]);
   const [recentActivity, setRecentActivity] = useState<WorkshopActivity[]>([]);
+  const [stepCompletions, setStepCompletions] = useState<StepCompletionEvent[]>([]);
+  const [stepCompletionStatus, setStepCompletionStatus] = useState<StepHistoryStatus>('loading');
+  const [stepCompletionAccountId, setStepCompletionAccountId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const hideToast = useCallback(() => setToastMessage(null), []);
@@ -159,6 +169,12 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
   const confirmedSteps = useRef(new Map<string, number>());
   const projectPersistChain = useRef(new Map<string, Promise<void>>());
   const completedProjectIds = useRef(new Set<string>());
+  const stepHistoryGeneration = useRef(0);
+  const stepHistoryRef = useRef({
+    accountId: null as string | null,
+    status: 'loading' as StepHistoryStatus,
+    events: [] as StepCompletionEvent[],
+  });
 
   const enqueueProjectPersist = useCallback((projectId: string, task: () => Promise<void>) => {
     const previous = projectPersistChain.current.get(projectId) ?? Promise.resolve();
@@ -285,6 +301,91 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       ),
     [publishedProjects, userProjects],
   );
+
+  const replaceStepHistory = useCallback(
+    (accountId: string | null, status: StepHistoryStatus, events: StepCompletionEvent[]) => {
+      const next = { accountId, status, events };
+      stepHistoryRef.current = next;
+      setStepCompletionAccountId(accountId);
+      setStepCompletionStatus(status);
+      setStepCompletions(events);
+    },
+    [],
+  );
+
+  const reloadStepCompletions = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    const accountId = userId ?? null;
+    const generation = ++stepHistoryGeneration.current;
+    const current = stepHistoryRef.current;
+
+    if (!accountId) {
+      replaceStepHistory(null, 'ready', []);
+      return { error: null, applied: true };
+    }
+
+    if (current.accountId !== accountId) {
+      replaceStepHistory(accountId, 'loading', []);
+    } else if (!silent && current.status !== 'ready') {
+      replaceStepHistory(accountId, 'loading', []);
+    }
+
+    const result = await fetchStepCompletions();
+    if (generation !== stepHistoryGeneration.current) {
+      return { error: null, applied: false };
+    }
+
+    if (result.status === 'ready') {
+      const events = mergeStepCompletions(stepHistoryRef.current.events, result.events, accountId);
+      replaceStepHistory(accountId, 'ready', events);
+      return { error: null, applied: true };
+    }
+    if (result.status === 'missing_table') {
+      replaceStepHistory(accountId, 'missing_table', []);
+      return { error: null, applied: true };
+    }
+    if (result.status === 'unauthenticated') {
+      replaceStepHistory(null, 'ready', []);
+      return { error: null, applied: true };
+    }
+    if (current.accountId === accountId && current.status === 'ready' && silent) {
+      return { error: result.error, applied: false };
+    }
+    replaceStepHistory(accountId, 'error', []);
+    return { error: result.error, applied: false };
+  }, [replaceStepHistory, userId]);
+
+  const recordStepCompletion = useCallback(
+    async (projectId: string, stepIndex: number) => {
+      const resolved = resolveProjectId(projectId);
+      if (!userId || !resolved) {
+        return { recorded: false, error: null };
+      }
+
+      const result = await insertStepCompletion(userId, resolved, stepIndex);
+      if (stepHistoryRef.current.accountId !== userId && stepHistoryRef.current.accountId != null) {
+        return { recorded: false, error: null };
+      }
+      if (result.status === 'inserted') {
+        const events = rememberStepCompletion(stepHistoryRef.current.events, result.event);
+        replaceStepHistory(userId, 'ready', events);
+        return { recorded: true, error: null };
+      }
+      if (result.status === 'duplicate') {
+        return { recorded: false, error: null };
+      }
+      if (result.status === 'missing_table') {
+        replaceStepHistory(userId, 'missing_table', []);
+        return { recorded: false, error: null };
+      }
+      return { recorded: false, error: result.status === 'failed' ? result.error : null };
+    },
+    [replaceStepHistory, resolveProjectId, userId],
+  );
+
+  useEffect(() => {
+    void reloadStepCompletions();
+  }, [reloadStepCompletions]);
 
   const getUserProject = useCallback(
     (projectId: string) => {
@@ -664,6 +765,11 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       favouriteProjectIds,
       projectProgress,
       recentActivity,
+      stepCompletions,
+      stepCompletionStatus,
+      stepCompletionAccountId,
+      reloadStepCompletions,
+      recordStepCompletion,
       reloadInventory,
       addInventoryItem,
       updateInventoryItem,
@@ -692,6 +798,11 @@ export function AtlasProvider({ children }: { children: ReactNode }) {
       favouriteProjectIds,
       projectProgress,
       recentActivity,
+      stepCompletions,
+      stepCompletionStatus,
+      stepCompletionAccountId,
+      reloadStepCompletions,
+      recordStepCompletion,
       reloadInventory,
       addInventoryItem,
       updateInventoryItem,
