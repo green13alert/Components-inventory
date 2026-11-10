@@ -30,7 +30,9 @@ import {
   walkthroughButtonFlex,
   walkthroughFooterControls,
   walkthroughFooterPadding,
+  walkthroughFurthestStep,
   walkthroughProgressPercent,
+  walkthroughStepIsComplete,
   WALKTHROUGH_SAVE_FAILED,
 } from '@/lib/project-navigation';
 import {
@@ -70,6 +72,7 @@ export default function ProjectBuildScreen() {
     completeProject,
     startProject,
     recordStepCompletion,
+    stepCompletions,
   } = useAtlas();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -84,6 +87,7 @@ export default function ProjectBuildScreen() {
   const startAttemptedRef = useRef<string | null>(null);
   const stepCursorRef = useRef(0);
   const scrollGateRef = useRef(initialStepScrollGate());
+  const explanationResizeRef = useRef(false);
   const [scrollReachedKey, setScrollReachedKey] = useState<string | null>(null);
   const [wiringPinchActive, setWiringPinchActive] = useState(false);
 
@@ -148,6 +152,22 @@ export default function ProjectBuildScreen() {
   const currentStepIndex = reviewMode
     ? Math.min(reviewStepIndex, lastStepIndex)
     : Math.min(stepOverride ?? persistedStep, lastStepIndex);
+  const completedStepIndexes = stepCompletions
+    .filter((event) => event.projectId === projectKey)
+    .map((event) => event.stepIndex);
+  const furthestStep = walkthroughFurthestStep({
+    viewedStep: currentStepIndex,
+    savedStep: persistedStep,
+    completedStepIndexes,
+    stepCount: steps.length,
+  });
+  const stepAlreadyCompleted =
+    !reviewMode &&
+    walkthroughStepIsComplete({
+      stepIndex: currentStepIndex,
+      furthestStep,
+      completedStepIndexes,
+    });
   const destination = resolveBuildDestination({
     stepCount: steps.length,
     status,
@@ -169,12 +189,26 @@ export default function ProjectBuildScreen() {
   const currentStep = steps[currentStepIndex] ?? steps[0];
   const stepNavigationKey = currentStep?.id ?? String(currentStepIndex);
   const scrollGateKey = `${session?.user.id ?? 'signed-out'}:${projectKey}:${stepNavigationKey}`;
-  if (scrollGateRef.current.stepKey !== scrollGateKey) {
-    scrollGateRef.current = updateStepScrollGate(scrollGateRef.current, scrollGateKey, {});
+  if (
+    scrollGateRef.current.stepKey !== scrollGateKey ||
+    (stepAlreadyCompleted && !scrollGateRef.current.stepCompleted)
+  ) {
+    scrollGateRef.current = updateStepScrollGate(scrollGateRef.current, scrollGateKey, {
+      alreadyCompleted: stepAlreadyCompleted,
+    });
   }
-  const nextLocked = !reviewMode && (scrollReachedKey !== scrollGateKey || stepAdvanceLocked(scrollGateRef.current, scrollGateKey));
+  if (stepAlreadyCompleted && scrollReachedKey !== scrollGateKey) {
+    setScrollReachedKey(scrollGateKey);
+  }
+  const nextLocked =
+    !reviewMode &&
+    !stepAlreadyCompleted &&
+    (scrollReachedKey !== scrollGateKey || stepAdvanceLocked(scrollGateRef.current, scrollGateKey));
   const reportScrollMetrics = (metrics: StepScrollMeasurement) => {
-    const next = updateStepScrollGate(scrollGateRef.current, scrollGateKey, metrics);
+    const next = updateStepScrollGate(scrollGateRef.current, scrollGateKey, {
+      ...metrics,
+      alreadyCompleted: stepAlreadyCompleted,
+    });
     scrollGateRef.current = next;
     setScrollReachedKey((current) => (current === next.reachedStepKey ? current : next.reachedStepKey));
   };
@@ -187,6 +221,7 @@ export default function ProjectBuildScreen() {
 
   useEffect(() => {
     setWiringPinchActive(false);
+    explanationResizeRef.current = false;
   }, [stepNavigationKey]);
 
   if (loading) {
@@ -219,7 +254,7 @@ export default function ProjectBuildScreen() {
       ? [...currentStep.blocks, { type: 'tip' as const, body: currentStep.tip }]
       : currentStep?.blocks ?? [];
   const priorWiringConnections = collectPriorWiringConnections(steps, currentStepIndex);
-  const progressPercent = walkthroughProgressPercent(currentStepIndex, steps.length, reviewMode);
+  const progressPercent = walkthroughProgressPercent(furthestStep, steps.length, reviewMode);
   const isFirstStep = !footerControls.previousEnabled;
   const isLastStep = footerControls.nextLabel !== 'Next Step';
   const sketch = getWalkthroughSketch(steps);
@@ -275,7 +310,6 @@ export default function ProjectBuildScreen() {
     }
     stepCursorRef.current = previous;
     setStepOverride(previous);
-    void persistStep(previous);
   };
 
   const handleNext = () => {
@@ -306,7 +340,9 @@ export default function ProjectBuildScreen() {
     }
     stepCursorRef.current = next;
     setStepOverride(next);
-    void persistStep(next);
+    if (next >= furthestStep) {
+      void persistStep(next);
+    }
     if (completedStep != null) {
       void recordStepCompletion(project.id, completedStep);
     }
@@ -495,7 +531,12 @@ export default function ProjectBuildScreen() {
         <View
           style={styles.stepBody}
           onLayout={(event) => {
-            reportScrollMetrics({ instructionalHeight: event.nativeEvent.layout.height });
+            const preserveReachedEnd = explanationResizeRef.current;
+            explanationResizeRef.current = false;
+            reportScrollMetrics({
+              instructionalHeight: event.nativeEvent.layout.height,
+              preserveReachedEnd,
+            });
           }}>
           {stage ? (
             <Text style={styles.stageKicker}>
@@ -516,6 +557,10 @@ export default function ProjectBuildScreen() {
             steps={steps}
             stepIndex={currentStepIndex}
             onWiringPinchActiveChange={setWiringPinchActive}
+            onExplanationToggle={() => {
+              explanationResizeRef.current = true;
+              walkthroughScroll.holdAnchor();
+            }}
             explain={{
               projectId: project.id,
               projectSlug: project.slug,
@@ -531,7 +576,7 @@ export default function ProjectBuildScreen() {
                 style={[
                   styles.dot,
                   index === currentStepIndex && styles.dotActive,
-                  index < currentStepIndex && styles.dotCompleted,
+                  index < furthestStep && index !== currentStepIndex && styles.dotCompleted,
                 ]}
               />
             ))}

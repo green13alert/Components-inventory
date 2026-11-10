@@ -198,6 +198,11 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
         body: 'SCK is the I2C clock and connects to IO22. SDI is the I2C data and connects to IO21. Adafruit’s I2C wiring uses those two signal pins plus Vin and GND, and says to leave the other pins disconnected. The default address is 0x77. A jumper from SDO to GND, or soldering the ADDR jumper on the back, changes the address to 0x76, which this sketch does not scan. Adafruit’s I2C page does not add a separate pull-up resistor, so this project does not put one on the BOM.',
       },
       {
+        type: 'explanation',
+        title: 'How does I²C communication work?',
+        body: 'I²C uses two signal wires. The clock line, SCK, marks when each bit is valid. The data line, SDI, carries the bits. The ESP32 selects a chip by its address. This breakout answers at 0x77 while SDO is left open. Connecting SDO to ground changes that address to 0x76. This sketch asks only for 0x77, so the other address would leave the sensor silent.',
+      },
+      {
         type: 'text',
         heading: 'How you connect it without soldering',
         body: 'Adafruit’s current product 2652 is the STEMMA QT board. The BME280 chip is already soldered to that PCB. The loose 0.1 inch header is not soldered, and this project does not solder it. Plug an Adafruit 4397 cable into either STEMMA QT socket. That cable is JST-SH to four female sockets, about 150 mm. Adafruit’s colours are black for GND, red for VIN, blue for SDA, and yellow for SCL. Blue is SDI. Yellow is SCK. An older breakout with no STEMMA QT socket is not this build.',
@@ -527,6 +532,11 @@ export const ESP32_WIFI_WEATHER_STEPS: AuthoredWalkthroughStep[] = [
       {
         type: 'code_explanation',
         body: 'loop() calls server.handleClient() every pass so a browser that can still reach the board gets an answer. Wi-Fi retries are timed with millis() and WIFI_RETRY_MS. There is no while-loop waiting forever for a network. If the ESP32 leaves Wi-Fi, Serial prints “Connecting to Wi-Fi...” on the next retry. The page’s “Wi-Fi disconnected” text is sent only inside a successful /readings response. A browser that can no longer reach the ESP32 does not get that response. It shows “Dashboard not updating” instead.',
+      },
+      {
+        type: 'explanation',
+        title: 'How does the page get new readings?',
+        body: 'The ESP32 serves a small web page on your own network. Opening the board’s address loads that page from the / route. The page is the display, not the sensor. Every two seconds it asks /readings for the latest temperature, humidity, and pressure, and the board answers with those numbers. Nothing is sent to an outside weather service.',
       },
     ],
   },

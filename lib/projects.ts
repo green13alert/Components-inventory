@@ -156,7 +156,13 @@ function parseStepBlocks(value: unknown): StepBlock[] {
     if (!isRecord(block) || typeof block.type !== 'string') {
       return false;
     }
-    return (STEP_BLOCK_TYPES as readonly string[]).includes(block.type);
+    if (!(STEP_BLOCK_TYPES as readonly string[]).includes(block.type)) {
+      return false;
+    }
+    if (block.type === 'explanation') {
+      return typeof block.title === 'string' && block.title.trim().length > 0 && typeof block.body === 'string' && block.body.trim().length > 0;
+    }
+    return true;
   }) as StepBlock[];
 }
 

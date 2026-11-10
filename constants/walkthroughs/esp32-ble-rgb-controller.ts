@@ -238,9 +238,9 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         body: 'Hold the Kingbright WP154A4SEJ3VBDZGW/CA with the dome up. One side of the rim has a flat. The lead nearest that flat is pin 1, the red cathode. The next lead, pin 2, is the longest and is the common anode. Pin 3 is the blue cathode. Pin 4 is the green cathode. All four leads must be spread to neighbouring breadboard rows. Make the first bend at least 3 mm below the lens.',
       },
       {
-        type: 'text',
-        heading: 'The datasheet detail',
-        body: 'Kingbright drawing DSAN1168 / 1101031384, Rev V.7A, dated 11/02/2024, shows that order and shows the anode lead at least 2.5 mm longer. At 20 mA the typical forward voltage is 2.2 V red, 3.3 V blue, and 3.3 V green. The maximums are 2.8 V, 4.0 V, and 4.1 V. The absolute maximum current is 30 mA red, 30 mA blue, and 25 mA green. The leads are spaced about 1.27 mm, which is half a breadboard pitch, so they do not drop into four holes until you spread them.',
+        type: 'explanation',
+        title: 'Why can the colours look different?',
+        body: 'This LED is common anode: the shared pin is positive, and each colour is switched toward ground. Red, green, and blue are separate chips. A higher forward voltage leaves less voltage across the series resistor, so less current flows and that colour looks dimmer. From a USB port near 5 V, red is often near 2.2 V and green or blue near 3.3 V. Those are typical estimates, not a measurement of your LED. PWM sets brightness by turning the switch on for a larger or smaller share of each cycle.',
       },
       {
         type: 'warning',
@@ -263,6 +263,11 @@ export const ESP32_BLE_RGB_STEPS: AuthoredWalkthroughStep[] = [
         type: 'text',
         heading: 'Why each resistor is there',
         body: 'The 220 Ω resistor sits between the transistor and one LED cathode. It limits the LED current. The 1 kΩ resistor sits between a GPIO pin and the transistor base. It limits the current the ESP32 pin has to supply. Without the 220 Ω resistor the LED can draw more current than it is rated for. Without the 1 kΩ resistor the GPIO pin can be asked for far too much base current. On USB power, green and blue look dimmer than red because those chips have a higher forward voltage.',
+      },
+      {
+        type: 'explanation',
+        title: 'Why a transistor and two resistors?',
+        body: 'Each transistor is a switch. The GPIO asks it to turn on and does not carry the LED current. The 220 Ω resistor is in the LED path and limits that current. The 1 kΩ resistor is in the base path and limits what the 3.3 V pin supplies. One protects the LED. The other protects the pin. From a port near 5 V, red is roughly 10 mA and green or blue only a few milliamps. Treat those figures as estimates, not measured current.',
       },
       {
         type: 'tip',

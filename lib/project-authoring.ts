@@ -216,6 +216,9 @@ export function reviewAuthoredProject(input: AuthoredProjectInput): AuthoringFin
           }
         }
       }
+      if (block.type === 'explanation' && !block.title.trim()) {
+        error('instructions', `Step “${step.title}” has an explanation without a title.`)
+      }
       if (block.type === 'wiring') {
         for (const row of block.connections) {
           const key = connectionKey(row)

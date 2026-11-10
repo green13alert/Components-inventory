@@ -274,6 +274,11 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         body: 'Plug the PIR pins into c3, c4, and c5: VCC, OUT, then GND. The usual HC-SR501 header, with the pins along the bottom and the two trimmers along the top, reads in that order. If the silk prints another order, put each labelled pin in the hole named for it and do not swap VCC and GND. A male-to-male jumper joins a3 to the left + rail at row 3. Another joins a5 to the left − rail at row 5. D2 goes to a4. OUT is the motion flag — that is PIR_PIN in the sketch. After power-up, give the module about 30 seconds. OUT can chatter during that time. A HIGH is one motion pulse, then it returns LOW. It does not stay HIGH for as long as a person remains in view. Aim the lens away from heaters and vents.',
       },
       {
+        type: 'explanation',
+        title: 'How does a PIR sensor work?',
+        body: 'A passive infrared sensor watches for a change in heat in front of its lens. It does not send out a beam. When that change is large enough, OUT goes HIGH. HIGH and LOW are the two states of a digital signal, which is all digitalRead() needs. When the scene is still, OUT sits LOW. A HIGH means motion was noticed. It does not mean a person is still standing there, and the output falls again after the pulse.',
+      },
+      {
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_PIR],
         connections: PIR_CONNECTIONS,
@@ -305,6 +310,11 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         body: 'The longer LED lead is the anode. Seat it in d12 and the shorter lead, by the flat, in d13. The 220 Ω resistor goes in e8 and e12, along column e so it does not cover the buzzer pins. D8 goes to a8. a13 goes to the left − rail at row 13. Use this one resistor only.',
       },
       {
+        type: 'explanation',
+        title: 'Why does the LED need a resistor?',
+        body: 'An LED lets current through easily once it lights. With no resistor in series, that current can be more than the LED or the Arduino pin should carry. The 220 Ω resistor sits in the path and limits the current. The pin then supplies a small amount, and the LED is not asked to take a direct connection to ground. Leaving the resistor out is what makes that path unsafe.',
+      },
+      {
         type: 'wiring',
         nodes: [NODE_ARDUINO, NODE_RESISTOR, NODE_LED],
         connections: LED_CONNECTIONS,
@@ -333,6 +343,11 @@ export const MOTION_SENSOR_ALARM_STEPS: AuthoredWalkthroughStep[] = [
         type: 'text',
         heading: 'Three-pin active module',
         body: 'Use the three-pin active module from the parts list. Its header is male. Plug it into c9, c10, and c11: VCC, I/O, then GND. If the silk prints another order, follow the silk and do not swap VCC and GND. a9 goes to the left + rail at row 9, D9 goes to a10, and a11 goes to the left − rail at row 11. The GPIO drives I/O only. The module takes sounder current from the 5 V rail. A two-pin piezo is not this part, and this sketch will not sound one.',
+      },
+      {
+        type: 'explanation',
+        title: 'How does an active buzzer work?',
+        body: 'This module already contains the oscillator that makes the tone. A HIGH on its I/O pin only turns that circuit on. The sounder takes its current from the module’s 5 V pin, so the Arduino pin is a control signal, not the power source. A passive piezo has no oscillator of its own. digitalWrite cannot make it sound, because nothing inside it creates the tone.',
       },
       {
         type: 'wiring',

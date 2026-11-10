@@ -58,6 +58,7 @@ export const STEP_BLOCK_TYPES = [
   'expected',
   'troubleshooting',
   'components',
+  'explanation',
 ] as const;
 
 export type StepBlockType = (typeof STEP_BLOCK_TYPES)[number];
@@ -81,7 +82,8 @@ export type StepBlock =
   | { type: 'warning'; body: string }
   | { type: 'expected'; heading?: string; body: string }
   | { type: 'troubleshooting'; heading?: string; items: StepTroubleshootingItem[] }
-  | { type: 'components'; heading?: string; items: ProjectComponent[] };
+  | { type: 'components'; heading?: string; items: ProjectComponent[] }
+  | { type: 'explanation'; title: string; body: string };
 
 export type AuthoredWalkthroughStep = {
   sortOrder: number;

@@ -84,3 +84,86 @@ test('removed lessons stay available as supporting notes, not as walkthrough ste
     assert.equal(notes.every((note) => note.body.trim().length > 40), true)
   }
 })
+
+test('optional explanations sit on the steps they explain and stay short', () => {
+  const expected: Record<string, string[]> = {
+    'Connect the PIR Motion Sensor': ['How does a PIR sensor work?'],
+    'Connect the LED': ['Why does the LED need a resistor?'],
+    'Connect the Buzzer': ['How does an active buzzer work?'],
+    'Control the Pan Servo': ['How does servo control work?'],
+    'Confirm the BME280 pin labels': ['How does I²C communication work?'],
+    'Serve the page and the JSON endpoint': ['How does the page get new readings?'],
+    'Confirm the LED is common anode': ['Why can the colours look different?'],
+    'Know the transistors and the resistors': ['Why a transistor and two resistors?'],
+    'Identify the LED Matrix and Joystick': ['How does the MAX7219 light the grid?'],
+    'Read Joystick Movement': ['Why does the joystick need a deadzone?'],
+    'Move and Draw the Player': ['Why does the game use millis()?'],
+    'Add Level Completion and Timing': ['Why is the button debounced?'],
+  }
+  const steps = walks.flat()
+  for (const [title, explanations] of Object.entries(expected)) {
+    const step = steps.find((item) => item.title === title)
+    assert.ok(step, title)
+    const notes = step.blocks.filter((block) => block.type === 'explanation')
+    assert.equal(notes.length <= 2, true, title)
+    for (const explanationTitle of explanations) {
+      const note = notes.find((block) => block.type === 'explanation' && block.title === explanationTitle)
+      assert.ok(note && note.type === 'explanation', explanationTitle)
+      const words = note.body.trim().split(/\s+/).length
+      assert.equal(words >= 40 && words <= 120, true, `${explanationTitle} has ${words} words`)
+    }
+  }
+  const ledStep = steps.find((item) => item.title === 'Connect the LED')
+  assert.equal(ledStep?.blocks.some((block) => block.type === 'warning'), true)
+  const buzzerStep = steps.find((item) => item.title === 'Connect the Buzzer')
+  assert.equal(buzzerStep?.blocks.some((block) => block.type === 'warning'), true)
+  const servoPower = steps.find((item) => item.title === 'Understand Power and Pin Architecture')
+  assert.equal(servoPower?.blocks.some((block) => block.type === 'warning'), true)
+  assert.equal(servoPower?.blocks.some((block) => block.type === 'explanation'), false)
+  const matrix = steps.find((item) => item.title === 'Identify the LED Matrix and Joystick')
+  assert.equal(matrix?.blocks.some((block) => block.type === 'warning'), true)
+  const led = steps.find((item) => item.title === 'Confirm the LED is common anode')
+  assert.equal(led?.blocks.some((block) => block.type === 'text' && block.heading === 'Find the leads'), true)
+  assert.equal(led?.blocks.some((block) => block.type === 'text' && block.heading === 'The datasheet detail'), false)
+
+  const placedAfter: Record<string, { type: string; heading?: string }> = {
+    'How does a PIR sensor work?': { type: 'text', heading: 'What you are wiring' },
+    'Why does the LED need a resistor?': { type: 'text', heading: 'Polarity and current limit' },
+    'How does an active buzzer work?': { type: 'text', heading: 'Three-pin active module' },
+    'How does servo control work?': { type: 'code_explanation' },
+    'How does I²C communication work?': { type: 'text', heading: 'I2C pins and address' },
+    'How does the page get new readings?': { type: 'code_explanation' },
+    'Why can the colours look different?': { type: 'text', heading: 'Find the leads' },
+    'Why a transistor and two resistors?': { type: 'text', heading: 'Why each resistor is there' },
+    'How does the MAX7219 light the grid?': { type: 'text', heading: 'FC-16 matrix' },
+    'Why does the joystick need a deadzone?': { type: 'code_explanation' },
+    'Why does the game use millis()?': { type: 'code' },
+    'Why is the button debounced?': { type: 'code' },
+  }
+  for (const [explanationTitle, anchor] of Object.entries(placedAfter)) {
+    const owner = steps.find((step) =>
+      step.blocks.some((block) => block.type === 'explanation' && block.title === explanationTitle),
+    )
+    assert.ok(owner, explanationTitle)
+    const index = owner.blocks.findIndex((block) => block.type === 'explanation' && block.title === explanationTitle)
+    const previous = owner.blocks[index - 1]
+    assert.equal(previous?.type, anchor.type, explanationTitle)
+    if (anchor.heading) {
+      assert.equal('heading' in previous && previous.heading, anchor.heading, explanationTitle)
+    }
+    const following = owner.blocks[index + 1]
+    if (
+      explanationTitle === 'How does a PIR sensor work?' ||
+      explanationTitle === 'Why does the LED need a resistor?' ||
+      explanationTitle === 'How does an active buzzer work?'
+    ) {
+      assert.equal(following?.type, 'wiring', explanationTitle)
+    }
+    if (explanationTitle === 'How does the MAX7219 light the grid?') {
+      assert.equal(following?.type === 'text' && following.heading, 'KY-023 joystick')
+    }
+    if (explanationTitle === 'Why does the game use millis()?') {
+      assert.equal(following?.type === 'text' && following.heading, 'Walls, player, and goal')
+    }
+  }
+})

@@ -1,9 +1,9 @@
 /**
  * Educational explanations taken out of the main walkthrough.
  *
- * The app does not import this file. There is no expandable-explanation control yet,
- * so this text stays here for the planned reusable explanation system and a future
- * Learn section. Do not paste it back into a walkthrough step unless the build
+ * The app does not import this file. Shortened explanations now live on the
+ * relevant steps as collapsed explanation blocks. This file keeps the longer
+ * background. Do not paste it back into a walkthrough step unless the build
  * cannot be completed without it.
  */
 

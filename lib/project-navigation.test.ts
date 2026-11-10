@@ -14,7 +14,9 @@ import {
   walkthroughButtonFlex,
   walkthroughFooterControls,
   walkthroughFooterPadding,
+  walkthroughFurthestStep,
   walkthroughProgressPercent,
+  walkthroughStepIsComplete,
 } from './project-navigation.ts'
 
 const published = [
@@ -145,6 +147,59 @@ test('Next, Previous and Finish follow the visible step', () => {
   assert.equal(walkthroughProgressPercent(0, 31), 3)
   assert.equal(walkthroughProgressPercent(1, 31), 6)
   assert.equal(walkthroughProgressPercent(30, 31, true), 100)
+})
+
+test('going back does not reduce the furthest step or complete the open step', () => {
+  const reached = walkthroughFurthestStep({
+    viewedStep: 4,
+    savedStep: 4,
+    completedStepIndexes: [0, 1, 2, 3],
+    stepCount: 8,
+  })
+  assert.equal(reached, 4)
+  assert.equal(walkthroughProgressPercent(reached, 8), 63)
+  assert.equal(
+    walkthroughStepIsComplete({ stepIndex: 4, furthestStep: reached, completedStepIndexes: [0, 1, 2, 3] }),
+    false,
+  )
+
+  const revisited = walkthroughFurthestStep({
+    viewedStep: 1,
+    savedStep: 4,
+    completedStepIndexes: [0, 1, 2, 3],
+    stepCount: 8,
+  })
+  assert.equal(revisited, 4)
+  assert.equal(walkthroughProgressPercent(revisited, 8), walkthroughProgressPercent(reached, 8))
+  assert.equal(
+    walkthroughStepIsComplete({ stepIndex: 1, furthestStep: revisited, completedStepIndexes: [0, 1, 2, 3] }),
+    true,
+  )
+  assert.equal(
+    walkthroughStepIsComplete({ stepIndex: 3, furthestStep: revisited, completedStepIndexes: [0, 1, 2, 3] }),
+    true,
+  )
+
+  const reopened = walkthroughFurthestStep({
+    viewedStep: 4,
+    savedStep: 4,
+    completedStepIndexes: [0, 1, 2, 3],
+    stepCount: 8,
+  })
+  assert.equal(reopened, 4)
+  assert.equal(
+    walkthroughStepIsComplete({ stepIndex: 4, furthestStep: reopened, completedStepIndexes: [0, 1, 2, 3] }),
+    false,
+  )
+
+  const regressedSave = walkthroughFurthestStep({
+    viewedStep: 1,
+    savedStep: 1,
+    completedStepIndexes: [0, 1, 2, 3],
+    stepCount: 8,
+  })
+  assert.equal(regressedSave, 4)
+  assert.equal(walkthroughProgressPercent(regressedSave, 8), 63)
 })
 
 test('a failed save keeps the open step and the last confirmed step', () => {

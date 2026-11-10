@@ -813,6 +813,11 @@ export const SERVO_PAN_TILT_CAMERA_STEPS: AuthoredWalkthroughStep[] = [
         body: 'Serial prints the commanded angle so you can match what you see to what the sketch asked for. If Serial says Pan 120 and the base barely moves, the fault is mechanical binding or power — not this write() call.',
       },
       {
+        type: 'explanation',
+        title: 'How does servo control work?',
+        body: 'write(90) asks the servo for about the middle of its travel. The Arduino pin sends a short control pulse that names the angle. It does not feed the motor. The motor current comes in on the red wire from the separate 5 V supply. The brown wire has to share the Arduino’s ground, so the pulse and the motor have one common reference. If those grounds are split, the servo can jitter or ignore the angle.',
+      },
+      {
         type: 'expected',
         heading: 'Check',
         body: 'This sketch attaches and writes only panServo on D9. TILT_PIN is named but unused — leave the tilt signal wire on D10 from the electronics stage. Physical pan motion is confirmed later in Calibrate and Test.',

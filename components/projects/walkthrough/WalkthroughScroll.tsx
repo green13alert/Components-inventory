@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useRef, type ReactNode } from 'react';
 import type { ScrollView } from 'react-native';
 
-import { scrollAnchorDelta } from '@/lib/scroll-anchor';
+import { anchoredMarkerUpdate } from '@/lib/scroll-anchor';
 
 type ScrollEvent = {
   nativeEvent: { contentOffset: { y: number } };
@@ -19,6 +19,8 @@ export function useWalkthroughScrollController(resetKey: string) {
   const dragging = useRef(false);
   const expected = useRef<number | null>(null);
   const correcting = useRef(false);
+  const holding = useRef(false);
+  const holdToken = useRef(0);
   const keyRef = useRef(resetKey);
   if (keyRef.current !== resetKey) {
     keyRef.current = resetKey;
@@ -26,7 +28,21 @@ export function useWalkthroughScrollController(resetKey: string) {
     expected.current = null;
     correcting.current = false;
     dragging.current = false;
+    holding.current = false;
+    holdToken.current += 1;
   }
+
+  const holdAnchor = useCallback(() => {
+    holding.current = true;
+    const token = ++holdToken.current;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (holdToken.current === token) {
+          holding.current = false;
+        }
+      });
+    });
+  }, []);
 
   const reportMarker = useCallback((screenY: number) => {
     if (correcting.current) {
@@ -40,19 +56,24 @@ export function useWalkthroughScrollController(resetKey: string) {
       expected.current = screenY;
       return;
     }
-    const delta = scrollAnchorDelta(expected.current, screenY, false);
-    if (expected.current == null || delta === 0) {
-      expected.current = screenY;
+    const update = anchoredMarkerUpdate({
+      previousScreenY: expected.current,
+      nextScreenY: screenY,
+      userIsDragging: false,
+      holdPosition: holding.current,
+    });
+    if (update.delta === 0) {
+      expected.current = update.expectedScreenY;
       return;
     }
-    const next = Math.max(0, offset.current + delta);
+    const next = Math.max(0, offset.current + update.delta);
     offset.current = next;
-    expected.current = screenY - delta;
-      correcting.current = true;
-      scrollRef.current?.scrollTo({ y: next, animated: false });
-      requestAnimationFrame(() => {
-        correcting.current = false;
-      });
+    expected.current = update.expectedScreenY;
+    correcting.current = true;
+    scrollRef.current?.scrollTo({ y: next, animated: false });
+    requestAnimationFrame(() => {
+      correcting.current = false;
+    });
   }, []);
 
   const onScroll = useCallback((event: ScrollEvent) => {
@@ -68,7 +89,7 @@ export function useWalkthroughScrollController(resetKey: string) {
     expected.current = null;
   }, []);
 
-  return { scrollRef, reportMarker, onScroll, onScrollBeginDrag, onScrollEndDrag, onMomentumScrollEnd: onScrollEndDrag };
+  return { scrollRef, reportMarker, holdAnchor, onScroll, onScrollBeginDrag, onScrollEndDrag, onMomentumScrollEnd: onScrollEndDrag };
 }
 
 export function WalkthroughScrollProvider({

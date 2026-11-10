@@ -4,6 +4,13 @@ export type StepScrollMeasurement = {
   offsetY?: number
   viewportHeight?: number
   instructionalHeight?: number
+  /**
+   * The user opened or closed an optional explanation. An end already reached
+   * stays reached. An early short layout measurement must not set this.
+   */
+  preserveReachedEnd?: boolean
+  /** The user already advanced past this step. Opening it does not require another scroll. */
+  alreadyCompleted?: boolean
 }
 
 export type StepScrollGate = {
@@ -14,6 +21,7 @@ export type StepScrollGate = {
   offsetY: number
   viewportHeight: number
   instructionalHeight: number
+  stepCompleted: boolean
 }
 
 export function initialStepScrollGate(): StepScrollGate {
@@ -25,6 +33,7 @@ export function initialStepScrollGate(): StepScrollGate {
     offsetY: 0,
     viewportHeight: 0,
     instructionalHeight: 0,
+    stepCompleted: false,
   }
 }
 
@@ -32,6 +41,7 @@ export function initialStepScrollGate(): StepScrollGate {
  * A step whose content is taller than the viewport stays locked until the
  * bottom is actually in view. A step that already fits is unlocked. A fit
  * caused by an early short measurement is revoked if the content later grows.
+ * Growth flagged as an optional explanation does not revoke an end already reached.
  */
 export function getStepScrollState(input: {
   offsetY: number
@@ -56,15 +66,20 @@ export function updateStepScrollGate(
   metrics: StepScrollMeasurement,
 ): StepScrollGate {
   let next = gate
+  const markedComplete = Boolean(metrics.alreadyCompleted)
   if (next.stepKey !== stepKey) {
     next = {
       ...next,
       stepKey,
-      unlockedByScroll: false,
+      stepCompleted: markedComplete,
+      reachedStepKey: markedComplete ? stepKey : null,
+      unlockedByScroll: markedComplete,
       freshLayout: false,
       offsetY: 0,
       instructionalHeight: 0,
     }
+  } else if (markedComplete) {
+    next = { ...next, stepCompleted: true }
   }
 
   if (metrics.viewportHeight != null && metrics.viewportHeight > 0) {
@@ -89,12 +104,17 @@ export function updateStepScrollGate(
   }
 
   if (!state.canScroll) {
-    return { ...next, reachedStepKey: stepKey, unlockedByScroll: false }
+    return { ...next, reachedStepKey: stepKey, unlockedByScroll: next.stepCompleted }
   }
 
   let reachedStepKey = next.reachedStepKey
   let unlockedByScroll = next.unlockedByScroll
-  if (!unlockedByScroll && reachedStepKey === stepKey) {
+  if (next.stepCompleted) {
+    unlockedByScroll = true
+    reachedStepKey = stepKey
+  } else if (metrics.preserveReachedEnd && reachedStepKey === stepKey) {
+    unlockedByScroll = true
+  } else if (!unlockedByScroll && reachedStepKey === stepKey) {
     reachedStepKey = null
   }
   if (state.atEnd) {

@@ -3,6 +3,8 @@ import { Image, type ImageSource } from 'expo-image';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { pressFeedback } from '@/components/ui/press-feedback';
+
 import { ComponentIllustration } from '@/components/components/ComponentIllustration';
 import { ProjectCover } from '@/components/projects/ProjectCover';
 import { displayProjectCoverCaption, projectCoverIsPending } from '@/lib/project-navigation';
@@ -23,6 +25,7 @@ type StepContentProps = {
   steps?: { blocks: StepBlock[] }[];
   stepIndex?: number;
   onWiringPinchActiveChange?: (active: boolean) => void;
+  onExplanationToggle?: () => void;
 };
 
 function useStepTheme() {
@@ -39,6 +42,7 @@ export function StepContent({
   steps,
   stepIndex,
   onWiringPinchActiveChange,
+  onExplanationToggle,
 }: StepContentProps) {
   const { styles } = useStepTheme();
   if (blocks.length === 0) return null;
@@ -55,6 +59,7 @@ export function StepContent({
           steps={steps}
           stepIndex={stepIndex}
           onWiringPinchActiveChange={onWiringPinchActiveChange}
+          onExplanationToggle={onExplanationToggle}
         />
       ))}
     </View>
@@ -69,6 +74,7 @@ function StepBlockView({
   steps,
   stepIndex,
   onWiringPinchActiveChange,
+  onExplanationToggle,
 }: {
   block: StepBlock;
   explain?: Omit<ExplainCodeContext, 'code' | 'language' | 'filename'>;
@@ -77,6 +83,7 @@ function StepBlockView({
   steps?: { blocks: StepBlock[] }[];
   stepIndex?: number;
   onWiringPinchActiveChange?: (active: boolean) => void;
+  onExplanationToggle?: () => void;
 }) {
   switch (block.type) {
     case 'text':
@@ -131,6 +138,8 @@ function StepBlockView({
       return <TroubleshootingBlock heading={block.heading} items={block.items} />;
     case 'components':
       return <ComponentsBlock heading={block.heading} items={block.items} />;
+    case 'explanation':
+      return <ExplanationBlock title={block.title} body={block.body} onToggle={onExplanationToggle} />;
     default:
       return null;
   }
@@ -341,6 +350,37 @@ function TroubleshootingBlock({
           </View>
         ))}
       </View>
+    </View>
+  );
+}
+
+function ExplanationBlock({
+  title,
+  body,
+  onToggle,
+}: {
+  title: string;
+  body: string;
+  onToggle?: () => void;
+}) {
+  const { colors, styles } = useStepTheme();
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.explanation}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={title}
+        accessibilityHint={open ? 'Collapses this explanation' : 'Expands this explanation'}
+        onPress={() => {
+          onToggle?.();
+          setOpen((current) => !current);
+        }}
+        style={pressFeedback(styles.explanationHeader)}>
+        <Text style={styles.explanationTitle}>{title}</Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+      </Pressable>
+      {open ? <Text style={styles.explanationBody}>{body}</Text> : null}
     </View>
   );
 }
@@ -578,6 +618,34 @@ function createStyles(colors: SolderiPalette) {
       fontSize: 14,
       fontWeight: '700',
       color: colors.textSecondary,
+    },
+    explanation: {
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      overflow: 'hidden',
+    },
+    explanationHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+    },
+    explanationTitle: {
+      flex: 1,
+      fontSize: 16,
+      lineHeight: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    explanationBody: {
+      fontSize: 16,
+      lineHeight: 26,
+      color: colors.textSecondary,
+      paddingHorizontal: 14,
+      paddingBottom: 14,
     },
   });
 }

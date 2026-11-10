@@ -103,6 +103,60 @@ export function moveWalkthroughStep(current: number, direction: -1 | 1, stepCoun
   return Math.min(Math.max(0, index + direction), last);
 }
 
+function clampWalkthroughStep(index: number, last: number): number {
+  if (!Number.isFinite(index)) {
+    return 0;
+  }
+  return Math.min(last, Math.max(0, Math.floor(index)));
+}
+
+/**
+ * The furthest step the user has reached.
+ * The step on screen can be earlier. A completion record means they advanced
+ * past that step, even if a later Previous press saved a lower cursor.
+ */
+export function walkthroughFurthestStep(input: {
+  viewedStep: number;
+  savedStep: number;
+  completedStepIndexes: readonly number[];
+  stepCount: number;
+}): number {
+  if (input.stepCount <= 0) {
+    return 0;
+  }
+  const last = input.stepCount - 1;
+  let furthest = Math.max(
+    clampWalkthroughStep(input.viewedStep, last),
+    clampWalkthroughStep(input.savedStep, last),
+  );
+  for (const completed of input.completedStepIndexes) {
+    if (!Number.isFinite(completed)) {
+      continue;
+    }
+    furthest = Math.max(furthest, Math.min(last, Math.max(0, Math.floor(completed)) + 1));
+  }
+  return furthest;
+}
+
+/** True when this step was advanced past, or has its own completion record. */
+export function walkthroughStepIsComplete(input: {
+  stepIndex: number;
+  furthestStep: number;
+  completedStepIndexes: readonly number[];
+}): boolean {
+  if (!Number.isFinite(input.stepIndex)) {
+    return false;
+  }
+  const index = Math.floor(input.stepIndex);
+  if (index < 0) {
+    return false;
+  }
+  if (input.completedStepIndexes.some((completed) => Number.isFinite(completed) && Math.floor(completed) === index)) {
+    return true;
+  }
+  return index < input.furthestStep;
+}
+
 export function walkthroughProgressPercent(stepIndex: number, stepCount: number, completed = false): number {
   if (stepCount <= 0) {
     return 0;

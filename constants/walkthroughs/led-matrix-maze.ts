@@ -110,6 +110,11 @@ export const LED_MATRIX_MAZE_STEPS: AuthoredWalkthroughStep[] = [
       body: 'Use an assembled FC-16 MAX7219 module with the 8×8 matrix seated and a 5-pin male input header already soldered on. Some listings are a kit with a loose header. If the header is not soldered, stop. This guide does not include soldering. A bare MAX7219 chip, or a board with a different header, is not this part. Lay the board flat, LED face up, with the input header on the right. From the top that header is CLK, CS, DIN, GND, and VCC. With the header on the right, row 0 is the top of the grid and column 0 is the left. The library call setPoint(row, column) uses that order. PCB text may look upside down. That is the FC-16 mounting MD_MAX72XX expects. The header is not inserted into the breadboard. The module runs from 5 V. Do not power it from the Uno 3.3 V pin. Each pin takes the female socket of a male-to-female jumper, and the male pin goes to the Uno or to a breadboard rail. Leave the sketch intensity at 2.',
     },
     {
+      type: 'explanation',
+      title: 'How does the MAX7219 light the grid?',
+      body: 'The chip does not power all 64 LEDs at once. It lights one row at a time and scans through the grid. For that instant a row can draw much more current than the average you see. Intensity is a duty cycle from 0 to 15. This game stays at 2, so each LED is on for only a small share of the time and the average stays modest. A weak USB port can still struggle if every LED is lit at full intensity.',
+    },
+    {
       type: 'text',
       heading: 'KY-023 joystick',
       body: 'Use a preassembled two-axis module with five male pins, sold as KY-023 or a PS2-style stick. It also runs from 5 V. The usual silk order is GND, +5V, VRx, VRy, and SW. If your silk prints a different order, follow the silk. VRx and VRy rest near the middle of the 0 to 1023 analog range. SW connects to GND when pressed. The sketch uses INPUT_PULLUP, so an unpressed button reads HIGH. Each pin takes a female socket. The male end goes to the Uno or to a rail. Do not plug this header into the breadboard.',
@@ -222,6 +227,11 @@ export const LED_MATRIX_MAZE_STEPS: AuthoredWalkthroughStep[] = [
       type: 'code_explanation',
       body: 'axisDirection and stickStep belong to the finished sketch. They fill dx and dy, which the movement step uses for one square. This fragment has no setup or loop, so it will not compile on its own.',
     },
+    {
+      type: 'explanation',
+      title: 'Why does the joystick need a deadzone?',
+      body: 'A centred stick rarely sits on one exact number. Small electrical noise makes the reading wander around the middle. A deadzone treats that wander as no movement, so the player stays still until you push past it. Beyond the band, the sketch takes one step on the axis that moved further. A light touch does not slide the dot, and a diagonal push becomes one horizontal or vertical step.',
+    },
   ]),
   step(8, 3, STAGE_GAME, 'Create the Maze and Player', 'This excerpt stores one maze and refuses a move onto a wall or off the grid. Do not upload it on its own.', [
     {
@@ -251,6 +261,11 @@ export const LED_MATRIX_MAZE_STEPS: AuthoredWalkthroughStep[] = [
       language: 'Arduino',
       filename: EXCERPT,
       code: firmwareSlice('bool takeMove', '\nbool readPress'),
+    },
+    {
+      type: 'explanation',
+      title: 'Why does the game use millis()?',
+      body: 'delay() would stop the whole loop, so the blink and the button would wait with it. millis() is a running clock. The sketch remembers the last move and subtracts that time from the current one. Both numbers are unsigned. When the clock wraps back through zero, the subtraction still gives the elapsed time, so the player does not freeze. The loop keeps running and can read the stick on every pass.',
     },
     {
       type: 'text',
@@ -286,6 +301,11 @@ export const LED_MATRIX_MAZE_STEPS: AuthoredWalkthroughStep[] = [
       language: 'Arduino',
       filename: EXCERPT,
       code: firmwareSlice('bool readPress', '\n// region: draw'),
+    },
+    {
+      type: 'explanation',
+      title: 'Why is the button debounced?',
+      body: 'A mechanical switch can flicker between open and closed for a few milliseconds as it shuts. If every flicker counted, one press would restart the level several times. The sketch waits until the new state has held for 40 ms, then accepts it once. Holding the button does not count again. Only the change into the pressed state does.',
     },
     {
       type: 'tip',

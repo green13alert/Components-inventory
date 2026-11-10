@@ -50,6 +50,36 @@ test('changing steps resets the scroll lock', () => {
   assert.equal(stepAdvanceLocked(returned, 'project:one'), true)
 })
 
+test('opening an explanation keeps an end that was already reached', () => {
+  const fitted = gateFor('project:short', { instructionalHeight: 400 })
+  assert.equal(stepAdvanceLocked(fitted, 'project:short'), false)
+  const opened = updateStepScrollGate(fitted, 'project:short', {
+    instructionalHeight: 1400,
+    preserveReachedEnd: true,
+  })
+  assert.equal(stepAdvanceLocked(opened, 'project:short'), false)
+  const laidOutAgain = updateStepScrollGate(opened, 'project:short', { instructionalHeight: 1400 })
+  assert.equal(stepAdvanceLocked(laidOutAgain, 'project:short'), false)
+
+  const scrolled = gateFor('project:long', { instructionalHeight: 2000, offsetY: 1200 })
+  assert.equal(stepAdvanceLocked(scrolled, 'project:long'), false)
+  const grown = updateStepScrollGate(scrolled, 'project:long', {
+    instructionalHeight: 2800,
+    preserveReachedEnd: true,
+  })
+  assert.equal(stepAdvanceLocked(grown, 'project:long'), false)
+})
+
+test('an explanation does not unlock a long step that has not been finished', () => {
+  const locked = gateFor('project:long', { instructionalHeight: 2000 })
+  assert.equal(stepAdvanceLocked(locked, 'project:long'), true)
+  const opened = updateStepScrollGate(locked, 'project:long', {
+    instructionalHeight: 2600,
+    preserveReachedEnd: true,
+  })
+  assert.equal(stepAdvanceLocked(opened, 'project:long'), true)
+})
+
 test('a short early measurement does not keep a longer step unlocked', () => {
   let gate = gateFor('project:long', { instructionalHeight: 100 })
   assert.equal(stepAdvanceLocked(gate, 'project:long'), false)
@@ -113,6 +143,65 @@ test('repeated taps while locked do not record a step completion', () => {
   const next = walkthrough.slice(walkthrough.indexOf('const handleNext'))
   assert.equal(next.indexOf('stepAdvanceLocked') < next.indexOf('recordStepCompletion'), true)
   assert.equal(next.includes('disabled={nextLocked || !footerControls.nextEnabled}'), true)
+})
+
+test('a completed step stays unlocked when it is opened again', () => {
+  const finished = gateFor('project:three', { instructionalHeight: 2000, offsetY: 1300 })
+  assert.equal(stepAdvanceLocked(finished, 'project:three'), false)
+
+  const ahead = updateStepScrollGate(finished, 'project:four', { alreadyCompleted: false })
+  assert.equal(stepAdvanceLocked(ahead, 'project:four'), true)
+
+  const backOne = updateStepScrollGate(ahead, 'project:three', { alreadyCompleted: true })
+  assert.equal(stepAdvanceLocked(backOne, 'project:three'), false)
+  const backLaidOut = updateStepScrollGate(backOne, 'project:three', {
+    instructionalHeight: 2000,
+    alreadyCompleted: true,
+  })
+  assert.equal(stepAdvanceLocked(backLaidOut, 'project:three'), false)
+
+  const backSeveral = updateStepScrollGate(backLaidOut, 'project:one', { alreadyCompleted: true })
+  const backSeveralLaidOut = updateStepScrollGate(backSeveral, 'project:one', {
+    instructionalHeight: 2400,
+    alreadyCompleted: true,
+  })
+  assert.equal(stepAdvanceLocked(backSeveralLaidOut, 'project:one'), false)
+
+  const forward = updateStepScrollGate(backSeveralLaidOut, 'project:three', {
+    instructionalHeight: 2000,
+    alreadyCompleted: true,
+  })
+  assert.equal(stepAdvanceLocked(forward, 'project:three'), false)
+
+  const frontier = updateStepScrollGate(forward, 'project:four', {
+    instructionalHeight: 2200,
+    alreadyCompleted: false,
+  })
+  assert.equal(stepAdvanceLocked(frontier, 'project:four'), true)
+})
+
+test('opening an explanation does not relock a completed step or unlock a new one', () => {
+  const completed = updateStepScrollGate(initialStepScrollGate(), 'project:done', {
+    viewportHeight: VIEWPORT,
+    instructionalHeight: 1800,
+    alreadyCompleted: true,
+  })
+  assert.equal(stepAdvanceLocked(completed, 'project:done'), false)
+  const opened = updateStepScrollGate(completed, 'project:done', {
+    instructionalHeight: 2500,
+    preserveReachedEnd: true,
+    alreadyCompleted: true,
+  })
+  assert.equal(stepAdvanceLocked(opened, 'project:done'), false)
+
+  const fresh = gateFor('project:new', { instructionalHeight: 1800 })
+  assert.equal(stepAdvanceLocked(fresh, 'project:new'), true)
+  const openedFresh = updateStepScrollGate(fresh, 'project:new', {
+    instructionalHeight: 2400,
+    preserveReachedEnd: true,
+    alreadyCompleted: false,
+  })
+  assert.equal(stepAdvanceLocked(openedFresh, 'project:new'), true)
 })
 
 test('the completion insert and migration do not allow a client timestamp', () => {
